@@ -1,0 +1,9 @@
+Third-party libraries bundled with எழுத்து OCR (served from this site, unmodified):
+
+tesseract.js 7.0.0        Apache-2.0   https://github.com/naptha/tesseract.js
+tesseract.js-core 7.0.0   Apache-2.0   https://github.com/naptha/tesseract.js-core  (Tesseract OCR, Apache-2.0)
+Cropper.js 1.6.2           MIT          https://github.com/fengyuanchen/cropperjs
+PDF.js (pdfjs-dist) 3.11.174 Apache-2.0  https://github.com/mozilla/pdf.js
+docx 9.15.0                 MIT          https://github.com/dolanmiu/docx
+
+Language models are downloaded on demand from https://cdn.jsdelivr.net/npm/@tesseract.js-data/ (Apache-2.0, tessdata_best).

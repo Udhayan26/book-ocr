@@ -2,7 +2,17 @@
 <html lang="ta">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net blob: data:; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#b4471f">
+<script>
+/* move to the secure address as soon as the certificate works (downloads are blocked on http://) */
+(function(){ if (location.protocol !== "http:" || /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname)) return;
+  fetch("https://" + location.host + "/vendor/LICENSES.txt?" + Date.now(), {mode:"no-cors", cache:"no-store"})
+    .then(function(){ location.replace("https://" + location.host + location.pathname + location.search + location.hash); })
+    .catch(function(){ window.__insecure = true; document.documentElement.classList.add("insecure"); }); })();
+</script>
 <title>எழுத்து OCR · Tamil & Indic image and book to text</title>
 <meta name="description" content="Free Tamil, English and Indic OCR in your browser. Paste, drop or upload an image, PDF or a whole book; mark text, tables and pictures or detect them automatically; convert page by page to Word or text. Nothing is uploaded.">
 <meta property="og:title" content="எழுத்து OCR — Tamil image & book to text">
@@ -10,7 +20,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23b4471f'/><text x='32' y='45' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'>அ</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@500;700&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<link rel="stylesheet" href="vendor/cropper/cropper.min.css">
 <style>
 :root{
   --paper:#f6f2ea; --panel:#fffdf8; --ink:#1f1b16; --muted:#6f665a; --line:#e4dccd; --line-2:#d3c8b4;
@@ -84,7 +94,7 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .work{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
 .work.book{grid-template-columns:150px minmax(0,1.2fr) minmax(0,1fr)}
 @media (max-width:1100px){.work.book{grid-template-columns:120px minmax(0,1fr)} .work.book .side{grid-column:1/-1}}
-@media (max-width:760px){.work,.work.book{grid-template-columns:1fr} .rail{position:static!important;max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:86px}}
+@media (max-width:760px){.work,.work.book{grid-template-columns:minmax(0,1fr)} .work>*{min-width:0} .rail{position:static!important;max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:68px}}
 .rail{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .rail .rh{padding:10px 10px 8px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:grid;gap:6px}
 .rail .rh b{color:var(--ink);font-size:14px;word-break:break-word}
@@ -99,7 +109,7 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .pg.reading::after{content:"";position:absolute;inset:4px 4px 22px;border-radius:4px;background:repeating-linear-gradient(-45deg,transparent 0 8px,color-mix(in srgb,var(--accent) 18%,transparent) 8px 16px)}
 .imgcard{overflow:hidden}
 .tb{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.tb .lbl{font-size:13px;color:var(--muted);font-family:var(--mono)}
+.tb .lbl{font-size:13px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
 .cropwrap{height:min(70vh,680px);background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px;position:relative;overflow:hidden}
 .cropwrap img{display:block;max-width:100%}
 .cropwrap .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;z-index:3;background:color-mix(in srgb,var(--paper) 55%,transparent)}
@@ -120,7 +130,7 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .legend{display:flex;gap:10px;flex-wrap:wrap}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
 
-.side{display:grid;gap:14px}
+.side{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)} .side>*,.opts *{min-width:0}
 .opts{padding:16px}
 label.f{display:block;margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:9px;padding:9px 10px;background:var(--paper)}
@@ -160,7 +170,7 @@ select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:
 
 .result{display:flex;flex-direction:column;min-height:300px}
 .tabs{display:flex;gap:2px}
-.tabs button{border:0;background:none;padding:5px 10px;border-radius:7px;cursor:pointer;font-weight:500;color:var(--muted);font-size:14px}
+.tabs button{white-space:nowrap;border:0;background:none;padding:5px 10px;border-radius:7px;cursor:pointer;font-weight:500;color:var(--muted);font-size:14px}
 .tabs button.on{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
 .result textarea{border:0;resize:vertical;min-height:320px;padding:16px 18px;background:transparent;font:18px/1.9 var(--ta);outline:none;width:100%}
 .result textarea[readonly]{background:color-mix(in srgb,var(--paper) 55%,transparent)}
@@ -193,7 +203,44 @@ select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:
 .how div{padding:16px 18px}
 .how b{display:block;margin-bottom:4px}
 .how p{margin:0;color:var(--muted);font-size:14px}
-footer{max-width:1320px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:13px}
+footer{max-width:1320px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.linkbtn{border:0;background:none;color:var(--accent);cursor:pointer;padding:0;font-size:13px;text-decoration:underline}
+.secbar{display:none;max-width:1320px;margin:0 auto 10px;padding:9px 14px;border-radius:10px;background:var(--warn-soft);color:var(--ink);font-size:13.5px}
+html.insecure .secbar{display:block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.more{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.more>summary{flex-wrap:wrap;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px;user-select:none}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"▸";transition:transform .15s}
+details.more[open]>summary::before{transform:rotate(90deg)}
+details.more>summary .sum{font-weight:400;margin-left:auto;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.mbar{display:none}
+.scriptpref{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:13px;color:var(--muted)}
+.scriptpref select{width:auto;padding:4px 8px;font-size:13px}
+@media (max-width:760px){
+  header{padding:14px 14px 4px} .brand b{font-size:25px} .lede{font-size:13px;padding:0 14px 12px}
+  .secbar{margin:0 12px 10px}
+  main{padding:0 10px calc(92px + env(safe-area-inset-bottom))}
+  .drop{padding:30px 14px} .drop h1{font-size:18px} .drop .kh{display:none}
+  .drop .row .btn{min-height:46px;padding:10px 18px}
+  .tb{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:8px 10px} .tb::-webkit-scrollbar{display:none}
+  .btn{min-height:40px} .btn.sm{min-height:38px;padding:6px 11px;font-size:13.5px} .seg button{min-height:38px}
+  .cropwrap{height:54vh} .hintbar #hintText{font-size:11.5px}
+  .opts{padding:14px} #goBtn{display:none}
+  .result textarea{font-size:17px;min-height:240px;padding:14px}
+  .rail .rh{grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:8px 10px} .rail .rh span{display:none} .rail .rh b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lede .more-l{display:none} body{overflow-x:hidden}
+  .ms-pop{position:fixed;left:8px;right:8px;top:auto;bottom:calc(8px + env(safe-area-inset-bottom));max-height:78vh;display:flex;flex-direction:column;z-index:60}
+  .ms-list{max-height:none;flex:1;min-height:0} .ms-opt{padding:10px 8px}
+  .menu .list{position:fixed;left:8px;right:8px;top:auto;bottom:calc(84px + env(safe-area-inset-bottom))}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(30,20,10,.08)}
+  .mbar .btn{flex:1;justify-content:center;min-height:46px}
+  .mbar .btn.primary{flex:2}
+  .mbar .mprog{position:absolute;left:0;top:-1px;height:3px;background:var(--accent);width:0;transition:width .25s}
+  .mbar .mstat{position:absolute;left:12px;right:12px;bottom:calc(100% + 6px);font-size:12px;color:var(--muted);text-align:center;pointer-events:none}
+  body.drop-open .mbar{display:none}
+  dialog{width:96vw}
+}
 pre.code{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;font:12.5px/1.55 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(680px,94vw);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(20,15,10,.45)}
@@ -213,7 +260,8 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
   <span class="spacer"></span>
   <nav><a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a></nav>
 </header>
-<p class="lede">Tamil, English & Indic image-to-text — single pages or whole books, with tables and pictures. Free and unlimited: it runs inside your browser, so nothing is uploaded anywhere.</p>
+<div class="secbar" id="secbar" role="status">🔒 Secure connection (HTTPS) is still being set up for this address. If your browser blocks a download, use <b>Copy</b> — or try again later.</div>
+<p class="lede">Tamil, English & Indic image-to-text — single pages or whole books<span class="more-l">, with tables and pictures</span>. Free and unlimited<span class="more-l">: it runs inside your browser, so nothing is uploaded anywhere</span>.</p>
 
 <main>
   <section id="dropView">
@@ -221,7 +269,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
       <div>
         <div class="glyph">அ A</div>
         <h1>Paste, drop, or <u>upload</u> your image to convert</h1>
-        <p>One image, many page photos, or a whole PDF book · JPG, PNG, WebP, TIFF, PDF · <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a screenshot</p>
+        <p>One image, many page photos, or a whole PDF book · JPG, PNG, WebP, TIFF, PDF · <span class="kh"><kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a screenshot</span></p>
         <div class="row">
           <button class="btn primary" type="button" onclick="event.stopPropagation();fileIn.click()">Choose files</button>
           <button class="btn" type="button" onclick="event.stopPropagation();camIn.click()">📷 Camera</button>
@@ -302,10 +350,12 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           <div class="ms-pop hidden" id="langPop">
             <input type="text" id="langQ" placeholder="Search language…" autocomplete="off">
             <div class="ms-list" id="langList" role="listbox" aria-multiselectable="true"></div>
-            <div class="ms-foot"><button type="button" class="btn sm ghost" id="langReset">✦ Back to auto-detect</button><span class="spacer"></span><button type="button" class="btn sm primary" id="langDone">Done</button></div>
+            <div class="ms-foot"><button type="button" class="btn sm ghost" id="langReset">✦ Back to auto-detect</button><button type="button" class="btn sm ghost hidden" id="langRedo" title="Forget the detected language and detect it again on the next page you convert">↻ Detect again</button><span class="spacer"></span><button type="button" class="btn sm primary" id="langDone">Done</button></div>
           </div>
         </div>
         <div class="langhint" id="langHint"></div>
+        <div class="scriptpref hidden" id="scriptPref"></div>
+        <details class="more" id="more"><summary>More settings <span class="sum" id="moreSum"></span></summary>
         <div class="grid2">
           <div><label class="f" for="psm">Layout</label>
             <select id="psm">
@@ -330,6 +380,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           <label><input type="checkbox" id="keepLines"><span>Keep line breaks<small>For poetry and verse; otherwise paragraphs are joined</small></span></label>
           <label id="appendLbl"><input type="checkbox" id="append"><span>Add to existing text</span></label>
         </div>
+        </details>
         <button class="btn primary big" id="goBtn" onclick="convertCurrent()">Convert to text</button>
 
         <div class="bookbar hidden" id="bookbar">
@@ -377,7 +428,12 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
   </section>
 </main>
 
-<footer>எழுத்து OCR · runs locally in your browser · your work is kept in this browser only</footer>
+<div class="mbar" id="mbar"><div class="mprog" id="mprog"></div><div class="mstat" id="mstat"></div>
+  <button class="btn primary" id="mGo" onclick="convertCurrent()">Convert</button>
+  <button class="btn" onclick="copyText()">Copy</button>
+  <button class="btn" onclick="document.querySelector('.result').scrollIntoView({behavior:'smooth'})">Text ↓</button>
+</div>
+<footer><span>எழுத்து OCR · runs locally in your browser — your images never leave this device</span><span class="spacer"></span><button class="linkbtn" onclick="clearSaved()">Clear saved work</button></footer>
 
 <dialog id="embedDlg">
   <div class="dh"><h3>Add this OCR to your website</h3><span class="spacer"></span><button class="btn ghost sm" onclick="embedDlg.close()">✕</button></div>
@@ -389,13 +445,16 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
   </div>
 </dialog>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
+<script src="vendor/cropper/cropper.min.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-const DOCXJS = "https://cdn.jsdelivr.net/npm/docx@9.15.0/dist/index.iife.js";
+const PDFJS = "vendor/pdfjs/pdf.min.js";
+const PDFJS_WORKER = "vendor/pdfjs/pdf.worker.min.js";
+const DOCXJS = "vendor/docx/docx.min.js";
+/* all OCR code is served from this site; only language data comes from the CDN */
+const TOPTS = { workerPath: new URL("vendor/tesseract/worker.min.js", location.href).href, corePath: new URL("vendor/tesseract-core/", location.href).href, workerBlobURL: false };
+const newWorker = (langs, extra={}) => Tesseract.createWorker(langs, 1, {...TOPTS, ...extra});
 const SYMBOLS = [["Tamil digits & signs",[["ஃ","U+0B83","Tamil Sign Visarga"],["ௐ","U+0BD0","Tamil Om"],["௦","U+0BE6","Tamil Digit Zero"],["௧","U+0BE7","Tamil Digit One"],["௨","U+0BE8","Tamil Digit Two"],["௩","U+0BE9","Tamil Digit Three"],["௪","U+0BEA","Tamil Digit Four"],["௫","U+0BEB","Tamil Digit Five"],["௬","U+0BEC","Tamil Digit Six"],["௭","U+0BED","Tamil Digit Seven"],["௮","U+0BEE","Tamil Digit Eight"],["௯","U+0BEF","Tamil Digit Nine"],["௰","U+0BF0","Tamil Number Ten"],["௱","U+0BF1","Tamil Number One Hundred"],["௲","U+0BF2","Tamil Number One Thousand"],["௳","U+0BF3","Tamil Day Sign"],["௴","U+0BF4","Tamil Month Sign"],["௵","U+0BF5","Tamil Year Sign"],["௶","U+0BF6","Tamil Debit Sign"],["௷","U+0BF7","Tamil Credit Sign"],["௸","U+0BF8","Tamil As Above Sign"],["௹","U+0BF9","Tamil Rupee Sign"],["௺","U+0BFA","Tamil Number Sign"]]],["Tamil Supplement (fractions, measures, clerical)",[["𑿀","U+11FC0","Tamil Fraction One Three-Hundred-And-Twentieth"],["𑿁","U+11FC1","Tamil Fraction One One-Hundred-And-Sixtieth"],["𑿂","U+11FC2","Tamil Fraction One Eightieth"],["𑿃","U+11FC3","Tamil Fraction One Sixty-Fourth"],["𑿄","U+11FC4","Tamil Fraction One Fortieth"],["𑿅","U+11FC5","Tamil Fraction One Thirty-Second"],["𑿆","U+11FC6","Tamil Fraction Three Eightieths"],["𑿇","U+11FC7","Tamil Fraction Three Sixty-Fourths"],["𑿈","U+11FC8","Tamil Fraction One Twentieth"],["𑿉","U+11FC9","Tamil Fraction One Sixteenth-1"],["𑿊","U+11FCA","Tamil Fraction One Sixteenth-2"],["𑿋","U+11FCB","Tamil Fraction One Tenth"],["𑿌","U+11FCC","Tamil Fraction One Eighth"],["𑿍","U+11FCD","Tamil Fraction Three Twentieths"],["𑿎","U+11FCE","Tamil Fraction Three Sixteenths"],["𑿏","U+11FCF","Tamil Fraction One Fifth"],["𑿐","U+11FD0","Tamil Fraction One Quarter"],["𑿑","U+11FD1","Tamil Fraction One Half-1"],["𑿒","U+11FD2","Tamil Fraction One Half-2"],["𑿓","U+11FD3","Tamil Fraction Three Quarters"],["𑿔","U+11FD4","Tamil Fraction Downscaling Factor Kiizh"],["𑿕","U+11FD5","Tamil Sign Nel"],["𑿖","U+11FD6","Tamil Sign Cevitu"],["𑿗","U+11FD7","Tamil Sign Aazhaakku"],["𑿘","U+11FD8","Tamil Sign Uzhakku"],["𑿙","U+11FD9","Tamil Sign Muuvuzhakku"],["𑿚","U+11FDA","Tamil Sign Kuruni"],["𑿛","U+11FDB","Tamil Sign Pathakku"],["𑿜","U+11FDC","Tamil Sign Mukkuruni"],["𑿝","U+11FDD","Tamil Sign Kaacu"],["𑿞","U+11FDE","Tamil Sign Panam"],["𑿟","U+11FDF","Tamil Sign Pon"],["𑿠","U+11FE0","Tamil Sign Varaakan"],["𑿡","U+11FE1","Tamil Sign Paaram"],["𑿢","U+11FE2","Tamil Sign Kuzhi"],["𑿣","U+11FE3","Tamil Sign Veli"],["𑿤","U+11FE4","Tamil Wet Cultivation Sign"],["𑿥","U+11FE5","Tamil Dry Cultivation Sign"],["𑿦","U+11FE6","Tamil Land Sign"],["𑿧","U+11FE7","Tamil Salt Pan Sign"],["𑿨","U+11FE8","Tamil Traditional Credit Sign"],["𑿩","U+11FE9","Tamil Traditional Number Sign"],["𑿪","U+11FEA","Tamil Current Sign"],["𑿫","U+11FEB","Tamil And Odd Sign"],["𑿬","U+11FEC","Tamil Spent Sign"],["𑿭","U+11FED","Tamil Total Sign"],["𑿮","U+11FEE","Tamil In Possession Sign"],["𑿯","U+11FEF","Tamil Starting From Sign"],["𑿰","U+11FF0","Tamil Sign Muthaliya"],["𑿱","U+11FF1","Tamil Sign Vakaiyaraa"],["𑿿","U+11FFF","Tamil Punctuation End Of Text"]]],["Punctuation",[["‘","U+2018","Left Single Quotation Mark"],["’","U+2019","Right Single Quotation Mark"],["“","U+201C","Left Double Quotation Mark"],["”","U+201D","Right Double Quotation Mark"],["–","U+2013","En Dash"],["—","U+2014","Em Dash"],["…","U+2026","Horizontal Ellipsis"],["।","U+0964","Devanagari Danda"],["॥","U+0965","Devanagari Double Danda"],["·","U+00B7","Middle Dot"]]]];
 const params = new URLSearchParams(location.search);
 const EMBED = params.has("embed");
@@ -428,9 +487,9 @@ const LANGS = [["tam","Tamil","தமிழ்","in"],["eng","English","English"
 const LNAME = Object.fromEntries(LANGS.map(([c,n])=>[c,n]));
 /* langSel = [] means auto-detect (the default) */
 let langSel = (params.get("lang") || store.get("ez_langs") || "auto").split(/[+,]/).filter(c=>LNAME[c]);
-let docLangs = null;                                         // what auto-detect found for this document
+let docLangs = null, docScripts = null;                      // what auto-detect found for this document
 const isAuto = () => !langSel.length;
-const effLangs = () => isAuto() ? (docLangs || ["eng"]) : langSel;
+const effLangs = () => isAuto() ? (docLangs || ["eng"]) : langSel;   // before detection finishes, English is a harmless placeholder
 const langStr = () => effLangs().join("+");
 const rtl = () => effLangs().some(c=>c==="urd"||c==="ara");
 const names = a => a.map(c=>LNAME[c]).join(" + ");
@@ -449,10 +508,17 @@ function renderLangs(){
     ? `<span class="tg auto">✦ Auto-detect</span>` + (docLangs ? docLangs.map(c=>`<span class="tg found" title="Detected">${LNAME[c]}</span>`).join("") : "")
     : (langSel.length <= 4 ? langSel.map(c=>`<span class="tg">${LNAME[c]}</span>`).join("") : `<span class="tg">${langSel.length} languages</span>`);
   const h = $("#langHint");
+  $("#langRedo")?.classList.toggle("hidden", !(isAuto() && docLangs));
   h.classList.toggle("warn", langSel.length > 3);
   h.textContent = isAuto() ? (docLangs ? `Detected ${names(docLangs)} for this document. Pick languages yourself to override.` : "The language is found automatically when you convert the first page.")
     : langSel.length > 3 ? `Reading with ${langSel.length} languages is slower and less accurate — pick only the ones on the page.`
     : `Reading as ${names(langSel)}${langSel.length>1?" · the number is the priority (first = main language)":""}.`;
+  // which language to use for a script that several languages share
+  const sp = $("#scriptPref"), need = isAuto() && docScripts ? docScripts.filter(sc=>sc==="dev"||sc==="ar") : [];
+  sp.classList.toggle("hidden", !need.length);
+  sp.innerHTML = need.map(sc=> sc==="dev"
+    ? `Devanagari read as <select data-sc="dev">${["hin","san","mar"].map(c=>`<option value="${c}" ${PREF.dev===c?"selected":""}>${LNAME[c]}</option>`).join("")}</select>`
+    : `Arabic script read as <select data-sc="ar">${["urd","ara"].map(c=>`<option value="${c}" ${PREF.ar===c?"selected":""}>${LNAME[c]}</option>`).join("")}</select>`).join(" ");
   msKb = -1;
 }
 function setLangs(next){
@@ -473,6 +539,9 @@ function openMs(open){
 $("#langBtn").onclick = ()=>openMs();
 $("#langDone").onclick = ()=>openMs(false);
 $("#langReset").onclick = ()=>{ setLangs([]); };
+$("#langRedo").onclick = ()=>{ docLangs = null; docScripts = null; renderLangs(); saveSoon(); toast("The language will be detected again on the next page you convert"); };
+$("#scriptPref").addEventListener("change", e=>{ const sc = e.target.dataset.sc; if(!sc) return; PREF[sc] = e.target.value; store.set("ez_pref_"+sc, e.target.value);
+  if (docScripts){ docLangs = scriptsToLangs(docScripts); renderLangs(); saveSoon(); getPool(1).catch(()=>{}); } toast(`${sc==="dev"?"Devanagari":"Arabic script"} will be read as ${LNAME[e.target.value]}`); });
 $("#langQ").addEventListener("input", renderLangs);
 $("#langList").addEventListener("click", e=>{ const o = e.target.closest(".ms-opt"); if(!o) return; e.preventDefault(); toggleLang(o.dataset.c); });
 $("#langPop").addEventListener("keydown", e=>{
@@ -484,46 +553,90 @@ $("#langPop").addEventListener("keydown", e=>{
 document.addEventListener("click", e=>{ if (!e.composedPath().some(n=>n.id==="langMs")) openMs(false); });   // composedPath: the clicked option may have been re-drawn
 renderLangs();
 
-/* auto-detect: try script models on a reduced page, keep the one that reads best (+ English if present) */
+/* ---------- auto-detect v2: sample text lines, let each script model compete per line ----------
+   1. find text lines (layout analysis is script-independent)   2. stack ~12 sample lines into one small image
+   3. read that strip with each script model; every line goes to the script that reads it best
+   4. keep scripts that win enough lines (+ English for inline English words). Known scripts are tried first. */
 const SCRIPT = {tam:"ta",hin:"dev",san:"dev",mar:"dev",mal:"ml",tel:"te",kan:"kn",ben:"bn",guj:"gu",pan:"pa",ori:"or",sin:"si",urd:"ar",ara:"ar",eng:"lat",fra:"lat",deu:"lat"};
 const RANGES = [["ta",0x0B80,0x0BFF],["ta",0x11FC0,0x11FFF],["dev",0x0900,0x097F],["bn",0x0980,0x09FF],["pa",0x0A00,0x0A7F],["gu",0x0A80,0x0AFF],["or",0x0B00,0x0B7F],["te",0x0C00,0x0C7F],["kn",0x0C80,0x0CFF],["ml",0x0D00,0x0D7F],["si",0x0D80,0x0DFF],["ar",0x0600,0x06FF]];
 function scriptOf(ch){ const o = ch.codePointAt(0); for (const [k,a,b] of RANGES) if (o>=a && o<=b) return k; return /[A-Za-z]/.test(ch) ? "lat" : null; }
-const PROBES = ["tam","hin","mal","tel","kan","ben","guj","pan","ori","sin","urd"];
+const SCRIPT_NAME = {ta:"Tamil", dev:"Devanagari", ml:"Malayalam", te:"Telugu", kn:"Kannada", bn:"Bengali", gu:"Gujarati", pa:"Gurmukhi", or:"Odia", si:"Sinhala", ar:"Arabic script", lat:"Latin"};
+const PROBE_FOR = {ta:"tam", dev:"hin", ml:"mal", te:"tel", kn:"kan", bn:"ben", gu:"guj", pa:"pan", or:"ori", si:"sin", ar:"urd"};
+/* one script can be several languages — the reader chooses which (remembered) */
+const PREF = { dev: store.get("ez_pref_dev") || "hin", ar: store.get("ez_pref_ar") || "urd" };
+const langFor = sc => sc==="lat" ? "eng" : sc==="dev" ? PREF.dev : sc==="ar" ? PREF.ar : PROBE_FOR[sc];
 let probeW = null, probeLock = Promise.resolve();
 function detectLangs(canvas){ const run = probeLock.then(()=>_detect(canvas)); probeLock = run.catch(()=>{}); return run; }
 async function _detect(canvas){
-  const k = Math.min(1, 1300/canvas.width), sm = document.createElement("canvas");
-  sm.width = Math.round(canvas.width*k); sm.height = Math.round(canvas.height*k*0.88);
-  sm.getContext("2d").drawImage(canvas, 0, canvas.height*0.06, canvas.width, canvas.height*0.88, 0, 0, sm.width, sm.height);   // skip running header/footer
-  probeW ||= Tesseract.createWorker("eng", 1);
-  const w = await probeW;
-  const score = async l => {
-    if (!batch.running) setProg(.03, `Detecting language… checking ${LNAME[l]}`);
-    await w.reinitialize(l, 1);
-    await w.setParameters({ tessedit_pageseg_mode: "3" });
-    const { data } = await w.recognize(sm, {}, { blocks:true });
-    const words = (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines).flatMap(l=>l.words);
-    let s = 0, n = 0, sum = 0;
-    for (const wd of words){ if (wd.confidence < 50) continue; const sc = [...wd.text].map(scriptOf).filter(Boolean);
-      if (sc.length && sc.filter(x=>x===SCRIPT[l]).length / sc.length > 0.6){ s += wd.confidence*sc.length; n++; sum += wd.confidence; } }
-    return { s, n, mean: n ? sum/n : 0, all: words.length };
+  const say = m => { if (!batch.running) setProg(.03, m); };
+  say("Detecting language… finding text lines");
+  const k = Math.min(1, 1400/canvas.width), sm = document.createElement("canvas");
+  sm.width = Math.round(canvas.width*k); sm.height = Math.round(canvas.height*k);
+  const g = sm.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,sm.width,sm.height); g.drawImage(canvas, 0, 0, sm.width, sm.height);
+  probeW ||= newWorker("eng");
+  let w = await probeW;
+  await w.reinitialize("eng", 1); await w.setParameters({ tessedit_pageseg_mode: "3" });
+  const seg = (await w.recognize(sm, {}, { blocks:true })).data;
+  let lines = (seg.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines)
+    .filter(l => l.bbox.x1-l.bbox.x0 > sm.width*0.12 && l.bbox.y1-l.bbox.y0 > 8 && l.bbox.y0 > sm.height*0.04 && l.bbox.y1 < sm.height*0.96);
+  if (!lines.length) return null;                                         // no text on this page
+  // English words that read cleanly (also catches English words inside other-script lines)
+  const latWords = lines.flatMap(l=>l.words).filter(wd => wd.confidence >= 80 && wd.text.length >= 3 && /^[A-Za-z][A-Za-z'’.,;:()-]*$/.test(wd.text));
+  // sample up to 12 lines spread over the page and stack them into one strip
+  const N = Math.min(12, lines.length), pick = Array.from({length:N}, (_,i)=>lines[Math.floor(i*lines.length/N)]);
+  const pad = 4, gap = 16, W = Math.min(1400, Math.max(...pick.map(l=>l.bbox.x1-l.bbox.x0)) + pad*2);
+  const strip = document.createElement("canvas"); strip.width = W;
+  strip.height = pick.reduce((h,l)=>h + (l.bbox.y1-l.bbox.y0) + pad*2 + gap, gap);
+  const sg = strip.getContext("2d"); sg.fillStyle = "#fff"; sg.fillRect(0,0,strip.width,strip.height);
+  const spans = []; let y = gap;
+  for (const l of pick){ const lw = Math.min(W-pad*2, l.bbox.x1-l.bbox.x0), lh = l.bbox.y1-l.bbox.y0;
+    sg.drawImage(sm, l.bbox.x0-pad, l.bbox.y0-pad, lw+pad*2, lh+pad*2, 0, y, lw+pad*2, lh+pad*2); spans.push([y, y+lh+pad*2]); y += lh + pad*2 + gap; }
+  const lineOf = cy => spans.findIndex(([a,b]) => cy >= a-gap/2 && cy <= b+gap/2);
+  const best = spans.map(()=>({sc:null, score:0, mean:0}));
+  const tryModel = async sc => {
+    const model = PROBE_FOR[sc] || "eng";
+    say(`Detecting language… checking ${SCRIPT_NAME[sc]}`);
+    await w.reinitialize(model, 1); await w.setParameters({ tessedit_pageseg_mode: "6" });
+    const { data } = await w.recognize(strip, {}, { blocks:true });
+    const per = spans.map(()=>({score:0, sum:0, n:0}));
+    (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines).flatMap(l=>l.words).forEach(wd=>{
+      const i = lineOf((wd.bbox.y0+wd.bbox.y1)/2); if (i < 0) return;
+      const chars = [...wd.text].map(scriptOf).filter(Boolean); if (!chars.length) return;
+      const own = chars.filter(x=>x===sc).length / chars.length;
+      if (own > 0.6){ per[i].score += wd.confidence * chars.length; per[i].sum += wd.confidence; per[i].n++; }
+    });
+    per.forEach((p,i)=>{ if (p.n && p.score > best[i].score) best[i] = {sc, score:p.score, mean:p.sum/p.n}; });
   };
-  const lat = await score("eng");
-  if (lat.n >= 10 && lat.n >= 0.85*lat.all && lat.mean >= 80) return ["eng"];       // a plain English page
-  let best = null;
-  for (const l of PROBES){
-    const r = await score(l);
-    if (r.n >= 3 && (!best || r.s > best.s)) best = {l, ...r};
-    if (r.n >= 12 && r.mean >= 75) break;                                            // clearly found — stop early
+  // stop once almost every sampled line is read confidently (a mixed-script title line may never be)
+  const covered = m => best.filter(b => b.sc && b.mean >= m).length;
+  const done = () => covered(72) >= Math.max(1, Math.ceil(N*0.85)) || covered(60) >= Math.max(1, Math.ceil(N*0.92));
+  let idle = 0;                      // models in a row that explained no new line
+  const safeTry = async sc => { try{ await tryModel(sc); }
+    catch(e){ console.warn("language probe skipped:", sc, e); probeW = newWorker("eng"); w = await probeW; } };   // e.g. model download failed
+  await safeTry("lat");
+  if (!done()){
+    const order = [...new Set([...(JSON.parse(store.get("ez_scripts") || "[]")), "ta","dev","ml","te","kn","bn","gu","pa","or","si","ar"])].filter(x=>x!=="lat");
+    for (const sc of order){
+      const before = best.map(b=>b.sc).join();
+      await safeTry(sc); if (done()) break;
+      idle = best.map(b=>b.sc).join() === before ? idle + 1 : 0;
+      if (idle >= 2 && covered(50) >= Math.ceil(N*0.75)) break;          // the rest are messy lines, not a new script
+    }
   }
-  const out = best ? [best.l] : [];
-  if (lat.n >= 3 || !out.length) out.push("eng");
-  return out;
+  const count = {}; best.forEach(b=>{ if (b.sc && b.mean >= 50) count[b.sc] = (count[b.sc]||0) + 1; });
+  let scripts = Object.keys(count).filter(sc => count[sc] >= Math.max(1, Math.round(N*0.15)) || count[sc] >= 2).sort((a,b)=>count[b]-count[a]);
+  scripts = scripts.filter(sc=>sc!=="lat").slice(0, 2).concat(scripts.includes("lat") || latWords.length >= 3 ? ["lat"] : []);
+  if (!scripts.length) scripts = ["lat"];
+  store.set("ez_scripts", JSON.stringify(scripts.filter(x=>x!=="lat")));
+  return scripts;
 }
+const scriptsToLangs = scs => [...new Set(scs.map(langFor))];
 async function ensureLangs(p, f){
   if (!isAuto() || docLangs) return;
   const c = sub(await fullCanvas(p), f || p.crop || globalCrop || {x:0,y:0,w:1,h:1});
-  docLangs = await detectLangs(c);
+  docScripts = await detectLangs(c);
+  if (!docScripts) return;                                  // blank page: decide on a later page
+  docLangs = scriptsToLangs(docScripts);
   renderLangs(); saveSoon();
   setProg(.05, `Detected ${names(docLangs)} — loading…`);
 }
@@ -531,9 +644,10 @@ async function ensureLangs(p, f){
 async function readAuto(w, p, live){
   let r = await readPage(w, p, live); r.langs = poolLangs;
   if (isAuto() && docLangs && r.conf != null && r.conf < 60 && (r.text||"").trim()){
-    const alt = await detectLangs(sub(await fullCanvas(p), live || p.crop || globalCrop || {x:0,y:0,w:1,h:1}));
+    const sc = await detectLangs(sub(await fullCanvas(p), live || p.crop || globalCrop || {x:0,y:0,w:1,h:1}));
+    const alt = sc ? scriptsToLangs(sc) : docLangs;
     if (alt.join("+") !== docLangs.join("+")){
-      const tw = await Tesseract.createWorker(alt, 1);
+      const tw = await newWorker(alt);
       try{ const r2 = await readPage(tw, p, live); if ((r2.conf||0) > r.conf + 5){ r = r2; r.langs = alt.join("+"); } }
       finally{ tw.terminate(); }
     }
@@ -544,16 +658,18 @@ async function readAuto(w, p, live){
 /* ===================== saved work (IndexedDB) ===================== */
 const idb = (()=>{ let dbp; const open = ()=> dbp ||= new Promise((ok,err)=>{ const r = indexedDB.open("ezhuthu-ocr",1); r.onupgradeneeded=()=>r.result.createObjectStore("docs"); r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); });
   const tx = async (m, fn) => { const db = await open(); return new Promise((ok,err)=>{ const t = db.transaction("docs",m); const req = fn(t.objectStore("docs")); t.oncomplete=()=>ok(req && req.result); t.onerror=()=>err(t.error); }); };
-  return { get:k=>tx("readonly",s=>s.get(k)).catch(()=>null), put:(k,v)=>tx("readwrite",s=>s.put(v,k)).catch(()=>{}), all:()=>tx("readonly",s=>s.getAll()).catch(()=>[]) }; })();
+  return { get:k=>tx("readonly",s=>s.get(k)).catch(()=>null), put:(k,v)=>tx("readwrite",s=>s.put(v,k)).catch(()=>{}), all:()=>tx("readonly",s=>s.getAll()).catch(()=>[]), clear:()=>tx("readwrite",s=>s.clear()).catch(()=>{}) }; })();
 let saveT = null;
-function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(()=>idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs,
-  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null}))}), 700); }
+let saveFn = null;
+function flushSave(){ if (saveT){ clearTimeout(saveT); saveT = null; saveFn && saveFn(); } }
+function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(saveFn = ()=>{ saveT = null; return idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs, docScripts,
+  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null}))}); }, 700); }
 async function restore(){
   const rec = docKey && await idb.get(docKey);
   if (!rec || rec.total !== pages.length) return;
   rec.pages.forEach((r,i)=>Object.assign(pages[i], r));
   if (rec.globalCrop){ globalCrop = rec.globalCrop; $("#sameCrop").checked = true; }
-  if (rec.docLangs){ docLangs = rec.docLangs; renderLangs(); }
+  if (rec.docLangs){ docLangs = rec.docLangs; docScripts = rec.docScripts || null; renderLangs(); }
   const n = rec.pages.filter(p=>p.status==="done").length;
   if (n) toast(`Restored your earlier work: ${n} page${n>1?"s":""} already read`);
 }
@@ -586,13 +702,13 @@ async function openFiles(files, append = false){
   files = files.filter(f=>f && (f.type.startsWith("image/") || f.type==="application/pdf" || /\.(pdf|tiff?)$/i.test(f.name||"")));
   if (!files.length) return toast("Please choose images or a PDF");
   files.sort((a,b)=>(a.name||"").localeCompare(b.name||"", undefined, {numeric:true}));
-  if (!append){ stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; docLangs = null; renderLangs(); $("#sameCrop").checked = false; out.value = ""; }
+  if (!append){ flushSave(); stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; docLangs = null; docScripts = null; renderLangs(); $("#sameCrop").checked = false; out.value = ""; }
   const startLen = pages.length;
   for (const f of files){
     if (f.type === "application/pdf" || /\.pdf$/i.test(f.name||"")){
       try{
         if (!window.pdfjsLib){ await loadScript(PDFJS); pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; }
-        const doc = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+        const doc = await pdfjsLib.getDocument({data: await f.arrayBuffer(), isEvalSupported:false}).promise;
         for (let n=1; n<=doc.numPages; n++) pages.push(newPage({kind:"pdf",doc,n}));
       }catch(e){ console.error(e); toast(`Couldn't open ${f.name}`); }
     } else if (/tiff?$/i.test(f.type) || /\.tiff?$/i.test(f.name||"")){
@@ -616,17 +732,17 @@ function enterWork(){
   $("#workView").classList.toggle("book", book);
   ["#rail","#pnav","#bookbar","#sameCropLbl","#tabBook","#markLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
   $("#appendLbl").classList.toggle("hidden", book);
-  $("#goBtn").textContent = book ? "Convert this page" : "Convert to text";
+  setGo(false); document.body.classList.remove("drop-open");
   $("#docName").textContent = docName;
   if (!book && tab==="book") setTab("page");
   setMode(mode, true); renderRail(); sendHeight();
-  if (isAuto() && !docLangs){ probeW ||= Tesseract.createWorker("eng", 1); setProg(0, "Ready — the language will be detected when you convert."); }
+  if (isAuto() && !docLangs){ probeW ||= newWorker("eng"); setProg(0, "Ready — the language will be detected when you convert."); }
   else getPool(1).catch(()=>{});
 }
 function reset(){
   if (batch.running && !confirm("Reading is still running. Stop and close?")) return;
-  stopBatch(); destroyViews(); pages = []; docKey = null;
-  $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); showResume(); sendHeight();
+  flushSave(); stopBatch(); destroyViews(); pages = []; docKey = null;
+  $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); document.body.classList.add("drop-open"); showResume(); sendHeight();
 }
 
 /* ===================== page strip ===================== */
@@ -844,7 +960,9 @@ document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspa
 })();
 
 /* ===================== OCR engine (worker pool) ===================== */
-function setProg(p, msg){ $("#bar").style.width = Math.round(p*100)+"%"; if(msg) $("#pstat").textContent = msg; }
+function setProg(p, msg){ const w = Math.round(p*100)+"%"; $("#bar").style.width = w; $("#mprog").style.width = (p>0 && p<1) ? w : "0"; if(msg){ $("#pstat").textContent = msg; $("#mstat").textContent = (p>0 && p<1) ? msg : ""; } }
+function setGo(busy){ for (const b of [$("#goBtn"), $("#mGo")]){ b.disabled = busy; }
+  $("#goBtn").textContent = busy ? "Converting…" : isBook() ? "Convert this page" : "Convert to text"; $("#mGo").textContent = busy ? "Converting…" : isBook() ? "Convert page" : "Convert"; }
 let pool = [], poolLangs = "";
 async function getPool(n){
   const langs = langStr();
@@ -852,7 +970,7 @@ async function getPool(n){
   while (pool.length < n){
     const first = pool.length === 0;
     if (first) setProg(0, `Loading ${names(effLangs())}…`);
-    const wp = Tesseract.createWorker(effLangs(), 1, {
+    const wp = newWorker(effLangs(), {
       logger: m => { if(!first) return;
         if (m.status === "recognizing text" && busyOne) setProg(m.progress, `Reading text… ${Math.round(m.progress*100)}%`);
         else if (/load|initializ/.test(m.status) && !batch.running && !busyOne) setProg(m.progress||0, m.status.replace(/^./, c=>c.toUpperCase()) + "…"); }
@@ -1165,7 +1283,7 @@ function blocksToText(blocks, pics){ return blocks.map(b=> b.type==="table" ? b.
 async function convertCurrent(){
   if (busyOne || !pages.length) return;
   const p = pages[cur];
-  busyOne = true; $("#goBtn").disabled = true; $("#goBtn").textContent = "Converting…";
+  busyOne = true; setGo(true);
   try{
     const live = mode==="crop" && cropper ? (cropFractions() || {x:0,y:0,w:1,h:1}) : null;
     if (live) rememberCrop();
@@ -1182,7 +1300,7 @@ async function convertCurrent(){
     setProg(1, r.text ? `Done${nt||ni?` — found ${[nt?nt+" table"+(nt>1?"s":""):"", ni?ni+" picture"+(ni>1?"s":""):""].filter(Boolean).join(" and ")} (see Preview)`:""}. Check the highlighted words, then copy.` : "No text found — try a tighter crop, other languages, or ‘Old / yellowed paper’.");
     notifyParent(p.text, {page: cur+1, pages: pages.length, confidence: p.conf});
   }catch(e){ console.error(e); p.status = "error"; renderRail(); setProg(0, "OCR failed: " + (e.message||e)); }
-  busyOne = false; $("#goBtn").disabled = false; $("#goBtn").textContent = isBook() ? "Convert this page" : "Convert to text";
+  busyOne = false; setGo(false);
   sendHeight();
 }
 async function detectHere(){
@@ -1388,11 +1506,13 @@ document.addEventListener("keydown", e=>{
   if (e.altKey && e.key==="ArrowLeft"){ e.preventDefault(); go(cur-1); }
   if (e.key==="Escape" && tool){ tool = null; refreshTools(); }
 });
-window.addEventListener("beforeunload", ()=>{ if(cropper) rememberCrop(); saveEdits(); });
+window.addEventListener("beforeunload", ()=>{ if(cropper) rememberCrop(); saveEdits(); flushSave(); });
 
 /* ===================== embedding ===================== */
-function notifyParent(text, info){ if (window.parent !== window) window.parent.postMessage({ type:"ezhuthu-ocr", text, ...info, langs: poolLangs }, "*"); }
-function sendHeight(){ if(window.parent!==window) window.parent.postMessage({type:"ezhuthu-height", height: document.documentElement.scrollHeight}, "*"); }
+/* results go only to the page that embeds this tool (never to "*") */
+const PARENT = (()=>{ try{ return window.parent !== window && document.referrer ? new URL(document.referrer).origin : null; }catch{ return null; } })();
+function notifyParent(text, info){ if (PARENT) window.parent.postMessage({ type:"ezhuthu-ocr", text, ...info, langs: poolLangs }, PARENT); }
+function sendHeight(){ if (PARENT) window.parent.postMessage({type:"ezhuthu-height", height: document.documentElement.scrollHeight}, PARENT); }
 if (EMBED) new ResizeObserver(sendHeight).observe(document.body);
 const BASE = location.origin + location.pathname.replace(/index\.html$/,"");
 $("#codeInline").textContent = `<script src="${BASE}embed.js" data-lang="tam+eng"><\/script>`;
@@ -1400,6 +1520,18 @@ $("#codeButton").textContent = `<script src="${BASE}embed.js" data-mode="button"
 $("#codeIframe").textContent = `<iframe src="${BASE}?embed=1&lang=tam+eng" style="width:100%;height:820px;border:0"\n  allow="clipboard-write; camera" title="Tamil OCR"></iframe>`;
 $("#codeLink").textContent = `<a href="${BASE}" target="_blank">Tamil OCR — image & book to text</a>`;
 setMode("crop", true); showResume();
+document.body.classList.add("drop-open");
+(function(){ const d = $("#more"), st = store.get("ez_more");
+  d.open = st ? st==="1" : matchMedia("(min-width: 761px)").matches;
+  d.addEventListener("toggle", ()=>store.set("ez_more", d.open?"1":"0"));
+  const upd = ()=>{ $("#moreSum").textContent = [$("#psm").selectedOptions[0].text, $("#prep").value!=="auto" ? $("#prep").selectedOptions[0].text : "", $("#autoLayout").checked ? "tables & pictures" : ""].filter(Boolean).join(" · "); };
+  ["psm","prep","autoLayout"].forEach(id=>$("#"+id).addEventListener("change", upd)); upd(); })();
+async function clearSaved(){
+  if (!confirm("Delete all OCR work saved in this browser? (Your files are not affected.)")) return;
+  clearTimeout(saveT); await idb.clear();
+  ["ez_scripts"].forEach(k=>{ try{ localStorage.removeItem(k); }catch{} });
+  docKey = null; toast("Saved work cleared from this browser"); showResume();
+}
 if (location.hash === "#embed") embedDlg.showModal();
 </script>
 </body>

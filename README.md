@@ -37,6 +37,10 @@ Options: include pictures, include headers/footers/page numbers, keep original l
 
 ## Quick web OCR — https://ocr.udhayam.in (`docs/`)
 
+**Protection:** all code (Tesseract.js + WASM core, PDF.js, Cropper.js, docx) is served from this site — no third-party scripts; only language data comes from jsDelivr. A Content-Security-Policy blocks other script sources, `eval`, plugins and forms; results are posted only to the page that embeds the tool; the page moves itself to HTTPS as soon as the certificate works and warns while it doesn't; "Clear saved work" wipes everything stored in the browser. Licenses: `docs/vendor/LICENSES.txt`.
+
+**Phones:** single-column layout, swipeable page strip, a fixed Convert / Copy / Text bar at the bottom, settings tucked under "More settings", bottom-sheet language picker, large touch targets.
+
 A page that runs entirely in the visitor's browser (Tesseract.js with the same "best" Tamil models), hosted free on GitHub Pages. No server, no limits, nothing uploaded.
 
 **Single image:** paste a screenshot (Ctrl+V), drop, upload, or use the phone camera → crop → Convert → copy / .txt / Word.
@@ -50,7 +54,7 @@ A page that runs entirely in the visitor's browser (Tesseract.js with the same "
 
 **Tables and pictures:** switch the page to **Areas** and draw boxes typed Text / Heading / Table / Picture / Skip (move, resize, reorder, change type), or press **✦ Detect automatically**. With "Find tables & pictures automatically" on, every page without drawn areas is split into headings, paragraphs, ruled and borderless tables, and pictures (captions kept as text, page numbers skipped). Word (.docx) and web-page downloads keep real tables and the pictures.
 
-**Languages:** a multi-select dropdown (search, checkboxes, priority numbers). The default is **✦ Auto-detect**: on the first page it tries the script models (Tamil, Devanagari, Malayalam, Telugu, Kannada, Bengali, Gujarati, Gurmukhi, Odia, Sinhala, Urdu) and keeps the best plus English if present; pages that later read poorly are re-checked. Or pick any combination of 17 languages yourself.
+**Languages:** a multi-select dropdown (search, checkboxes, priority numbers; a bottom sheet on phones). The default **✦ Auto-detect** samples up to 12 text lines, lets each script model compete line by line (Tamil, Devanagari, Malayalam, Telugu, Kannada, Bengali, Gujarati, Gurmukhi, Odia, Sinhala, Arabic script, Latin) and keeps every script that wins enough lines — so a Tamil + Sanskrit page is detected as both — plus English for inline English words. Scripts seen before are tried first (typically 4–8 s). Devanagari can be read as Hindi, Sanskrit or Marathi and Arabic script as Urdu or Arabic; "↻ Detect again" re-runs it. Or pick any combination of 17 languages yourself.
 
 **Layout:** Auto, Single column, **Two columns**, **Three columns**, **Multi-column (find columns)**, One block, Single line, Scattered text. Column modes find the white gutters, keep full-width titles/pictures as their own bands, and read each column top to bottom (right-to-left for Urdu/Arabic). Image clean-up for old paper; keep line breaks for verse.
 
