@@ -269,6 +269,18 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 .db{padding:4px 18px 16px;max-height:72vh;overflow:auto}
 .db h4{margin:16px 0 4px;font-size:14px}
 .db p{margin:4px 0;font-size:14px;color:var(--muted)}
+dialog.ver{width:min(760px,96vw)}
+.vimg{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;justify-content:center;margin:12px 0}
+.vimg canvas{max-width:100%;height:auto;display:block}
+.vrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#vWord{background:#fff;border:1px solid var(--line);border-radius:8px;max-width:100%;height:auto}
+.vin{flex:1;min-width:220px}
+#vIn{font:26px/1.4 var(--ta);padding:10px 12px}
+.vmeta{font:12px var(--mono);color:var(--muted);margin-top:6px}
+.vkeys{font-size:12px;color:var(--muted);margin-right:auto}
+.dlg-in label.f{margin-top:12px}
+.dlg-in input[type=text]{font:17px var(--ta)}
+.verbtn{margin-left:8px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 .cropper-view-box{outline:2px solid var(--accent);outline-color:color-mix(in srgb,var(--accent) 85%,transparent)}
 .cropper-line,.cropper-point{background-color:var(--accent)}
@@ -314,6 +326,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
         <b id="docName">Book</b>
         <span id="railSum"></span>
         <button class="btn sm" onclick="addIn.click()">+ Add pages</button>
+        <button class="btn sm ghost" onclick="splitAllWide()" title="Scans that show two book pages side by side are cut into separate pages">⫼ Split 2-page scans</button>
       </div>
       <div class="pages" id="pages"></div>
       <input type="file" id="addIn" accept="image/*,.pdf" multiple hidden>
@@ -335,6 +348,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
         <span id="cropTools" style="display:inline-flex;gap:4px">
           <button class="btn sm ghost" onclick="rotate(-90)" title="Rotate left">⟲</button>
           <button class="btn sm ghost" onclick="rotate(90)" title="Rotate right">⟳</button>
+          <button class="btn sm ghost" onclick="splitPage(cur)" title="This scan shows two book pages side by side — cut it into two pages">⫼ Split</button>
           <button class="btn sm ghost" onclick="zoomBy(.15)" title="Zoom in">＋</button>
           <button class="btn sm ghost" onclick="zoomBy(-.15)" title="Zoom out">－</button>
           <button class="btn sm" id="wholeBtn" onclick="selectAll()" title="Use the whole page">Whole page</button>
@@ -392,11 +406,14 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           <div><label class="f" for="prep">Image clean-up</label>
             <select id="prep">
               <option value="auto">Auto</option>
+              <option value="photo">Phone photo (shadows, uneven light)</option>
               <option value="bw">Old / yellowed paper</option>
               <option value="none">None</option>
             </select></div>
         </div>
         <div class="checks">
+          <label><input type="checkbox" id="deskew" checked><span>Straighten tilted pages<small>Measures the slant of the text lines and levels the page</small></span></label>
+          <label><input type="checkbox" id="autoRot" checked><span>Turn sideways / upside-down pages<small>Pages that read badly are tried at 90°, 180° and 270°</small></span></label>
           <label><input type="checkbox" id="autoLayout" checked><span>Find tables & pictures automatically<small>Pages without marked areas are split into text, headings, tables and pictures</small></span></label>
           <label><input type="checkbox" id="keepLines"><span>Keep line breaks<small>For poetry and verse; otherwise paragraphs are joined</small></span></label>
           <label id="appendLbl"><input type="checkbox" id="append"><span>Add to existing text</span></label>
@@ -425,10 +442,12 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           </div>
           <span class="spacer"></span>
           <button class="btn sm" onclick="copyText()">Copy</button>
+          <button class="btn sm ghost" onclick="openFind()" title="Find & replace (Ctrl+H)">Find</button>
           <div class="menu">
             <button class="btn sm" onclick="toggleMenu()">Download ▾</button>
             <div class="list hidden" id="dlMenu">
               <button onclick="dl('docx')">Word (.docx)<small>Headings, tables and pictures kept</small></button>
+              <button onclick="dl('pdf')">Searchable PDF<small>Looks like the scan; text can be searched and copied (text layer from OCR, not your edits)</small></button>
               <button onclick="dl('html')">Web page (.html)<small>One file, pictures included</small></button>
               <button onclick="dl('csv')">Tables for Excel (.csv)<small>Every table found, ready to open in Excel</small></button>
               <button onclick="dl('txt')">Text (.txt)<small>Plain UTF-8; tables tab-separated</small></button>
@@ -457,6 +476,29 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 </div>
 <footer><span>எழுத்து OCR · runs locally in your browser — your images never leave this device</span><span class="spacer"></span><button class="linkbtn" onclick="clearSaved()">Clear saved work</button></footer>
 
+<dialog id="verDlg" class="ver" aria-label="Verify uncertain words">
+  <div class="dh"><h3>Verify uncertain words</h3><span class="spacer"></span><span class="vmeta" id="vPos" style="margin:0 10px 0 0"></span><button class="btn ghost sm" onclick="closeVerify()">✕</button></div>
+  <div class="db">
+    <div class="vimg"><canvas id="vCtx"></canvas></div>
+    <div class="vrow"><canvas id="vWord"></canvas>
+      <div class="vin"><input type="text" id="vIn" lang="ta" autocomplete="off" spellcheck="false" aria-label="Correct word"><div class="vmeta" id="vMeta"></div></div></div>
+  </div>
+  <div class="df" style="flex-wrap:wrap"><span class="vkeys">Enter = accept · Alt+→ skip · Alt+← back</span>
+    <button class="btn" id="vPrev">← Back</button><button class="btn ghost" id="vAlways" title="Never ask about this word again in this book">Always accept</button>
+    <button class="btn" id="vSkip">Skip →</button><button class="btn primary" id="vApply">Accept ↵</button></div>
+</dialog>
+
+<dialog id="frDlg" aria-label="Find and replace">
+  <div class="dh"><h3>Find &amp; replace</h3><span class="spacer"></span><button class="btn ghost sm" onclick="frDlg.close()">✕</button></div>
+  <div class="db dlg-in">
+    <label class="f" for="frFind">Find</label><input type="text" id="frFind" lang="ta" autocomplete="off" spellcheck="false">
+    <label class="f" for="frRep">Replace with</label><input type="text" id="frRep" lang="ta" autocomplete="off" spellcheck="false">
+    <div class="checks" style="display:flex;gap:16px;flex-wrap:wrap"><label id="frBookL"><input type="checkbox" id="frBook" checked> In all pages</label><label><input type="checkbox" id="frWord"> Whole words only</label><label><input type="checkbox" id="frCase"> Match case</label></div>
+    <p class="hint" id="frMsg" style="min-height:20px;margin:0"></p>
+  </div>
+  <div class="df"><button class="btn" id="frNext">Find next</button><span class="spacer"></span><button class="btn primary" id="frAll">Replace all</button></div>
+</dialog>
+
 <dialog id="embedDlg">
   <div class="dh"><h3>Add this OCR to your website</h3><span class="spacer"></span><button class="btn ghost sm" onclick="embedDlg.close()">✕</button></div>
   <div class="db">
@@ -474,6 +516,7 @@ const $ = s => document.querySelector(s);
 const PDFJS = "vendor/pdfjs/pdf.min.js";
 const PDFJS_WORKER = "vendor/pdfjs/pdf.worker.min.js";
 const DOCXJS = "vendor/docx/docx.min.js";
+const PDFLIBJS = "vendor/pdf-lib/pdf-lib.min.js";
 /* all OCR code is served from this site; only language data comes from the CDN */
 const TOPTS = { workerPath: new URL("vendor/tesseract/worker.min.js", location.href).href, corePath: new URL("vendor/tesseract-core/", location.href).href, workerBlobURL: false };
 const newWorker = (langs, extra={}) => Tesseract.createWorker(langs, 1, {...TOPTS, ...extra});
@@ -500,7 +543,7 @@ if (EMBED) document.body.classList.add("embed");
 if (store.get("ezTheme")) document.documentElement.dataset.theme = store.get("ezTheme");
 function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches; r.dataset.theme = dark?"light":"dark"; store.set("ezTheme", r.dataset.theme); }
 ["psm","prep"].forEach(id=>{ const v = store.get("ez_"+id); if(v && [...$("#"+id).options].some(o=>o.value===v)) $("#"+id).value = v; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.value)); });
-["keepLines","append","pageMarks","withPics","autoLayout"].forEach(id=>{ const v = store.get("ez_"+id); if(v!==null) $("#"+id).checked = v==="1"; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.checked?"1":"0")); });
+["keepLines","append","pageMarks","withPics","autoLayout","deskew","autoRot"].forEach(id=>{ const v = store.get("ez_"+id); if(v!==null) $("#"+id).checked = v==="1"; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.checked?"1":"0")); });
 
 /* ===================== languages: multi-select dropdown + auto-detect ===================== */
 const LANGS = [["tam","Tamil","தமிழ்","in"],["eng","English","English","w"],["san","Sanskrit","संस्कृतम्","in"],["hin","Hindi","हिन्दी","in"],["mar","Marathi","मराठी","in"],
@@ -662,9 +705,34 @@ async function ensureLangs(p, f){
   renderLangs(); saveSoon();
   setProg(.05, `Detected ${names(docLangs)} — loading…`);
 }
+/* which quarter-turn makes a badly-read page readable? (0 = none) */
+async function bestRotation(w, p){
+  const full = await fullCanvas(p), k = Math.min(1, 1100/Math.max(full.width, full.height));
+  const quick = async deg => {
+    const r = deg % 180, c = document.createElement("canvas"); c.width = Math.round((r ? full.height : full.width)*k); c.height = Math.round((r ? full.width : full.height)*k);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,c.width,c.height); g.translate(c.width/2, c.height/2); g.rotate(deg*Math.PI/180); g.drawImage(full, -full.width*k/2, -full.height*k/2, full.width*k, full.height*k);
+    await w.setParameters({ tessedit_pageseg_mode: "3" });
+    const { data } = await w.recognize(c, {}, { blocks:true });
+    // count only words lying horizontally in this orientation (Tesseract can also read sideways lines, which would fool the comparison)
+    const ws = (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(q=>q.lines).flatMap(l=>l.words)
+      .filter(x=>/[\p{L}\p{M}]{2,}/u.test(x.text) && (x.bbox.x1-x.bbox.x0) >= (x.bbox.y1-x.bbox.y0)*0.9);
+    return ws.length ? ws.reduce((s,x)=>s+x.confidence,0)/ws.length * Math.min(1, ws.length/15) : 0;
+  };
+  const base = await quick(0); let best = 0, bv = base;
+  for (const d of [90, 270, 180]){ const v = await quick(d); if (v > bv){ bv = v; best = d; } }
+  return bv > base + 15 && bv > 45 ? best : 0;
+}
 /* read a page; in auto mode re-check the language of pages that read poorly */
 async function readAuto(w, p, live){
   let r = await readPage(w, p, live); r.langs = poolLangs;
+  if ($("#autoRot").checked && r.conf != null && r.conf < 50 && !p.areas.some(a=>!a.auto)){
+    const turn = await bestRotation(w, p);
+    if (turn){ p.rot = ((p.rot||0) + turn) % 360; p.skew = null; p.areas = []; p.viewTurned = turn;
+      const r2 = await readPage(w, p, null); r2.langs = poolLangs;
+      if ((r2.conf||0) > (r.conf||0)) { r = r2; toast(`Page ${pages.indexOf(p)+1} was turned ${turn}° — it reads better now`); if (pages[cur]===p && cropper) go(cur); }
+      else { p.rot = ((p.rot||0) - turn + 360) % 360; p.skew = null; }
+    }
+  }
   if (isAuto() && docLangs && r.conf != null && r.conf < 60 && (r.text||"").trim()){
     const sc = await detectLangs(sub(await fullCanvas(p), live || p.crop || globalCrop || {x:0,y:0,w:1,h:1}));
     const alt = sc ? scriptsToLangs(sc) : docLangs;
@@ -684,14 +752,15 @@ const idb = (()=>{ let dbp; const open = ()=> dbp ||= new Promise((ok,err)=>{ co
 let saveT = null;
 let saveFn = null;
 function flushSave(){ if (saveT){ clearTimeout(saveT); saveT = null; saveFn && saveFn(); } }
-function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(saveFn = ()=>{ saveT = null; return idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs, docScripts,
-  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null}))}); }, 700); }
+function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(saveFn = ()=>{ saveT = null; return idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs, docScripts, okWords:[...okWords],
+  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, skew:p.skew??null, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null, weak:p.weak||[]}))}); }, 700); }
 async function restore(){
   const rec = docKey && await idb.get(docKey);
   if (!rec || rec.total !== pages.length) return;
   rec.pages.forEach((r,i)=>Object.assign(pages[i], r));
   if (rec.globalCrop){ globalCrop = rec.globalCrop; $("#sameCrop").checked = true; }
   if (rec.docLangs){ docLangs = rec.docLangs; docScripts = rec.docScripts || null; renderLangs(); }
+  if (rec.okWords) okWords = new Set(rec.okWords);
   const n = rec.pages.filter(p=>p.status==="done").length;
   if (n) toast(`Restored your earlier work: ${n} page${n>1?"s":""} already read`);
 }
@@ -724,7 +793,7 @@ async function openFiles(files, append = false){
   files = files.filter(f=>f && (f.type.startsWith("image/") || f.type==="application/pdf" || /\.(pdf|tiff?)$/i.test(f.name||"")));
   if (!files.length) return toast("Please choose images or a PDF");
   files.sort((a,b)=>(a.name||"").localeCompare(b.name||"", undefined, {numeric:true}));
-  if (!append){ flushSave(); stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; docLangs = null; docScripts = null; renderLangs(); $("#sameCrop").checked = false; out.value = ""; }
+  if (!append){ flushSave(); stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; docLangs = null; docScripts = null; okWords = new Set(); renderLangs(); $("#sameCrop").checked = false; out.value = ""; }
   const startLen = pages.length;
   for (const f of files){
     if (f.type === "application/pdf" || /\.pdf$/i.test(f.name||"")){
@@ -791,7 +860,7 @@ function lazyThumbs(){
   thumbObs = new IntersectionObserver(es=>es.forEach(async en=>{
     if(!en.isIntersecting) return; const el = en.target; thumbObs.unobserve(el);
     const p = pages[+el.closest(".pg").dataset.i]; if(!p) return;
-    if (p.src.kind === "img"){ el.innerHTML = `<img src="${p.src.url}" alt="">`; return; }
+    if (p.src.kind === "img" || p.half){ el.innerHTML = `<img src="${await pageUrl(p)}" alt="">`; return; }
     const c = await renderPdfPage(p.src.doc, p.src.n, 0.18); el.innerHTML = ""; el.append(c);
   }), {root: $("#pages"), rootMargin: "300px"});
   document.querySelectorAll("#pages .th").forEach(t=>thumbObs.observe(t));
@@ -804,9 +873,20 @@ async function renderPdfPage(doc, n, scale){
   await pg.render({canvasContext: c.getContext("2d"), viewport: vp}).promise; return c;
 }
 const toUrl = c => new Promise(ok=>c.toBlob(b=>ok(URL.createObjectURL(b)), "image/png"));
+async function srcCanvasOrUrl(src){ return src.kind === "img" ? src.url : await toUrl(await renderPdfPage(src.doc, src.n, 300/72)); }
 async function pageUrl(p){
-  if (p.src.kind === "img") return p.src.url;
-  if (!p.viewUrl) p.viewUrl = await toUrl(await renderPdfPage(p.src.doc, p.src.n, 300/72));
+  if (p.src.kind === "img" && !p.half) return p.src.url;
+  if (!p.viewUrl){
+    const base = await srcCanvasOrUrl(p.src);
+    if (!p.half) p.viewUrl = base;
+    else {                                          // one half of a two-page scan
+      const im = await loadImage(base), W = im.naturalWidth, H = im.naturalHeight, cut = Math.round((p.splitX||0.5)*W);
+      const x0 = p.half==="L" ? 0 : cut, w = p.half==="L" ? cut : W-cut;
+      const c = document.createElement("canvas"); c.width = w; c.height = H; c.getContext("2d").drawImage(im, x0, 0, w, H, 0, 0, w, H);
+      if (base !== p.src.url) URL.revokeObjectURL(base);
+      p.viewUrl = await toUrl(c);
+    }
+  }
   return p.viewUrl;
 }
 const loadImage = url => new Promise((ok,err)=>{ const im = new Image(); im.onload=()=>ok(im); im.onerror=err; im.src=url; });
@@ -817,7 +897,59 @@ async function fullCanvas(p){
   const c = document.createElement("canvas"); c.width = sw; c.height = sh;
   const x = c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,sw,sh);
   x.translate(sw/2, sh/2); x.rotate(r*Math.PI/180); x.drawImage(im, -im.naturalWidth/2, -im.naturalHeight/2);
-  return c;
+  if (p.skew == null) p.skew = $("#deskew").checked ? skewAngle(c) : 0;      // measured once per page
+  if (!p.skew) return c;
+  const o = document.createElement("canvas"); o.width = sw; o.height = sh;
+  const g = o.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,sw,sh);
+  g.translate(sw/2, sh/2); g.rotate(-p.skew*Math.PI/180); g.drawImage(c, -sw/2, -sh/2);
+  return o;
+}
+/* slant of the text lines in degrees (projection profile: the angle where rows of ink line up best) */
+function skewAngle(c){
+  const B = binarize(c, 1000), {w, h, ink} = B, pts = [];
+  for (let y=Math.round(h*0.04); y<h*0.96; y+=2) for (let x=Math.round(w*0.04); x<w*0.96; x+=2) if (ink[y*w+x]) pts.push(x - w/2, y);
+  if (pts.length < 400) return 0;
+  const score = a => { const t = Math.tan(a*Math.PI/180), bins = new Float32Array(h*2);
+    for (let i=0;i<pts.length;i+=2){ const yy = Math.round(pts[i+1] - pts[i]*t + h/2); if (yy>=0 && yy<bins.length) bins[yy]++; }
+    let s = 0; for (const v of bins) s += v*v; return s; };
+  let best = 0, bs = score(0);
+  for (let a=-6; a<=6.001; a+=0.4){ const v = score(a); if (v > bs){ bs = v; best = a; } }
+  for (let a=best-0.4; a<=best+0.401; a+=0.08){ const v = score(a); if (v > bs){ bs = v; best = a; } }
+  return Math.abs(best) >= 0.25 && Math.abs(best) <= 6 ? Math.round(best*100)/100 : 0;
+}
+/* two-page scans: find the gutter between the pages and cut there */
+async function findGutter(p){
+  const im = await loadImage(await pageUrl(p)), k = Math.min(1, 900/im.naturalWidth);
+  const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*k); c.height = Math.round(im.naturalHeight*k);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+  const B = binarize(c, 900), prof = new Float32Array(B.w);
+  for (let y=Math.round(B.h*0.1); y<B.h*0.9; y++) for (let x=0;x<B.w;x++) prof[x] += B.ink[y*B.w+x];
+  let best = Math.round(B.w/2), bv = Infinity;
+  for (let x=Math.round(B.w*0.38); x<B.w*0.62; x++){ let v = 0; for (let d=-3; d<=3; d++) v += prof[Math.min(B.w-1, Math.max(0, x+d))]; v += Math.abs(x - B.w/2)*0.05; if (v < bv){ bv = v; best = x; } }
+  return best / B.w;
+}
+async function splitPage(i, quiet){
+  const p = pages[i]; if (!p || p.half) return quiet ? 0 : toast("This page was already split");
+  const g = await findGutter(p);
+  const mk = half => ({...newPage(p.src), half, splitX:g, rot:p.rot||0});
+  pages.splice(i, 1, mk("L"), mk("R"));
+  if (p.viewUrl && p.src.kind !== "img") URL.revokeObjectURL(p.viewUrl);
+  if (docKey) docKey += `|split${i}`;
+  if (!quiet){ $("#pages").innerHTML = ""; enterWork(); go(i); toast("Split into two pages"); }
+  return 1;
+}
+async function splitAllWide(){
+  let n = 0;
+  for (let i = pages.length-1; i >= 0; i--){
+    const p = pages[i]; if (p.half) continue;
+    let W, H;
+    if (p.src.kind === "pdf"){ const vp = (await p.src.doc.getPage(p.src.n)).getViewport({scale:1}); W = vp.width; H = vp.height; }
+    else { const im = await loadImage(p.src.url); W = im.naturalWidth; H = im.naturalHeight; }
+    if ((p.rot||0) % 180) [W, H] = [H, W];
+    if (W > H*1.15) n += await splitPage(i, true);
+  }
+  if (!n) return toast("No two-page scans found (pages must be wider than tall)");
+  $("#pages").innerHTML = ""; enterWork(); go(0); toast(`Split ${n} two-page scan${n>1?"s":""}`);
 }
 function sub(c, f){
   const x = Math.round(f.x*c.width), y = Math.round(f.y*c.height), w = Math.max(8, Math.round(f.w*c.width)), h = Math.max(8, Math.round(f.h*c.height));
@@ -896,8 +1028,8 @@ function fitRotation(deg){
 async function rotate(deg){
   const p = pages[cur]; if(!p) return;
   if (mode==="crop" && cropper){ fitRotation((cropper.getData().rotate||0) + deg); p.rot = cropper.getData().rotate; }
-  else { p.rot = ((p.rot||0) + deg + 360) % 360; if (p.areas.length) toast("Areas were cleared because the page was rotated"); p.areas = []; go(cur); }
-  p.crop = null; saveSoon();
+  else { p.rot = ((p.rot||0) + deg + 360) % 360; if (p.areas.length) toast("Areas were cleared because the page was rotated"); p.areas = []; p.skew = null; go(cur); }
+  p.crop = null; p.skew = null; saveSoon();
 }
 function selectAll(){ if(!cropper) return; const d = cropper.getCanvasData(); cropper.setCropBoxData({left:d.left, top:d.top, width:d.width, height:d.height}); }
 let stageScale = 1;
@@ -1106,12 +1238,45 @@ async function getPool(n){
   }
   return Promise.all(pool.slice(0, n));
 }
-function preprocess(src, m){
-  const k = src.width < 1400 ? Math.min(3, 1800/src.width) : 1;
-  const c = document.createElement("canvas"); c.width = Math.round(src.width*k); c.height = Math.round(src.height*k);
-  const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(src, 0, 0, c.width, c.height);
+/* paper brightness: morphological closing (max then min filter) on a 1/8 copy — removes the text, keeps sharp shadow edges */
+function paperLight(c){
+  const sw = Math.max(8, Math.round(c.width/8)), sh = Math.max(8, Math.round(c.height/8)), sm = document.createElement("canvas"); sm.width = sw; sm.height = sh;
+  const sg = sm.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(c, 0, 0, sw, sh);
+  const sd = sg.getImageData(0,0,sw,sh), A = sd.data, v0 = new Float32Array(sw*sh);
+  for (let i=0;i<sw*sh;i++) v0[i] = (A[i*4]*299 + A[i*4+1]*587 + A[i*4+2]*114)/1000;
+  const filt = (src, useMax) => { const t = new Float32Array(sw*sh), o = new Float32Array(sw*sh), R = 3;
+    for (let y=0;y<sh;y++) for (let x=0;x<sw;x++){ let v = useMax ? 0 : 255; for (let d=-R; d<=R; d++){ const q = src[y*sw+Math.min(sw-1, Math.max(0, x+d))]; v = useMax ? Math.max(v,q) : Math.min(v,q); } t[y*sw+x] = v; }
+    for (let y=0;y<sh;y++) for (let x=0;x<sw;x++){ let v = useMax ? 0 : 255; for (let d=-R; d<=R; d++){ const q = t[Math.min(sh-1, Math.max(0, y+d))*sw+x]; v = useMax ? Math.max(v,q) : Math.min(v,q); } o[y*sw+x] = v; }
+    return o; };
+  const bg = filt(filt(v0, true), false);
+  for (let i=0;i<sw*sh;i++){ A[i*4]=A[i*4+1]=A[i*4+2]=bg[i]; A[i*4+3]=255; } sg.putImageData(sd,0,0);
+  const sorted = Float32Array.from(bg).sort(), lo = sorted[Math.floor(sorted.length*0.05)], hi = sorted[Math.floor(sorted.length*0.95)];
+  let dark = 0; for (const v of bg) if (v < hi - 55) dark++;
+  return { canvas: sm, lo, hi, darkShare: dark / bg.length };
+}
+/* shadows / uneven light? (the paper is much darker in some places than others) */
+/* a shadow darkens a large part of the page; a photo printed on the page is a compact dark block (don't "flatten" it away) */
+function unevenLight(c){ const L = paperLight(c); return L.hi - L.lo > 55 && L.darkShare > 0.2 ? L : null; }
+/* divide by the paper's brightness: an evenly lit grey page */
+function flatten(c, L){
+  L = L || paperLight(c);
+  const W = c.width, H = c.height, bg = document.createElement("canvas"); bg.width = W; bg.height = H;
+  const bgc = bg.getContext("2d"); bgc.imageSmoothingQuality = "high"; bgc.drawImage(L.canvas, 0, 0, W, H);
+  const B2 = bgc.getImageData(0,0,W,H).data;
+  const o = document.createElement("canvas"); o.width = W; o.height = H; const og = o.getContext("2d");
+  og.filter = "blur(0.8px)"; og.drawImage(c, 0, 0); og.filter = "none";                 // light blur: don't amplify grain in dark corners
+  const im = og.getImageData(0,0,W,H), d = im.data;
+  for (let i=0;i<d.length;i+=4){ const g = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000, v = Math.min(255, g * Math.min(4, 245 / Math.max(20, B2[i]))); d[i]=d[i+1]=d[i+2]=v; }
+  og.putImageData(im,0,0); return o;
+}
+/* image clean-up before OCR / layout analysis. keepSize: same pixel size as src (for layout coordinates) */
+function preprocess(src, m, keepSize){
+  const k = keepSize ? 1 : (src.width < 1400 ? Math.min(3, 1800/src.width) : 1);
+  let c = document.createElement("canvas"); c.width = Math.round(src.width*k); c.height = Math.round(src.height*k);
+  let x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  if (m === "none"){ c.k = k; return c; }
+  if (m === "photo" || m === "auto"){ const L = m === "photo" ? paperLight(c) : unevenLight(c); if (L){ c = flatten(c, L); x = c.getContext("2d"); } }
   c.k = k;
-  if (m === "none") return c;
   const im = x.getImageData(0,0,c.width,c.height), d = im.data, hist = new Uint32Array(256);
   for (let i=0;i<d.length;i+=4){ const g = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000 | 0; d[i]=d[i+1]=d[i+2]=g; hist[g]++; }
   if (m === "bw"){ const thr = otsu(hist, d.length/4); for (let i=0;i<d.length;i+=4){ const v = d[i] > thr ? 255 : 0; d[i]=d[i+1]=d[i+2]=v; } }
@@ -1121,7 +1286,7 @@ function otsu(hist, total){ let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t]; le
   for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t]; const mB=sB/wB, mF=(sum-sB)/wF, b=wB*wF*(mB-mF)*(mB-mF); if(b>max){max=b;thr=t;} } return thr; }
 /* run Tesseract; returns words with boxes in the source canvas' pixels */
 async function ocr(worker, canvas, psm){
-  await worker.setParameters({ tessedit_pageseg_mode: String(psm || basePsm()), preserve_interword_spaces: "1", user_defined_dpi: "300" });
+  await worker.setParameters({ tessedit_pageseg_mode: String(psm || basePsm()), preserve_interword_spaces: "1", user_defined_dpi: "0" });   // 0 = let Tesseract measure the resolution (a fixed 300 hurts photos and low-res scans)
   const pc = preprocess(canvas, $("#prep").value), k = pc.k;
   const { data } = await worker.recognize(pc, {}, { text:true, blocks:true });
   const paras = [];
@@ -1132,7 +1297,13 @@ async function ocr(worker, canvas, psm){
   return { text: cleanTamil(data.text||"").trim(), conf: data.confidence, paras, words: paras.flatMap(p=>p.lines.flatMap(l=>l.words)) };
 }
 const sc = (b,k) => ({x:b.x0/k, y:b.y0/k, w:(b.x1-b.x0)/k, h:(b.y1-b.y0)/k});
-const weakOf = words => words.filter(w=>w.conf<70 && w.text.trim()).map(w=>({t:w.text, c:Math.round(w.conf)})).sort((a,b)=>a.c-b.c).slice(0,40);
+/* word boxes -> fractions of the full page (fr = where this canvas sits on the page) */
+function frac(words, fr, cw, ch){ for (const w of words) w.fb = {x: fr.x + w.box.x/cw*fr.w, y: fr.y + w.box.y/ch*fr.h, w: w.box.w/cw*fr.w, h: w.box.h/ch*fr.h}; return words; }
+/* uncertain words in reading order; n = which occurrence of that spelling on the page (to correct the right one) */
+function weakOf(words){ const seen = {}, out = [];
+  for (const w of words){ const t = w.text; if (!t || !t.trim()) continue; const n = seen[t] = (seen[t] ?? -1) + 1;
+    if (w.conf < 70 && w.fb) out.push({t, c: Math.round(w.conf), n, b: w.fb}); }
+  return out.slice(0, 400); }
 const finishText = t => $("#keepLines").checked ? t : reflow(t);
 
 /* ===================== layout: lines, tables, pictures ===================== */
@@ -1244,7 +1415,7 @@ function eraseLines(c, L, s){
 }
 /* read one table area. grid = {cols:[fractions], rows:[fractions]} = the user's lines (empty list = find automatically) */
 async function readTable(worker, c, grid){
-  const B = binarize(c), L = lineSegs(B), clean = eraseLines(c, L, B.s);
+  const B = binarize(preprocess(c, $("#prep").value, true)), L = lineSegs(B), clean = eraseLines(c, L, B.s);
   const r = await ocr(worker, clean, 6);
   const W = c.width, H = c.height, box = {x0:0, y0:0, x1:W, y1:H};
   const userCols = grid?.cols?.length ? [0, ...[...grid.cols].sort((a,b)=>a-b).map(f=>f*W), W] : null;
@@ -1265,7 +1436,7 @@ function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createEle
 /* auto layout of one (cropped) canvas -> areas + blocks, all in that canvas' pixels */
 async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true){
   const r = await ocr(worker, c, psm);
-  const B = binarize(c), L = lineSegs(B), T = findTables(B, L), s = B.s;
+  const B = binarize(preprocess(c, $("#prep").value, true)), L = lineSegs(B), T = findTables(B, L), s = B.s;   // layout on the cleaned image (shadows removed)
   const tables = [];
   for (const t of T){
     const bx = {x:t.box.x0/s, y:t.box.y0/s, w:(t.box.x1-t.box.x0)/s, h:(t.box.y1-t.box.y0)/s};
@@ -1322,7 +1493,7 @@ const basePsm = () => /^\d+$/.test(layoutVal()) ? layoutVal() : "4";
 const colMode = () => layoutVal()==="colauto" ? "auto" : layoutVal().startsWith("col") ? +layoutVal().slice(3) : null;
 /* split a page into reading-order regions: full-width bands (titles, wide pictures) and columns */
 function columnRegions(c, want, rightToLeft){
-  const B = binarize(c, 1200), {w,h,ink} = B;
+  const B = binarize(preprocess(c, $("#prep").value, true), 1200), {w,h,ink} = B;
   let top = -1, bot = -1;
   for (let y=0;y<h && top<0;y++) for (let x=0;x<w;x++) if (ink[y*w+x]){ top = y; break; }
   for (let y=h-1;y>=0 && bot<0;y--) for (let x=0;x<w;x++) if (ink[y*w+x]){ bot = y; break; }
@@ -1386,9 +1557,9 @@ async function readPage(worker, p, liveCrop){
       if (a.type === "ignore") continue;
       const c = sub(full, a);
       if (a.type === "image"){ blocks.push({type:"image", img: picture(c), aid:a.id}); continue; }
-      if (a.type === "table"){ const t = await readTable(worker, c, a.grid); a.grid = t.grid; blocks.push({type:"table", rows:t.rows, aid:a.id}); words.push(...t.words); continue; }
+      if (a.type === "table"){ const t = await readTable(worker, c, a.grid); a.grid = t.grid; blocks.push({type:"table", rows:t.rows, aid:a.id}); words.push(...frac(t.words, a, c.width, c.height)); continue; }
       const r = await ocr(worker, c, a.type==="heading" ? 7 : 6);
-      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text), aid:a.id}); words.push(...r.words);
+      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text), aid:a.id}); words.push(...frac(r.words, a, c.width, c.height));
     }
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : 0;
   } else {
@@ -1399,6 +1570,7 @@ async function readPage(worker, p, liveCrop){
       const rc = regions.length > 1 ? sub(c, rg) : c;
       // a region's box (in rc pixels) -> fraction of the full page
       const toPage = bx => ({ x: f.x + (rg.x + bx.x/rc.width*rg.w)*f.w, y: f.y + (rg.y + bx.y/rc.height*rg.h)*f.h, w: bx.w/rc.width*rg.w*f.w, h: bx.h/rc.height*rg.h*f.h });
+      const fr = {x: f.x + rg.x*f.w, y: f.y + rg.y*f.h, w: rg.w*f.w, h: rg.h*f.h};
       if (auto){
         const r = await autoLayout(worker, rc, cm ? 4 : 3, rg.y < 0.02, rg.y + rg.h > 0.98);
         for (const b of r.blocks){
@@ -1406,13 +1578,13 @@ async function readPage(worker, p, liveCrop){
           areas.push({id, type:b.type, auto:true, ...toPage(b.box), ...(b.grid ? {grid:b.grid} : {})});
           if (b.type !== "ignore") blocks.push({type:b.type, text:b.text, rows:b.rows, img:b.img, aid:id});
         }
-        words.push(...r.words); if (r.conf != null) confs.push(r.conf);
+        words.push(...frac(r.words, fr, rc.width, rc.height)); if (r.conf != null) confs.push(r.conf);
       } else {
         const r = await ocr(worker, rc, cm ? 4 : undefined);
         const id = areaSeq++;
         if (r.text.trim()) blocks.push({type:"text", text: finishText(r.text), aid: cm ? id : undefined});
         if (cm) areas.push({id, type:"text", auto:true, ...toPage({x:0, y:0, w:rc.width, h:rc.height})});
-        words.push(...r.words); confs.push(r.conf);
+        words.push(...frac(r.words, fr, rc.width, rc.height)); confs.push(r.conf);
       }
     }
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : (confs[0] ?? 0);
@@ -1551,9 +1723,9 @@ function pageBlocks(p){
   if (p.textDirty || (p.edited && p.blocks && !p.v2)){ p.blocks = textToBlocks(p.text, p.blocks); p.textDirty = false; p.v2 = true; }
   return p.blocks || [{type:"text", text:p.text||""}];
 }
+/* typing in the Text tab already updates p.text (input handler); here the edited text is parsed back into the page structure */
 function saveEdits(){
   const p = pages[cur]; if (!p || p.status!=="done") return;
-  if (tab === "page" && out.value !== (p.text||"")){ p.text = out.value; p.edited = true; p.textDirty = true; }
   if (p.textDirty){ pageBlocks(p); saveSoon(); renderRail(); }
 }
 out.addEventListener("input", ()=>{ if(tab==="page"){ const p = pages[cur]; if(p && p.status==="done"){ p.text = out.value; p.edited = true; p.textDirty = true; p.v2 = true; saveSoon(); } } });
@@ -1601,11 +1773,101 @@ $("#preview").addEventListener("click", e=>{
 
 /* ===================== weak words, Tamil clean-up ===================== */
 const confCol = c => c>=85 ? "var(--ok)" : c>=70 ? "var(--warn)" : "var(--bad)";
-function showWeak(lo){
+let okWords = new Set();                                   // "always accept" words for this book
+const openWeak = p => (p.weak||[]).filter(w=>!w.done && !okWords.has(w.t));
+function showWeak(all){
+  const lo = all.filter(w=>!w.done && !okWords.has(w.t)), top = [...lo].sort((a,b)=>a.c-b.c).slice(0, 40);
+  const bookN = isBook() ? pages.reduce((s,p)=>s + (p.status==="done" ? openWeak(p).length : 0), 0) : lo.length;
   weak.classList.toggle("hidden", !lo.length || tab!=="page");
-  weak.innerHTML = lo.length ? `<div style="color:var(--muted);margin-bottom:5px">Check these words (low confidence) — click to find:</div>` + lo.map(w=>`<span class="w" data-t="${esc(w.t)}">${esc(w.t)}<small>${w.c}</small></span>`).join("") : "";
+  weak.innerHTML = lo.length ? `<div style="color:var(--muted);margin-bottom:5px;display:flex;align-items:center;flex-wrap:wrap;gap:6px">Check these words (low confidence) — click one to verify it:<button class="btn sm primary verbtn" id="verGo">✓ Verify ${bookN} word${bookN>1?"s":""}${isBook()?" in the book":""}</button></div>`
+    + top.map(w=>`<span class="w" data-i="${(pages[cur].weak||[]).indexOf(w)}">${esc(w.t)}<small>${w.c}</small></span>`).join("") : "";
 }
-weak.addEventListener("click", e=>{ const w = e.target.closest(".w"); if(!w) return; const i = out.value.indexOf(w.dataset.t); if(i>=0){ out.focus(); out.setSelectionRange(i, i+w.dataset.t.length); } });
+weak.addEventListener("click", e=>{
+  if (e.target.id === "verGo") return openVerify();
+  const w = e.target.closest(".w"); if (!w) return; openVerify(cur, +w.dataset.i);
+});
+
+/* ---------- Verify (like FineReader's verification): step through uncertain words with their image ---------- */
+const ver = { list: [], k: 0, fullPi: -1, full: null, fixed: 0 };
+function replaceNth(text, find, n, repl){ let idx = -1; for (let k=0; k<=n; k++){ idx = text.indexOf(find, idx+1); if (idx < 0) return null; } return text.slice(0, idx) + repl + text.slice(idx + find.length); }
+function openVerify(startPi = cur, startWi = -1){
+  saveEdits();
+  const order = isBook() ? [...pages.keys()].map(i => (i + startPi) % pages.length) : [cur];
+  ver.list = []; ver.fixed = 0;
+  for (const pi of order){ const p = pages[pi]; if (p.status !== "done") continue; (p.weak||[]).forEach((w, wi) => { if (!w.done && !okWords.has(w.t) && w.b) ver.list.push({pi, wi}); }); }
+  if (!ver.list.length) return toast("No uncertain words left to check 🎉");
+  ver.k = Math.max(0, ver.list.findIndex(x => x.pi === startPi && x.wi === startWi));
+  verDlg.showModal(); showVerify();
+}
+function closeVerify(){ if (verDlg.open) verDlg.close(); }
+verDlg.addEventListener("close", ()=>{ ver.full = null; ver.fullPi = -1; showView(); renderRail(); if (ver.fixed){ toast(`${ver.fixed} word${ver.fixed>1?"s":""} corrected`); ver.fixed = 0; } });
+async function showVerify(){
+  while (ver.k < ver.list.length){ const it = ver.list[ver.k], w = pages[it.pi].weak[it.wi]; if (!w.done && !okWords.has(w.t)) break; ver.k++; }
+  if (ver.k >= ver.list.length){ closeVerify(); return toast("Verification finished"); }
+  const {pi, wi} = ver.list[ver.k], p = pages[pi], w = p.weak[wi];
+  if (ver.fullPi !== pi){ ver.full = await fullCanvas(p); ver.fullPi = pi; if (pi !== cur) go(pi); }
+  const F = ver.full, W = F.width, H = F.height, bx = w.b.x*W, by = w.b.y*H, bw = Math.max(4, w.b.w*W), bh = Math.max(4, w.b.h*H);
+  // context: the line around the word, with the word outlined
+  const x0 = Math.max(0, bx - bw*3 - bh*2), x1 = Math.min(W, bx + bw*4 + bh*2), y0 = Math.max(0, by - bh*1.3), y1 = Math.min(H, by + bh*2.3);
+  const cv = $("#vCtx"), k = Math.min(1.6, 700/(x1-x0)); cv.width = Math.round((x1-x0)*k); cv.height = Math.round((y1-y0)*k);
+  const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,cv.width,cv.height); g.drawImage(F, x0, y0, x1-x0, y1-y0, 0, 0, cv.width, cv.height);
+  g.strokeStyle = "#b4471f"; g.lineWidth = 2.5; g.strokeRect((bx-x0)*k-4, (by-y0)*k-4, bw*k+8, bh*k+8);
+  // the word itself, large
+  const pad = bh*0.25, wv = $("#vWord"), kk = Math.min(4, 84/(bh+pad*2), 340/(bw+pad*2)); wv.width = Math.round((bw+pad*2)*kk); wv.height = Math.round((bh+pad*2)*kk);
+  const wg = wv.getContext("2d"); wg.fillStyle = "#fff"; wg.fillRect(0,0,wv.width,wv.height); wg.drawImage(F, bx-pad, by-pad, bw+pad*2, bh+pad*2, 0, 0, wv.width, wv.height);
+  const inp = $("#vIn"); inp.value = w.t; inp.focus(); inp.select();
+  $("#vMeta").textContent = `read as “${w.t}” · confidence ${w.c}%`;
+  $("#vPos").textContent = `${isBook() ? `page ${pi+1} · ` : ""}${ver.k+1} of ${ver.list.length}`;
+  $("#vAlways").textContent = `Always accept “${w.t.length > 14 ? w.t.slice(0,14)+"…" : w.t}”`;
+}
+function verApply(){
+  const it = ver.list[ver.k]; if (!it) return; const p = pages[it.pi], w = p.weak[it.wi], v = $("#vIn").value;
+  if (v !== w.t){
+    const res = replaceNth(p.text||"", w.t, w.n, v) ?? replaceNth(p.text||"", w.t, 0, v);
+    if (res != null){ p.text = res; p.edited = true; p.textDirty = true; p.v2 = true; ver.fixed++;
+      p.weak.forEach(o => { if (o !== w && o.t === w.t && o.n > w.n) o.n--; }); pageBlocks(p); }
+  }
+  w.done = true; saveSoon(); ver.k++;
+  if (it.pi === cur && tab === "page") out.value = p.text || "";
+  showVerify();
+}
+$("#vApply").onclick = verApply;
+$("#vSkip").onclick = () => { ver.k++; showVerify(); };
+$("#vPrev").onclick = () => { if (ver.k > 0){ ver.k--; const it = ver.list[ver.k]; pages[it.pi].weak[it.wi].done = false; showVerify(); } };
+$("#vAlways").onclick = () => { const it = ver.list[ver.k]; okWords.add(pages[it.pi].weak[it.wi].t); saveSoon(); ver.k++; showVerify(); };
+$("#vIn").addEventListener("keydown", e => {
+  if (e.key === "Enter"){ e.preventDefault(); verApply(); }
+  else if (e.altKey && e.key === "ArrowRight"){ e.preventDefault(); ver.k++; showVerify(); }
+  else if (e.altKey && e.key === "ArrowLeft"){ e.preventDefault(); $("#vPrev").click(); }
+});
+
+/* ---------- Find & replace (this page or the whole book) ---------- */
+function openFind(){ saveEdits(); $("#frBookL").classList.toggle("hidden", !isBook()); $("#frMsg").textContent = ""; const sel = out.value.slice(out.selectionStart, out.selectionEnd); if (sel && sel.length < 60) $("#frFind").value = sel; frDlg.showModal(); $("#frFind").focus(); $("#frFind").select(); }
+function frRegex(){
+  const f = $("#frFind").value; if (!f) return null;
+  const L = "[\\p{L}\\p{M}\\p{N}]", body = f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp($("#frWord").checked ? `(?<!${L})${body}(?!${L})` : body, "gu" + ($("#frCase").checked ? "" : "i"));
+}
+$("#frAll").onclick = () => {
+  const re = frRegex(); if (!re) return; const rp = $("#frRep").value;
+  const list = isBook() && $("#frBook").checked ? pages : [pages[cur]]; let n = 0, pn = 0;
+  for (const p of list){ if (p.status !== "done" || !p.text) continue; const m = p.text.match(re); if (!m) continue;
+    n += m.length; pn++; p.text = p.text.replace(re, () => rp); p.edited = true; p.textDirty = true; p.v2 = true; pageBlocks(p); }
+  showView(); renderRail(); saveSoon();
+  $("#frMsg").textContent = n ? `Replaced ${n} time${n>1?"s":""}${isBook() ? ` on ${pn} page${pn>1?"s":""}` : ""}.` : "Not found.";
+};
+$("#frNext").onclick = async () => {
+  const re = frRegex(); if (!re) return;
+  if (tab !== "page") setTab("page");
+  const tryPage = from => { re.lastIndex = from; const m = re.exec(out.value); if (!m) return false; out.focus(); out.setSelectionRange(m.index, m.index + m[0].length); const before = out.value.slice(0, m.index).split("\n").length; out.scrollTop = Math.max(0, (before-3)*30); return true; };
+  if (tryPage(out.selectionEnd)) return $("#frMsg").textContent = "";
+  if (isBook() && $("#frBook").checked){
+    for (let s2=1; s2<=pages.length; s2++){ const pi = (cur + s2) % pages.length, p = pages[pi]; if (p.status !== "done" || !(p.text||"").match(frRegex())) continue;
+      await go(pi); out.value = p.text; tryPage(0); return $("#frMsg").textContent = `Found on page ${pi+1}.`; }
+  } else if (tryPage(0)) return $("#frMsg").textContent = "Searched from the start again.";
+  $("#frMsg").textContent = "No (more) matches.";
+};
+$("#frFind").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#frNext").click(); } });
 function cleanTamil(t){
   return (t||"")
     .replace(/[​⁠﻿◌]/g, "")
@@ -1627,6 +1889,29 @@ async function dl(kind){
   $("#dlMenu").classList.add("hidden");
   const marks = $("#pageMarks").checked && isBook(), pics = $("#withPics").checked, list = donePages();
   if (!list.length || !list.some(x=>(x.p.text||"").trim() || x.p.blocks?.length)) return toast("Nothing to download yet — convert a page first");
+  if (kind==="pdf"){
+    if (busyOne || batch.running) return toast("Please wait until reading has finished");
+    try{ if (!window.PDFLib) await loadScript(PDFLIBJS); }catch{ return toast("Couldn't load the PDF builder"); }
+    busyOne = true; setGo(true);
+    try{
+      const n = list.length, nW = Math.max(1, Math.min(3, Math.floor((navigator.hardwareConcurrency||4)/2), n)), parts = new Array(n);
+      setProg(.02, "Making searchable PDF…");
+      const workers = await getPool(nW); let qi = 0, done = 0;
+      await Promise.all(workers.map(async w => { while (qi < n){ const j = qi++, p = list[j].p;
+        const c = await fullCanvas(p), k = Math.min(1, 2200/Math.max(c.width, c.height));
+        const s2 = document.createElement("canvas"); s2.width = Math.round(c.width*k); s2.height = Math.round(c.height*k); s2.getContext("2d").drawImage(c, 0, 0, s2.width, s2.height);
+        const jpg = await new Promise(ok => s2.toBlob(ok, "image/jpeg", 0.82));
+        await w.setParameters({ tessedit_pageseg_mode: "3", user_defined_dpi: String(Math.max(72, Math.round(300*k))) });
+        parts[j] = (await w.recognize(jpg, { pdfTitle: docName }, { pdf: true })).data.pdf;
+        done++; setProg(done/n*0.95, `Making searchable PDF… page ${done} of ${n}`); } }));
+      const doc = await PDFLib.PDFDocument.create(); doc.setTitle(docName); doc.setProducer("எழுத்து OCR (Tesseract)");
+      for (const bytes of parts){ const src = await PDFLib.PDFDocument.load(bytes); src.getPages().forEach(pg => cleanTextLayer(src, pg));
+        (await doc.copyPages(src, src.getPageIndices())).forEach(pg => doc.addPage(pg)); }
+      save(new Blob([await doc.save()], {type:"application/pdf"}), fname("pdf"));
+      setProg(1, "Searchable PDF ready.");
+    }catch(e){ console.error(e); setProg(0, "Couldn't make the PDF: " + (e.message||e)); }
+    busyOne = false; setGo(false); return;
+  }
   if (kind==="csv"){
     const tbls = list.flatMap(({p,i})=>pageBlocks(p).filter(b=>b.type==="table").map((b,k)=>({page:i+1, k:k+1, rows:b.rows})));
     if (!tbls.length) return toast("No tables yet — mark a Table area or turn on “Find tables & pictures automatically”");
@@ -1681,6 +1966,23 @@ async function dl(kind){
   }
 }
 
+/* Tesseract writes an invisible joiner after every Tamil pulli in the PDF text layer; remove it so search and copy work */
+function cleanTextLayer(doc, page){
+  const { PDFName, PDFArray, PDFRawStream, decodePDFRawStream } = PDFLib;
+  const c = page.node.get(PDFName.of("Contents")); if (!c) return;
+  const refs = c instanceof PDFArray ? c.asArray() : [c];
+  const fixed = refs.map(ref => {
+    const st = doc.context.lookup(ref); let bytes;
+    try{ bytes = st instanceof PDFRawStream ? decodePDFRawStream(st).decode() : st.getContents(); }catch{ return ref; }
+    let txt = ""; for (let i=0; i<bytes.length; i++) txt += String.fromCharCode(bytes[i]);
+    const t2 = txt.replace(/<([0-9A-Fa-f]+)>/g, (m, hex) => { if (hex.length % 4) return m; let o = ""; for (let i=0; i<hex.length; i+=4){ const u = hex.slice(i, i+4).toUpperCase(); if (u !== "200C" && u !== "200D") o += u; } return "<" + o + ">"; });
+    if (t2 === txt) return ref;
+    const nb = new Uint8Array(t2.length); for (let i=0; i<t2.length; i++) nb[i] = t2.charCodeAt(i) & 255;
+    return doc.context.register(doc.context.flateStream(nb));
+  });
+  page.node.set(PDFName.of("Contents"), fixed.length === 1 ? fixed[0] : doc.context.obj(fixed));
+}
+
 /* ===================== symbols ===================== */
 function togglePal(){ const p=$("#pal"); p.classList.toggle("hidden"); $("#palBtn").classList.toggle("on", !p.classList.contains("hidden")); renderSyms(); }
 function renderSyms(){
@@ -1695,8 +1997,9 @@ $("#symList").addEventListener("mousedown", e=>{ const s=e.target.closest(".sym"
 
 /* ===================== keyboard ===================== */
 document.addEventListener("keydown", e=>{
-  if ($("#workView").classList.contains("hidden")) return;
+  if ($("#workView").classList.contains("hidden") || document.querySelector("dialog[open]")) return;   // dialogs have their own keys
   if ((e.ctrlKey||e.metaKey) && e.key==="Enter"){ e.preventDefault(); convertCurrent(); }
+  if ((e.ctrlKey||e.metaKey) && (e.key==="h"||e.key==="H")){ e.preventDefault(); openFind(); }
   if (e.altKey && e.key==="ArrowRight"){ e.preventDefault(); go(cur+1); }
   if (e.altKey && e.key==="ArrowLeft"){ e.preventDefault(); go(cur-1); }
   if (e.key==="Escape" && tool){ tool = null; refreshTools(); }
