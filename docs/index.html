@@ -92,12 +92,20 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 
 /* workspace */
 .work{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
-.work.book{grid-template-columns:150px minmax(0,1.2fr) minmax(0,1fr)}
-@media (max-width:1100px){.work.book{grid-template-columns:120px minmax(0,1fr)} .work.book .side{grid-column:1/-1}}
+.work.book{grid-template-columns:136px minmax(0,1.3fr) minmax(320px,.95fr)}
+.menu .list.up{top:auto;bottom:calc(100% + 4px)}
+@media (max-width:1500px) and (min-width:761px){ #areaTools .lbl{display:none} #detectBtn .dl2{display:none} .tb{gap:5px;padding:8px 10px} }
+@media (max-width:1250px){.work.book{grid-template-columns:140px minmax(0,1fr)} .work.book .side{grid-column:1/-1}}
 @media (max-width:760px){.work,.work.book{grid-template-columns:minmax(0,1fr)} .work>*{min-width:0} .rail{position:static!important;max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:68px}}
 .rail{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .rail .rh{padding:10px 10px 8px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:grid;gap:6px}
-.rail .rh b{color:var(--ink);font-size:14px;word-break:break-word}
+.rail .rh b{color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rail .rh .st{display:none}
+.rail .rh .btn{white-space:normal;text-align:left;line-height:1.25}
+.result>.tb{gap:4px}
+.result>.tb .tabs button{padding:5px 8px}
+@media (min-width:761px){ .work.book .result .fl{display:none} }
+@media (min-width:761px) and (max-width:1340px){ .work.book .spl{display:none} }
 .rail .pages{overflow:auto;padding:8px;display:grid;gap:8px}
 .pg{position:relative;border:2px solid transparent;border-radius:9px;cursor:pointer;background:var(--paper);padding:4px;text-align:center}
 .pg:hover{border-color:var(--line-2)}
@@ -282,6 +290,88 @@ dialog.ver{width:min(760px,96vw)}
 .dlg-in input[type=text]{font:17px var(--ta)}
 .verbtn{margin-left:8px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:90vw;text-align:center}
+/* ---- dialogs: header / footer ---- */
+.dh h3{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.df{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:color-mix(in srgb,var(--paper) 50%,var(--panel));border-radius:0 0 14px 14px}
+dialog[open]{animation:dlgIn .16s ease-out}
+@keyframes dlgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.iconbtn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel);cursor:pointer;font-size:16px;color:var(--ink)}
+.iconbtn:hover{border-color:var(--ink)}
+/* ---- menus ---- */
+.menu .list{max-height:min(72vh,560px);overflow:auto}
+.menu .list .mh{display:none}
+.menu .list .msep{border-top:1px solid var(--line);margin:4px 0}
+.scrim{display:none;position:fixed;inset:0;background:rgba(20,15,10,.38);z-index:55}
+.tb .grp{display:inline-flex;gap:2px;align-items:center}
+.tb .btn.ic{padding:5px 8px}
+.tb .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+@media (max-width:760px){
+  body:has(#dlMenu:not(.hidden)) .scrim, body:has(#langPop:not(.hidden)) .scrim{display:block}
+  body:has(#dlMenu:not(.hidden)) .mbar, body:has(#langPop:not(.hidden)) .mbar{display:none}
+  /* bottom sheets */
+  .menu .list{z-index:60;bottom:0!important;left:0!important;right:0!important;border-radius:18px 18px 0 0;padding:6px 8px calc(12px + env(safe-area-inset-bottom));max-height:82vh;box-shadow:0 -10px 40px rgba(20,15,10,.25);animation:sheetIn .2s ease-out}
+  .menu .list .mh{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 8px;font-weight:600;font-size:15px}
+  .menu .list .mh::before{content:"";position:absolute;left:50%;top:6px;width:38px;height:4px;margin-left:-19px;border-radius:4px;background:var(--line-2)}
+  .menu .list .mh{padding-top:16px;position:relative}
+  .menu .list .mh button{width:auto;padding:6px 10px}
+  #verDlg #vAlways{order:5}
+  #vPos{white-space:nowrap;font-size:11px}
+  #verDlg .dh h3{font-size:15px}
+  .rail .rh .lt{display:none} .rail .rh .st{display:inline}
+  .menu .list button{padding:11px 12px;font-size:15px}
+  .menu .list label{padding:10px 12px;font-size:14px}
+  .ms-pop{bottom:0!important;left:0!important;right:0!important;border-radius:18px 18px 0 0;padding:12px 10px calc(10px + env(safe-area-inset-bottom));animation:sheetIn .2s ease-out;box-shadow:0 -10px 40px rgba(20,15,10,.25)}
+  @keyframes sheetIn{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  dialog{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:18px 18px 0 0;border-bottom:0;max-height:94dvh}
+  dialog[open]{display:flex;flex-direction:column}
+  dialog .db{flex:1;max-height:none;min-height:0}
+  .df{border-radius:0;padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
+  .df .btn{flex:1;justify-content:center;min-height:46px}
+  .dh{padding:12px 14px}
+  .db{padding:4px 14px 14px}
+  /* verify */
+  .vkeys{display:none}
+  #verDlg .df{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #verDlg #vApply{grid-column:1/-1;order:-1;font-size:16px}
+  #verDlg #vAlways{grid-column:1/-1;white-space:normal;min-height:40px}
+  .vrow{flex-direction:column;align-items:stretch;gap:10px} #vWord{align-self:center;max-height:110px;width:auto}
+  .vin{min-width:0} #vIn{font-size:24px}
+  #frDlg .df .spacer{display:none}
+  /* toolbars wrap instead of hiding tools off-screen */
+  .imgcard .tb{flex-wrap:wrap;overflow:visible;row-gap:6px}
+  .imgcard .tb>.spacer{display:none}
+  #cropTools{flex-basis:100%;justify-content:space-between}
+  #cropTools .btn{flex:1;justify-content:center;padding-left:4px;padding-right:4px}
+  #cropTools #wholeBtn{flex:2}
+  .imgcard .tb>.seg{margin-left:auto}
+  #areaTools .lbl{display:none}
+  #drawSeg{display:flex;flex-basis:100%}
+  #drawSeg button{flex:1;padding-left:2px;padding-right:2px}
+  #detectBtn{flex:1;justify-content:center}
+  .tabletools{overflow:visible}
+  .result>.tb{flex-wrap:wrap;overflow:visible;row-gap:8px}
+  .result>.tb .tabs{flex-basis:100%;display:grid;grid-template-columns:repeat(3,1fr);background:var(--paper);border-radius:10px;padding:3px}
+  .result>.tb .tabs button{min-height:36px}
+  .result>.tb .tabs button.on{background:var(--panel)}
+  .result>.tb .tabs button.hidden{display:none}
+  .result>.tb>.spacer{display:none}
+  .result>.tb>.btn,.result>.tb>.menu{flex:1}
+  .result>.tb>.menu>.btn{width:100%;justify-content:center}
+  .result>.tb>.btn{justify-content:center}
+  #palBtn{flex:0 0 46px!important}
+  .rail .rh{grid-template-columns:minmax(0,1fr) auto auto}
+  .rail .rh .btn{min-height:36px}
+  .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+  body.drop-open .toast{bottom:24px}
+  .checks input[type=checkbox],.hintbar input[type=checkbox],.bookbar input[type=checkbox]{width:18px;height:18px;flex:none}
+  .checks label{gap:10px}
+  .weak .w{padding:4px 9px;font-size:16px}
+  .sym{width:42px;height:42px}
+  .stats{gap:10px}
+  .hintbar{font-size:12px}
+}
+@media (max-width:760px) and (max-height:480px){ .mbar{padding:6px 12px calc(6px + env(safe-area-inset-bottom))} .mbar .btn{min-height:38px} main{padding-bottom:64px} .cropwrap{height:70vh} header{padding-top:8px} .lede{display:none} }
+@media (max-width:380px){ #cropTools .btn{font-size:13px} .rail .rh{grid-template-columns:minmax(0,1fr) auto} .rail .rh b{grid-column:1/-1} }
 .cropper-view-box{outline:2px solid var(--accent);outline-color:color-mix(in srgb,var(--accent) 85%,transparent)}
 .cropper-line,.cropper-point{background-color:var(--accent)}
 </style>
@@ -290,7 +380,7 @@ dialog.ver{width:min(760px,96vw)}
 <header>
   <a class="brand" href="./"><b>எழுத்து</b><span>OCR</span></a>
   <span class="spacer"></span>
-  <nav><a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a></nav>
+  <nav><button class="iconbtn" type="button" onclick="toggleTheme()" title="Light / dark theme" aria-label="Switch light or dark theme">◐</button></nav>
 </header>
 <div class="secbar" id="secbar" role="status">🔒 Secure connection (HTTPS) is still being set up for this address. If your browser blocks a download, use <b>Copy</b> — or try again later.</div>
 <p class="lede">Tamil, English & Indic image-to-text — single pages or whole books<span class="more-l">, with tables and pictures</span>. Free and unlimited<span class="more-l">: it runs inside your browser, so nothing is uploaded anywhere</span>.</p>
@@ -326,7 +416,7 @@ dialog.ver{width:min(760px,96vw)}
         <b id="docName">Book</b>
         <span id="railSum"></span>
         <button class="btn sm" onclick="addIn.click()">+ Add pages</button>
-        <button class="btn sm ghost" onclick="splitAllWide()" title="Scans that show two book pages side by side are cut into separate pages">⫼ Split 2-page scans</button>
+        <button class="btn sm ghost" onclick="splitAllWide()" title="Scans that show two book pages side by side are cut into separate pages">⫼ <span class="lt">Split 2-page scans</span><span class="st">Split all</span></button>
       </div>
       <div class="pages" id="pages"></div>
       <input type="file" id="addIn" accept="image/*,.pdf" multiple hidden>
@@ -345,12 +435,12 @@ dialog.ver{width:min(760px,96vw)}
           <button id="mAreas" onclick="setMode('areas')">Areas</button>
         </div>
         <span class="spacer"></span>
-        <span id="cropTools" style="display:inline-flex;gap:4px">
-          <button class="btn sm ghost" onclick="rotate(-90)" title="Rotate left">⟲</button>
-          <button class="btn sm ghost" onclick="rotate(90)" title="Rotate right">⟳</button>
-          <button class="btn sm ghost" onclick="splitPage(cur)" title="This scan shows two book pages side by side — cut it into two pages">⫼ Split</button>
-          <button class="btn sm ghost" onclick="zoomBy(.15)" title="Zoom in">＋</button>
-          <button class="btn sm ghost" onclick="zoomBy(-.15)" title="Zoom out">－</button>
+        <span id="cropTools" style="display:inline-flex;gap:2px;align-items:center">
+          <button class="btn sm ghost ic" onclick="rotate(-90)" title="Rotate left" aria-label="Rotate left">⟲</button>
+          <button class="btn sm ghost ic" onclick="rotate(90)" title="Rotate right" aria-label="Rotate right">⟳</button>
+          <button class="btn sm ghost ic" onclick="splitPage(cur)" title="This scan shows two book pages side by side — cut it into two pages" aria-label="Split two-page scan">⫼<span class="spl"> Split</span></button>
+          <button class="btn sm ghost ic" onclick="zoomBy(.15)" title="Zoom in" aria-label="Zoom in">＋</button>
+          <button class="btn sm ghost ic" onclick="zoomBy(-.15)" title="Zoom out" aria-label="Zoom out">－</button>
           <button class="btn sm" id="wholeBtn" onclick="selectAll()" title="Use the whole page">Whole page</button>
         </span>
       </div>
@@ -360,7 +450,7 @@ dialog.ver{width:min(760px,96vw)}
           <button data-t="text">Text</button><button data-t="heading">Heading</button><button data-t="table">Table</button><button data-t="image">Picture</button><button data-t="ignore">Skip</button>
         </div>
         <span class="spacer"></span>
-        <button class="btn sm" id="detectBtn" onclick="detectHere()" title="Find text, headings, tables and pictures on this page">✦ Detect automatically</button>
+        <button class="btn sm" id="detectBtn" onclick="detectHere()" title="Find text, headings, tables and pictures on this page">✦ Detect<span class="dl2"> automatically</span></button>
         <button class="btn sm ghost" onclick="clearAreas()" title="Remove all areas on this page">Clear</button>
       </div>
       <div class="tb tabletools hidden" id="tableTools"></div>
@@ -438,14 +528,14 @@ dialog.ver{width:min(760px,96vw)}
           <div class="tabs" id="tabs">
             <button class="on" data-t="page" onclick="setTab('page')">Text</button>
             <button data-t="preview" onclick="setTab('preview')">Preview</button>
-            <button data-t="book" id="tabBook" onclick="setTab('book')">Whole book</button>
+            <button data-t="book" id="tabBook" onclick="setTab('book')" title="All pages together">Book</button>
           </div>
           <span class="spacer"></span>
           <button class="btn sm" onclick="copyText()">Copy</button>
-          <button class="btn sm ghost" onclick="openFind()" title="Find & replace (Ctrl+H)">Find</button>
+          <button class="btn sm ghost" onclick="openFind()" title="Find & replace (Ctrl+H)" aria-label="Find and replace">🔍︎<span class="fl"> Find</span></button>
           <div class="menu">
             <button class="btn sm" onclick="toggleMenu()">Download ▾</button>
-            <div class="list hidden" id="dlMenu">
+            <div class="list hidden" id="dlMenu" role="menu"><div class="mh">Download as<button class="btn ghost sm" type="button" onclick="toggleMenu()" aria-label="Close">✕</button></div>
               <button onclick="dl('docx')">Word (.docx)<small>Headings, tables and pictures kept</small></button>
               <button onclick="dl('pdf')">Searchable PDF<small>Looks like the scan; text can be searched and copied (text layer from OCR, not your edits)</small></button>
               <button onclick="dl('html')">Web page (.html)<small>One file, pictures included</small></button>
@@ -453,7 +543,7 @@ dialog.ver{width:min(760px,96vw)}
               <button onclick="dl('txt')">Text (.txt)<small>Plain UTF-8; tables tab-separated</small></button>
               <button onclick="dl('md')">Markdown (.md)</button>
               <button onclick="dl('json')">JSON<small>Blocks, text and confidence per page</small></button>
-              <label id="markLbl"><input type="checkbox" id="pageMarks" checked> Page numbers between pages</label>
+              <div class="msep"></div><label id="markLbl"><input type="checkbox" id="pageMarks" checked> Page numbers between pages</label>
               <label><input type="checkbox" id="withPics" checked> Include pictures</label>
             </div>
           </div>
@@ -469,6 +559,7 @@ dialog.ver{width:min(760px,96vw)}
   </section>
 </main>
 
+<div class="scrim" id="scrim" aria-hidden="true"></div>
 <div class="mbar" id="mbar"><div class="mprog" id="mprog"></div><div class="mstat" id="mstat"></div>
   <button class="btn primary" id="mGo" onclick="convertCurrent()">Convert</button>
   <button class="btn" onclick="copyText()">Copy</button>
@@ -824,7 +915,7 @@ function enterWork(){
   ["#rail","#pnav","#bookbar","#sameCropLbl","#tabBook","#markLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
   $("#appendLbl").classList.toggle("hidden", book);
   setGo(false); document.body.classList.remove("drop-open");
-  $("#docName").textContent = docName;
+  $("#docName").textContent = docName; $("#docName").title = docName;
   if (!book && tab==="book") setTab("page");
   setMode(mode, true); renderRail(); sendHeight();
   if (isAuto() && !docLangs){ probeW ||= newWorker("eng"); setProg(0, "Ready — the language will be detected when you convert."); }
@@ -1880,7 +1971,9 @@ function reflow(t){ return t.split(/\n\s*\n/).map(p => p.replace(/(\w)-\n(\w)/g,
 
 /* ===================== downloads ===================== */
 function copyText(){ saveEdits(); const t = tab==="book" ? bookText($("#pageMarks").checked) : out.value; if(t) copy(t); }
-function toggleMenu(){ $("#dlMenu").classList.toggle("hidden"); }
+function toggleMenu(){ const m = $("#dlMenu"); m.classList.toggle("hidden"); m.classList.remove("up");
+  if (!m.classList.contains("hidden") && innerWidth > 760){ const r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 8 && r.top - r.height - 40 > 0) m.classList.add("up"); } if (!m.classList.contains("hidden")) m.querySelector("button[onclick^='dl']")?.focus({preventScroll:true}); }
+document.addEventListener("keydown", e=>{ if (e.key==="Escape" && !$("#dlMenu").classList.contains("hidden")){ $("#dlMenu").classList.add("hidden"); } });
 document.addEventListener("click", e=>{ if(!e.target.closest(".menu")) $("#dlMenu").classList.add("hidden"); });
 function fname(ext){ return `${(docName||"ocr").replace(/[\\/:*?"<>|]+/g,"_")}.${ext}`; }
 function save(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 3000); }
