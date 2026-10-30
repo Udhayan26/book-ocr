@@ -162,8 +162,6 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
   <a class="brand" href="./"><b>எழுத்து</b><span>OCR</span></a>
   <span class="spacer"></span>
   <nav>
-    <a href="#" onclick="embedDlg.showModal();return false">Embed</a>
-    <a href="https://github.com/Udhayan26/book-ocr" target="_blank" rel="noopener">Source</a>
     <a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a>
   </nav>
 </header>
@@ -306,10 +304,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 </main>
 
 <footer>
-  <span>எழுத்து OCR · Tesseract.js (Apache-2.0) · runs locally in your browser · your work is kept in this browser only</span>
-  <span class="spacer"></span>
-  <a href="https://github.com/Udhayan26/book-ocr" target="_blank" rel="noopener">Source on GitHub</a>
-  <a href="#" onclick="embedDlg.showModal();return false">Add to your website</a>
+  <span>எழுத்து OCR · runs locally in your browser · your work is kept in this browser only</span>
 </footer>
 
 <dialog id="embedDlg">
@@ -796,6 +791,7 @@ $("#codeButton").textContent = `<script src="${BASE}embed.js" data-mode="button"
 $("#codeIframe").textContent = `<iframe src="${BASE}?embed=1&lang=tam+eng" style="width:100%;height:820px;border:0"\n  allow="clipboard-write; camera" title="Tamil OCR"></iframe>`;
 $("#codeLink").textContent = `<a href="${BASE}" target="_blank">Tamil OCR — image & book to text</a>`;
 showResume();
+if (location.hash === "#embed") embedDlg.showModal();
 </script>
 </body>
 </html>
