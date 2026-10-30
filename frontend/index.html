@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>எழுத்து · Book OCR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@400;600&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f2ea; --panel:#fffdf8; --ink:#1f1b16; --muted:#6f665a; --line:#e4dccd; --line-2:#d3c8b4;
+  --accent:#b4471f; --accent-ink:#fff; --accent-soft:#f6e3d8;
+  --ok:#2f7a4c; --ok-soft:#dcefe2; --warn:#b07a00; --warn-soft:#f8ecc9; --bad:#b42a2a; --bad-soft:#f7dada;
+  --t-head:#7b3fb0; --t-text:#2563b8; --t-cap:#0f8a85; --t-table:#2f8a3c; --t-img:#d07a12; --t-hf:#8a8a8a;
+  --shadow:0 1px 2px rgba(40,30,10,.06),0 6px 24px rgba(40,30,10,.06);
+  --ta:"IBM Plex Sans","Noto Sans Tamil","Noto Sans Tamil Supplement",sans-serif;
+  --ta-serif:"Noto Serif Tamil","Noto Sans Tamil Supplement",Georgia,serif;
+  --ui:"IBM Plex Sans","Noto Sans Tamil",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
+  --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b;
+  --ok:#6cc08c; --ok-soft:#1d3326; --warn:#e3b44a; --warn-soft:#3a2f14; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+  --t-head:#b98ae6; --t-text:#6fa3ec; --t-cap:#4cc4bd; --t-table:#6cc07a; --t-img:#f0a650; --t-hf:#a0a0a0;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
+}}
+:root[data-theme=dark]{
+  --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
+  --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b;
+  --ok:#6cc08c; --ok-soft:#1d3326; --warn:#e3b44a; --warn-soft:#3a2f14; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+  --t-head:#b98ae6; --t-text:#6fa3ec; --t-cap:#4cc4bd; --t-table:#6cc07a; --t-img:#f0a650; --t-hf:#a0a0a0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.hidden{display:none!important}
+.spacer{flex:1}
+
+header{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:baseline;gap:10px;cursor:pointer}
+.brand b{font:600 22px/1 var(--ta-serif);color:var(--accent)}
+.brand span{font-weight:600;letter-spacing:.02em}
+.crumb{color:var(--muted);font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font:12px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.btn{border:1px solid var(--line-2);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--line)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.xs{padding:2px 7px;font-size:12px;border-radius:6px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:4px 10px;font-size:13px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.seg button:hover:not(.on){background:var(--paper)}
+
+/* library */
+main.lib{max-width:1220px;margin:0 auto;padding:28px 20px 60px;display:grid;grid-template-columns:370px 1fr;gap:28px;align-items:start}
+@media (max-width:900px){main.lib{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.upload{padding:20px;position:sticky;top:76px}
+h2{font:600 15px var(--ui);margin:0 0 14px;letter-spacing:.01em}
+h2 small{color:var(--muted);font-weight:400}
+.drop{border:1.5px dashed var(--line-2);border-radius:12px;padding:22px 14px;text-align:center;cursor:pointer;transition:.15s;background:var(--paper)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .big{font:600 26px var(--ta-serif);color:var(--accent)}
+.drop p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.files{margin-top:10px;font-size:13px;color:var(--muted);max-height:90px;overflow:auto}
+label.f{display:block;margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+input[type=text],input[type=password],select{width:100%;border:1px solid var(--line-2);border-radius:8px;padding:8px 10px;background:var(--paper)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);border-radius:99px;padding:4px 11px;cursor:pointer;font-size:13px;user-select:none;background:var(--paper)}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.auto.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip .ord{font:11px var(--mono);opacity:.7;margin-left:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checks{display:grid;gap:6px;font-size:13px}
+.checks label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.books-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.books{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.book{overflow:hidden;display:flex;flex-direction:column}
+.cover{height:150px;background:var(--paper) center top/cover no-repeat;border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+.cover .st{position:absolute;top:10px;left:10px}
+.bbody{padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.bt{font:600 15px/1.3 var(--ta);cursor:pointer;word-break:break-word}
+.meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.bar i.rev{background:var(--ok)}
+.bactions{display:flex;gap:6px;margin-top:auto;padding-top:6px}
+.tag{font:600 11px var(--ui);padding:2px 8px;border-radius:99px;letter-spacing:.03em;text-transform:uppercase}
+.tag.ocr,.tag.rendering{background:var(--warn-soft);color:var(--warn)}
+.tag.done{background:var(--ok-soft);color:var(--ok)}
+.tag.error,.tag.done_with_errors{background:var(--bad-soft);color:var(--bad)}
+.empty{padding:50px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;font:600 40px var(--ta-serif);color:var(--line-2);margin-bottom:8px}
+
+/* workspace */
+.ws{display:grid;grid-template-columns:180px minmax(0,1fr) minmax(0,1fr);height:calc(100vh - 55px)}
+@media (max-width:1100px){.ws{grid-template-columns:1fr;height:auto}.rail{max-height:200px}}
+.rail{border-right:1px solid var(--line);overflow:auto;background:var(--panel)}
+.rail .sum{padding:12px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);display:grid;gap:6px}
+.pg{display:flex;align-items:center;gap:7px;padding:7px 12px;cursor:pointer;font-size:12px;border-left:3px solid transparent}
+.pg:hover{background:var(--paper)}
+.pg.cur{background:var(--accent-soft);border-left-color:var(--accent)}
+.pg .n{font:500 12px var(--mono);width:32px}
+.pg .ic{color:var(--muted);font-size:11px}
+.pg .c{margin-left:auto;font:12px var(--mono)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);flex:none}
+.dot.done{background:var(--warn)} .dot.rev{background:var(--ok)} .dot.error{background:var(--bad)}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane+.pane{border-left:1px solid var(--line)}
+.tb{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap;min-height:46px}
+.tb .lbl{font-size:12px;color:var(--muted)}
+.viewer{flex:1;overflow:auto;background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px;position:relative;min-height:320px}
+.stage{position:relative;margin:16px auto;box-shadow:var(--shadow);background:#fff;user-select:none}
+.stage.drawing{cursor:crosshair}
+.stage img{display:block;width:100%;height:auto;pointer-events:none}
+.area{position:absolute;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 9%,transparent);cursor:pointer;border-radius:2px}
+.area>span{position:absolute;left:-2px;top:-18px;background:var(--c);color:#fff;font:600 10px/16px var(--ui);padding:0 5px;border-radius:3px 3px 0 0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.area.sel{background:color-mix(in srgb,var(--c) 22%,transparent);outline:2px solid var(--c);outline-offset:2px}
+.area.ignore{border-style:dashed;background:repeating-linear-gradient(45deg,transparent 0 6px,color-mix(in srgb,var(--c) 15%,transparent) 6px 12px)}
+.stage.drawing .area{pointer-events:none}
+.wbox{position:absolute;border-radius:2px;cursor:pointer;pointer-events:auto}
+.wbox.lo{background:rgba(220,40,40,.22);outline:1px solid rgba(200,30,30,.7)}
+.wbox.mid{background:rgba(230,170,0,.18);outline:1px solid rgba(200,140,0,.55)}
+.wbox.flash{animation:fl 1.1s 2}
+@keyframes fl{50%{background:rgba(180,71,31,.6);outline:2px solid var(--accent)}}
+.rubber{position:absolute;border:2px dashed var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);pointer-events:none}
+.legend{display:flex;gap:10px;flex-wrap:wrap;padding:5px 12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);background:var(--panel)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
+
+.tabs{display:flex;gap:2px}
+.tabs button{border:0;background:none;padding:6px 10px;border-radius:7px;cursor:pointer;font-weight:500;color:var(--muted)}
+.tabs button.on{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
+.edbody{flex:1;overflow:auto;background:var(--paper);min-height:300px}
+.blocks{padding:12px;display:grid;gap:10px}
+.blk{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:10px;transition:box-shadow .15s}
+.blk.sel{box-shadow:0 0 0 2px var(--c)}
+.blk .bh{display:flex;align-items:center;gap:6px;padding:6px 8px 4px 10px;font-size:12px;color:var(--muted)}
+.blk .bh select{width:auto;padding:2px 6px;font-size:12px;border-radius:6px;background:var(--paper)}
+.blk .bh .lang{font:11px var(--mono);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+.blk .bh .cf{font:11px var(--mono)}
+.blk .bh .ed{color:var(--warn)}
+.blk textarea{display:block;width:100%;border:0;resize:none;padding:4px 12px 12px;background:transparent;font:16px/1.8 var(--ta);outline:none;overflow:hidden}
+.blk.heading1 textarea{font-size:22px;font-weight:700} .blk.heading2 textarea{font-size:19px;font-weight:600} .blk.heading3 textarea{font-size:17px;font-weight:600}
+.blk.caption textarea{font-style:italic;font-size:14px;text-align:center} .blk.header textarea,.blk.footer textarea{font-size:13px;color:var(--muted)}
+.blk.ignore textarea{opacity:.45;text-decoration:line-through}
+.blk .tw{padding:4px 10px 10px;overflow:auto}
+.blk table{border-collapse:collapse;font:14px/1.5 var(--ta);min-width:100%}
+.blk td{border:1px solid var(--line-2);padding:4px 7px;min-width:60px;vertical-align:top;outline:none}
+.blk td:focus{background:var(--accent-soft)}
+.blk tr:first-child td{font-weight:600;background:var(--paper)}
+.blk .tops{display:flex;gap:4px;padding:0 10px 10px;flex-wrap:wrap}
+.blk .im{padding:4px 12px 12px;text-align:center}
+.blk .im img{max-width:100%;max-height:220px;border:1px solid var(--line);border-radius:4px}
+.preview{padding:28px 34px;background:var(--panel);margin:14px;border-radius:10px;border:1px solid var(--line);font:16px/1.8 var(--ta-serif);min-height:300px}
+.preview h1,.preview h2,.preview h3{font-family:"Noto Sans Tamil",var(--ui);line-height:1.3;margin:.6em 0 .4em}
+.preview h1{font-size:26px}.preview h2{font-size:21px}.preview h3{font-size:18px}
+.preview p{margin:0 0 .8em}
+.preview table{border-collapse:collapse;margin:1em auto;font-size:14px}
+.preview td,.preview th{border:1px solid var(--line-2);padding:4px 9px;text-align:left}
+.preview th{background:var(--paper)}
+.preview figure{margin:1em 0;text-align:center}.preview img{max-width:100%}
+.preview .cap{text-align:center;font-style:italic;font-size:14px;color:var(--muted)}
+.preview .hf{font-size:12px;color:var(--muted)}
+pre.plain{margin:14px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font:15px/1.8 var(--ta);white-space:pre-wrap;word-break:break-word}
+.status{display:flex;gap:14px;padding:6px 12px;border-top:1px solid var(--line);font:12px var(--mono);color:var(--muted);background:var(--panel);flex-wrap:wrap}
+.status .dirty{color:var(--warn)}
+.low{border-top:1px solid var(--line);max-height:120px;overflow:auto;padding:8px 12px;background:var(--panel)}
+.low h4{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600}
+.low .w{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;margin:0 4px 4px 0;cursor:pointer;font:14px var(--ta);background:var(--paper)}
+.low .w small{font:11px var(--mono);color:var(--bad)}
+.palette{border-top:1px solid var(--line);max-height:220px;overflow:auto;padding:10px 12px;background:var(--panel)}
+.palette h5{margin:8px 0 6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sym{display:inline-grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:7px;margin:0 4px 4px 0;cursor:pointer;font:19px "Noto Sans Tamil Supplement","Noto Sans Tamil",serif;background:var(--paper)}
+.sym:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(780px,94vw);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(20,15,10,.45)}
+.dh{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.dh h3{margin:0;font-size:16px}
+.db{padding:16px 18px;max-height:68vh;overflow:auto}
+.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.fmts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:600px){.fmts{grid-template-columns:repeat(2,1fr)}}
+.fmt{border:1.5px solid var(--line-2);border-radius:10px;padding:10px;cursor:pointer;background:var(--paper)}
+.fmt b{display:block;font-size:14px}
+.fmt small{color:var(--muted);font-size:11.5px;line-height:1.35;display:block;margin-top:2px}
+.fmt.on{border-color:var(--accent);background:var(--accent-soft)}
+table.rules{width:100%;border-collapse:collapse;font-size:13px}
+table.rules th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:4px}
+table.rules td{padding:3px 4px}
+table.rules input[type=text]{padding:5px 8px;font-family:var(--ta)}
+pre.code{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;font:12.5px/1.6 var(--mono);overflow:auto;white-space:pre}
+.menu{position:relative;display:inline-block}
+.menu .list{position:absolute;right:0;top:calc(100% + 4px);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:4px;z-index:30;min-width:220px}
+.menu .list button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer}
+.menu .list button:hover{background:var(--paper)}
+.menu .list small{color:var(--muted);display:block;font-size:11px}
+.menu .list hr{border:0;border-top:1px solid var(--line);margin:4px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:13px;z-index:50;box-shadow:var(--shadow)}
+kbd{font:11px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+.busy{position:absolute;inset:0;background:color-mix(in srgb,var(--paper) 60%,transparent);display:grid;place-items:center;font-weight:600;z-index:5}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" onclick="go('')"><b>எழுத்து</b><span>Book OCR</span></div>
+  <div class="crumb" id="crumb"></div>
+  <div class="spacer"></div>
+  <span class="pill" id="engine">…</span>
+  <button class="btn ghost sm" onclick="openRules()" title="Find/replace rules applied after OCR">Rules</button>
+  <button class="btn ghost sm" onclick="openApi()">API</button>
+  <button class="btn ghost sm" onclick="toggleTheme()" title="Light / dark">◐</button>
+</header>
+
+<!-- ============ LIBRARY ============ -->
+<main class="lib" id="libView">
+  <section class="card upload">
+    <h2>New book <small>scanned PDF or page images</small></h2>
+    <div class="drop" id="drop">
+      <div class="big">அ A ▦</div>
+      <p><b>Drop a PDF or scans here</b><br>or click · JPG, PNG, TIFF (multi-page), PDF</p>
+      <input type="file" id="fileIn" multiple accept=".pdf,image/*,.tif,.tiff" hidden>
+    </div>
+    <div class="files" id="fileList"></div>
+    <label class="f">Title</label>
+    <input type="text" id="title" placeholder="e.g. திருக்குறள் உரை">
+    <label class="f">Languages</label>
+    <div class="chips" id="langChips"></div>
+    <div class="hint" id="langHint"></div>
+    <label class="f">Recognise</label>
+    <div class="checks">
+      <label><input type="checkbox" id="optTables" checked> Tables (ruled & borderless)</label>
+      <label><input type="checkbox" id="optImages" checked> Pictures & figures</label>
+      <label><input type="checkbox" id="optRotate" checked> Fix sideways / upside-down pages</label>
+    </div>
+    <div class="row2">
+      <div><label class="f">Page layout</label>
+        <select id="psm">
+          <option value="3">Auto</option>
+          <option value="4">Single column</option>
+          <option value="6">One text block</option>
+          <option value="11">Sparse text</option>
+        </select></div>
+      <div><label class="f">Image clean-up</label>
+        <select id="prep">
+          <option value="auto">Auto</option>
+          <option value="binarize">Old / yellowed</option>
+          <option value="none">None</option>
+        </select></div>
+    </div>
+    <label class="f">PDF render quality</label>
+    <select id="dpi"><option value="300">300 DPI (recommended)</option><option value="400">400 DPI (small print)</option><option value="200">200 DPI (faster)</option></select>
+    <button class="btn primary" style="width:100%;justify-content:center;margin-top:18px;padding:10px" id="startBtn" onclick="upload()">Start OCR</button>
+  </section>
+
+  <section>
+    <div class="books-head"><h2 style="margin:0">Library</h2><span class="pill" id="libStats"></span></div>
+    <div class="books" id="books"></div>
+  </section>
+</main>
+
+<!-- ============ WORKSPACE ============ -->
+<div class="ws hidden" id="wsView">
+  <aside class="rail">
+    <div class="sum" id="bookSum"></div>
+    <div id="pageList"></div>
+  </aside>
+
+  <section class="pane">
+    <div class="tb">
+      <button class="btn sm" onclick="step(-1)" title="Previous page (Alt+←)">‹</button>
+      <span class="lbl" id="pgLbl" style="font-family:var(--mono)"></span>
+      <button class="btn sm" onclick="step(1)" title="Next page (Alt+→)">›</button>
+      <div class="seg" title="What to show on the scan">
+        <button id="ovAreas" onclick="setOverlay('areas')">Areas</button>
+        <button id="ovWords" onclick="setOverlay('words')">Weak words</button>
+        <button id="ovNone" onclick="setOverlay('none')">None</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="lbl">Draw</span>
+      <div class="seg" id="drawSeg" title="Draw an area on the scan to (re)read it">
+        <button data-t="paragraph" style="--c:var(--t-text)" onclick="setTool('paragraph')">Text</button>
+        <button data-t="heading2" onclick="setTool('heading2')">Heading</button>
+        <button data-t="table" onclick="setTool('table')">Table</button>
+        <button data-t="image" onclick="setTool('image')">Picture</button>
+      </div>
+    </div>
+    <div class="viewer" id="viewer"><div class="stage" id="stage"><img id="pimg" alt="page"></div></div>
+    <div class="legend">
+      <span><i style="--c:var(--t-head)"></i>Heading</span><span><i style="--c:var(--t-text)"></i>Text</span>
+      <span><i style="--c:var(--t-cap)"></i>Caption</span><span><i style="--c:var(--t-table)"></i>Table</span>
+      <span><i style="--c:var(--t-img)"></i>Picture</span><span><i style="--c:var(--t-hf)"></i>Header/footer</span>
+      <span class="spacer"></span>
+      <span id="imgKind" style="cursor:pointer;text-decoration:underline" onclick="toggleView()">show processed</span>
+      <span style="cursor:pointer" onclick="zoom(-.15)">−</span><span id="zLbl" style="font-family:var(--mono)">100%</span><span style="cursor:pointer" onclick="zoom(.15)">+</span><span style="cursor:pointer;text-decoration:underline" onclick="fit()">fit</span>
+    </div>
+  </section>
+
+  <section class="pane">
+    <div class="tb">
+      <div class="tabs">
+        <button id="tabBlocks" onclick="setTab('blocks')">Blocks</button>
+        <button id="tabPreview" onclick="setTab('preview')">Preview</button>
+        <button id="tabText" onclick="setTab('text')">Text</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn sm primary" onclick="savePage()" title="Ctrl+S">Save</button>
+      <button class="btn sm" id="revBtn" onclick="toggleReviewed()">Mark reviewed</button>
+      <button class="btn sm" onclick="togglePalette()" id="palBtn" title="Tamil & Tamil Supplement symbols">ௐ</button>
+      <div class="menu">
+        <button class="btn sm" onclick="toggleMenu('reocrMenu')">Re-OCR ▾</button>
+        <div class="list hidden" id="reocrMenu">
+          <button onclick="reocr({langs:['auto']})">Auto-detect language<small>detect again for this page</small></button>
+          <div id="reocrLangs"></div>
+          <hr>
+          <button onclick="reocr({preprocess:'binarize'})">Old / yellowed page mode</button>
+          <button onclick="reocr({psm:4})">Single column layout</button>
+          <button onclick="reocr({detect_tables:false})">Without table detection</button>
+          <button onclick="reocr({auto_rotate:false})">Without auto-rotate</button>
+          <button onclick="reocr({})">Same settings again</button>
+        </div>
+      </div>
+      <button class="btn sm" onclick="openExport()">Export</button>
+    </div>
+    <div class="edbody" id="edbody" style="position:relative">
+      <div class="blocks" id="blocks"></div>
+      <div class="preview hidden" id="preview"></div>
+      <div class="hidden" id="plainWrap"><div style="padding:12px 14px 0"><button class="btn sm" onclick="copyText()">Copy text</button></div><pre class="plain" id="plain"></pre></div>
+    </div>
+    <div class="palette hidden" id="palette">
+      <input type="text" id="symFilter" placeholder="Filter symbols: fraction, rupee, day, measure…" style="margin-bottom:6px">
+      <div id="symList"></div>
+    </div>
+    <div class="low" id="lowBox"></div>
+    <div class="status" id="status"></div>
+  </section>
+</div>
+
+<!-- export dialog -->
+<dialog id="expDlg">
+  <div class="dh"><h3>Export / convert</h3><span class="spacer"></span><button class="btn ghost sm" onclick="expDlg.close()">✕</button></div>
+  <div class="db">
+    <div class="fmts" id="fmts"></div>
+    <div class="row2" style="margin-top:6px">
+      <div><label class="f">Pages</label>
+        <div style="display:flex;gap:6px"><input type="text" id="expPages" placeholder="All pages — or e.g. 1-5, 8"><button class="btn sm" id="expThis" onclick="$('#expPages').value=String(page)">This page</button></div></div>
+      <div><label class="f">Options</label>
+        <div class="checks">
+          <label><input type="checkbox" id="eImages" checked> Include pictures</label>
+          <label><input type="checkbox" id="eHeaders"> Include running headers, footers & page numbers</label>
+          <label><input type="checkbox" id="eLines"> Keep original line breaks <span class="hint" style="margin:0">(poetry, verse)</span></label>
+          <label><input type="checkbox" id="ePB" checked> Start each page on a new page</label>
+        </div></div>
+    </div>
+    <p class="hint" id="expNote"></p>
+  </div>
+  <div class="df"><span class="hint" id="expSum" style="margin:0 auto 0 0"></span><button class="btn" onclick="expDlg.close()">Cancel</button><button class="btn primary" onclick="doExport()">Download</button></div>
+</dialog>
+
+<!-- rules dialog -->
+<dialog id="rulesDlg">
+  <div class="dh"><h3>Replacement rules</h3><span class="spacer"></span><button class="btn ghost sm" onclick="rulesDlg.close()">✕</button></div>
+  <div class="db">
+    <p class="hint" style="margin-top:0">Applied to every block and table cell after OCR. Map characters the engine can't read (e.g. Tamil Supplement fractions) or fix a recurring misread. Blocks you've edited are never touched.</p>
+    <table class="rules"><thead><tr><th>On</th><th>Find</th><th>Replace with</th><th>Regex</th><th>Note</th><th></th></tr></thead><tbody id="rulesBody"></tbody></table>
+    <button class="btn sm" style="margin-top:8px" onclick="addRule()">+ Add rule</button>
+  </div>
+  <div class="df">
+    <button class="btn" id="reapplyBtn" onclick="saveRules(true)">Save & apply to this book</button>
+    <button class="btn primary" onclick="saveRules(false)">Save</button>
+  </div>
+</dialog>
+
+<dialog id="apiDlg">
+  <div class="dh"><h3>Your OCR & conversion API</h3><span class="spacer"></span><button class="btn ghost sm" onclick="apiDlg.close()">✕</button></div>
+  <div class="db" id="apiBody"></div>
+</dialog>
+
+<dialog id="keyDlg">
+  <div class="dh"><h3>API key required</h3></div>
+  <div class="db"><p class="hint">This server is protected. Enter the API_KEY it was started with.</p><input type="password" id="keyIn"></div>
+  <div class="df"><button class="btn primary" onclick="setKey()">Continue</button></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
+let KEY = store.get("ocrKey") || "";
+let INFO = null, SYMBOLS = null, RULES = [];
+let book = null, page = 1, rec = null, blocks = [], dirty = false, scale = 1;
+let overlay = store.get("ocrOverlay") || "areas", tool = null, tab = "blocks", viewKind = "view", selId = null, lastField = null;
+let selLangs = ["auto"], pickedFiles = [], pollT = null, expFmt = "docx", expBook = null;
+
+const TYPES = {heading1:"Heading 1",heading2:"Heading 2",heading3:"Heading 3",paragraph:"Text",caption:"Caption",table:"Table",image:"Picture",header:"Header",footer:"Footer",ignore:"Ignore"};
+const COLOR = t => t.startsWith("heading") ? "var(--t-head)" : t==="caption" ? "var(--t-cap)" : t==="table" ? "var(--t-table)" : t==="image" ? "var(--t-img)" : (t==="header"||t==="footer") ? "var(--t-hf)" : t==="ignore" ? "var(--bad)" : "var(--t-text)";
+const LANGN = {ta:"Tamil",en:"English",hi:"Hindi",ml:"Malayalam",te:"Telugu",kn:"Kannada",bn:"Bengali",gu:"Gujarati",pa:"Punjabi",or:"Odia",si:"Sinhala",ar:"Arabic"};
+const FORMATS = [
+  ["docx","Word","Headings, tables, pictures, alignment — fully editable"],
+  ["xlsx","Excel","Every table on its own sheet, numbers as numbers"],
+  ["pdf","Searchable PDF","Looks like the scan, text selectable & searchable"],
+  ["html","Web page","One file, pictures embedded, Tamil fonts"],
+  ["epub","E-book","EPUB 3 for Kindle apps, Google Play Books, phones"],
+  ["txt","Plain text","UTF-8, tables tab-separated"],
+  ["md","Markdown","Zip with .md + images folder"],
+  ["json","JSON","Blocks, bounding boxes, styles, confidence"],
+];
+
+function qs(){ return KEY ? `key=${encodeURIComponent(KEY)}` : "" }
+async function api(path, opts = {}){
+  opts.headers = Object.assign({}, opts.headers, KEY ? {"X-API-Key":KEY} : {});
+  const r = await fetch(path, opts);
+  if (r.status === 401){ keyDlg.showModal(); throw new Error("auth"); }
+  if (!r.ok){ let m = r.statusText; try{ m = (await r.json()).detail || m }catch{} throw new Error(m); }
+  return r.headers.get("content-type")?.includes("json") ? r.json() : r;
+}
+const jput = (url, body, method="PUT") => api(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+function setKey(){ KEY = $("#keyIn").value.trim(); store.set("ocrKey",KEY); keyDlg.close(); boot(); }
+function toast(msg){ const t = document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.append(t); setTimeout(()=>t.remove(),2400); }
+function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches; r.dataset.theme = dark?"light":"dark"; store.set("ocrTheme",r.dataset.theme); }
+if(store.get("ocrTheme")) document.documentElement.dataset.theme = store.get("ocrTheme");
+const ago = t => { const s=(Date.now()/1000-t)|0; return s<60?"just now":s<3600?`${s/60|0} min ago`:s<86400?`${s/3600|0} h ago`:`${s/86400|0} d ago` };
+const confCol = c => c==null ? "var(--muted)" : c>=85 ? "var(--ok)" : c>=70 ? "var(--warn)" : "var(--bad)";
+const langLabel = l => (l||"").split("+").filter(Boolean).map(x=>LANGN[x]||x).join(" + ");
+
+/* ---------- routing ---------- */
+function go(h){ if(dirty && !confirm("Discard unsaved edits?")) return; dirty=false; location.hash = h; }
+window.addEventListener("hashchange", route);
+async function route(){
+  clearTimeout(pollT);
+  const m = location.hash.match(/^#book\/(\w+)(?:\/(\d+))?/);
+  $("#libView").classList.toggle("hidden", !!m);
+  $("#wsView").classList.toggle("hidden", !m);
+  if (m) await openBook(m[1], +(m[2]||1));
+  else { $("#crumb").textContent=""; book=null; loadLibrary(); }
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  try{
+    INFO = await api("/api/info");
+    $("#engine").textContent = `Tesseract ${INFO.tesseract} · ${INFO.workers} worker${INFO.workers>1?"s":""}`;
+    renderLangs();
+    $("#reocrLangs").innerHTML = INFO.languages.map(l=>`<button onclick="reocr({langs:['${l.code}']})">${esc(l.name)} only</button>`).join("") +
+      (INFO.languages.length>1 ? `<button onclick="reocr({langs:${esc(JSON.stringify(INFO.languages.map(l=>l.code)))}})">All installed together</button>` : "");
+  }catch(e){ $("#engine").textContent = "server offline"; }
+  route();
+}
+function renderLangs(){
+  const box = $("#langChips"); box.innerHTML = "";
+  const auto = selLangs[0]==="auto";
+  const a = document.createElement("span");
+  a.className = "chip auto"+(auto?" on":""); a.textContent = "✦ Auto-detect";
+  a.onclick = ()=>{ selLangs = ["auto"]; renderLangs(); }; box.append(a);
+  INFO.languages.forEach(l=>{
+    const i = auto ? -1 : selLangs.indexOf(l.code), c = document.createElement("span");
+    c.className = "chip"+(i>=0?" on":""); c.innerHTML = esc(l.name)+(i>=0?`<span class="ord">${i+1}</span>`:"");
+    c.onclick = ()=>{ if(auto) selLangs=[]; i>=0 ? selLangs.splice(i,1) : selLangs.push(l.code); if(!selLangs.length) selLangs=["auto"]; renderLangs(); };
+    box.append(c);
+  });
+  $("#langHint").textContent = auto
+    ? `Finds the script on the first pages (from: ${INFO.languages.map(l=>l.name).join(", ")}), re-checks any page that reads poorly.`
+    : `Order = priority · engine string ${selLangs.join("+")}`;
+}
+
+/* ---------- upload ---------- */
+const drop = $("#drop"), fileIn = $("#fileIn");
+drop.onclick = ()=>fileIn.click();
+fileIn.onchange = ()=>pickFiles(fileIn.files);
+drop.ondragover = e=>{e.preventDefault(); drop.classList.add("over")};
+drop.ondragleave = ()=>drop.classList.remove("over");
+drop.ondrop = e=>{e.preventDefault(); drop.classList.remove("over"); pickFiles(e.dataTransfer.files)};
+function pickFiles(fl){
+  pickedFiles = [...fl];
+  $("#fileList").innerHTML = pickedFiles.map(f=>`· ${esc(f.name)} <span style="opacity:.7">${(f.size/1048576).toFixed(1)} MB</span>`).join("<br>");
+  if(!$("#title").value && pickedFiles[0]) $("#title").value = pickedFiles[0].name.replace(/\.[^.]+$/,"");
+}
+async function upload(){
+  if(!pickedFiles.length) return toast("Choose a PDF or images first");
+  const fd = new FormData();
+  pickedFiles.forEach(f=>fd.append("files", f));
+  fd.append("title", $("#title").value); fd.append("langs", selLangs.join("+"));
+  fd.append("psm", $("#psm").value); fd.append("preprocess", $("#prep").value); fd.append("dpi", $("#dpi").value);
+  fd.append("detect_tables", $("#optTables").checked); fd.append("detect_images", $("#optImages").checked); fd.append("auto_rotate", $("#optRotate").checked);
+  const b = $("#startBtn"); b.disabled = true; b.textContent = "Uploading…";
+  try{ await api("/api/books",{method:"POST",body:fd}); pickedFiles=[]; fileIn.value=""; $("#fileList").innerHTML=""; $("#title").value=""; toast("OCR started"); loadLibrary(); }
+  catch(e){ toast("Upload failed: "+e.message) }
+  b.disabled = false; b.textContent = "Start OCR";
+}
+
+/* ---------- library ---------- */
+async function loadLibrary(){
+  let books; try{ books = await api("/api/books") }catch{ return }
+  const box = $("#books");
+  const pages = books.reduce((a,b)=>a+(b.total_pages||0),0), words = books.reduce((a,b)=>a+(b.words||0),0);
+  $("#libStats").textContent = `${books.length} books · ${pages} pages · ${words.toLocaleString()} words`;
+  if(!books.length){ box.innerHTML = `<div class="card empty" style="grid-column:1/-1"><b>நூல்</b>No books yet. Drop a scanned book on the left to begin.</div>`; return; }
+  box.innerHTML = books.map(b=>{
+    const pct = b.total_pages ? Math.round(100*b.done_pages/b.total_pages) : 0;
+    const rpct = b.total_pages ? Math.round(100*b.reviewed_pages/b.total_pages) : 0;
+    const label = {rendering:"Preparing",ocr:`OCR ${pct}%`,done:"Ready",done_with_errors:"Some errors",error:"Failed"}[b.status]||b.status;
+    const cover = b.total_pages ? `style="background-image:url('/api/books/${b.id}/pages/1/image?${qs()}')"` : "";
+    const langs = b.settings.langs[0]==="auto" ? (b.auto_langs ? "auto: "+b.auto_langs.join("+") : "auto-detect") : b.settings.langs.join("+");
+    return `<article class="card book">
+      <div class="cover" ${cover} onclick="go('book/${b.id}')"><span class="tag ${b.status} st">${label}</span></div>
+      <div class="bbody">
+        <div class="bt" onclick="go('book/${b.id}')">${esc(b.title)}</div>
+        <div class="meta"><span>${b.total_pages||"…"} pages</span><span>${esc(langs)}</span>${b.mean_conf!=null?`<span style="color:${confCol(b.mean_conf)}">${b.mean_conf}% conf</span>`:""}</div>
+        <div class="meta"><span>${b.tables} tables</span><span>${b.images} pictures</span><span>${(b.words||0).toLocaleString()} words</span><span>${ago(b.created)}</span></div>
+        <div class="bar" title="OCR progress"><i style="width:${pct}%"></i></div>
+        <div class="bar" title="Reviewed pages"><i class="rev" style="width:${rpct}%"></i></div>
+        <div class="meta"><span>${b.reviewed_pages}/${b.total_pages||0} reviewed</span>${b.error?`<span style="color:var(--bad)">${esc(b.error)}</span>`:""}</div>
+        <div class="bactions">
+          <button class="btn sm primary" onclick="go('book/${b.id}')">Review</button>
+          <button class="btn sm" onclick='openExport(${JSON.stringify({id:b.id,title:b.title,total_pages:b.total_pages})})'>Export</button>
+          <span class="spacer"></span>
+          <button class="btn sm ghost" title="Delete" onclick="delBook('${b.id}')">🗑</button>
+        </div>
+      </div></article>`;
+  }).join("");
+  if(books.some(b=>["rendering","ocr"].includes(b.status))) pollT = setTimeout(loadLibrary, 2500);
+}
+async function delBook(id){ if(!confirm("Delete this book and all its OCR results?")) return; await api(`/api/books/${id}`,{method:"DELETE"}); loadLibrary(); }
+
+/* ---------- workspace ---------- */
+async function openBook(id, n){
+  try{ book = await api(`/api/books/${id}`) }catch(e){ toast(e.message); return go("") }
+  $("#crumb").textContent = "/ " + book.title;
+  setOverlay(overlay, true); setTab(tab, true);
+  renderRail();
+  await loadPage(Math.min(Math.max(1,n), book.total_pages||1));
+  if(["rendering","ocr"].includes(book.status)) pollT = setTimeout(refreshBook, 3000);
+}
+async function refreshBook(){
+  if(!book) return;
+  try{ book = await api(`/api/books/${book.id}`) }catch{ return }
+  renderRail();
+  if(!rec && book.pages[page-1]?.status==="done") loadPage(page);
+  if(["rendering","ocr"].includes(book.status)) pollT = setTimeout(refreshBook, 3000);
+}
+function renderRail(){
+  const ps = book.pages, done = ps.filter(p=>p.status==="done"), rev = ps.filter(p=>p.reviewed);
+  const avg = done.length ? (done.reduce((a,p)=>a+p.mean_conf,0)/done.length).toFixed(1) : "–";
+  const langs = book.settings.langs[0]==="auto" ? `Auto → ${book.auto_langs ? book.auto_langs.join("+") : "detecting…"}` : book.settings.langs.join("+");
+  $("#bookSum").innerHTML = `<div><b style="color:var(--ink)">${done.length}/${book.total_pages}</b> read · <b style="color:var(--ink)">${rev.length}</b> reviewed</div>
+    <div class="bar"><i class="rev" style="width:${book.total_pages?100*rev.length/book.total_pages:0}%"></i></div>
+    <div>Avg confidence <b style="color:${confCol(+avg)}">${avg}%</b></div>
+    <div title="Languages">${esc(langs)}</div>
+    <button class="btn sm" onclick="nextLow()">Next weak page →</button>`;
+  $("#pageList").innerHTML = ps.map(p=>`<div class="pg ${p.page===page?"cur":""}" onclick="pick(${p.page})" title="${p.langs?p.langs.join('+'):''}${p.rotate?' · rotated '+p.rotate+'°':''}">
+     <span class="dot ${p.reviewed?"rev":p.status}"></span><span class="n">p.${p.page}</span>
+     <span class="ic">${p.tables?"▦":""}${p.images?"▣":""}${p.rotate?"↻":""}${p.edited?"✎":""}</span>
+     <span class="c" style="color:${confCol(p.mean_conf)}">${p.mean_conf!=null?Math.round(p.mean_conf)+"%":p.status==="error"?"err":"…"}</span></div>`).join("");
+}
+function pick(n){ if(dirty && !confirm("Discard unsaved edits on this page?")) return; dirty=false; history.replaceState(null,"",`#book/${book.id}/${n}`); loadPage(n); }
+function step(d){ const n = page+d; if(n>=1 && n<=book.total_pages) pick(n); }
+function nextLow(){
+  const c = book.pages.filter(p=>p.status==="done" && !p.reviewed).sort((a,b)=>a.mean_conf-b.mean_conf)[0];
+  c ? pick(c.page) : toast("Every page read so far is reviewed 🎉");
+}
+async function loadPage(n){
+  page = n; rec = null; blocks = []; selId = null; renderRail();
+  $("#pgLbl").textContent = `${n} / ${book.total_pages||"?"}`;
+  try{ rec = await api(`/api/books/${book.id}/pages/${n}`) }catch{ rec = null }
+  blocks = rec ? structuredClone(rec.blocks) : [];
+  dirty = false; updateRevBtn(); renderEditor(); renderLow(); renderStatus(); showImage();
+}
+function setRec(r){ rec = r; blocks = structuredClone(r.blocks); dirty=false; updateRevBtn(); renderEditor(); renderLow(); renderStatus(); drawOverlay(); syncRail(); }
+function syncRail(){ const p = book.pages[page-1]; if(!p||!rec) return; Object.assign(p,{status:"done",mean_conf:rec.mean_conf,reviewed:rec.reviewed,tables:blocks.filter(b=>b.type==="table").length,images:blocks.filter(b=>b.type==="image").length,edited:blocks.some(b=>b.edited),langs:rec.langs,rotate:rec.rotate}); renderRail(); }
+
+/* ---------- scan view & overlays ---------- */
+function showImage(){
+  const img = $("#pimg");
+  img.onload = ()=>{ if(img.dataset.fit!=="0") fit(); else applyZoom(); drawOverlay(); };
+  img.src = `/api/books/${book.id}/pages/${page}/image?kind=${viewKind}&${qs()}&t=${rec?rec.updated:Date.now()}`;
+  $("#imgKind").textContent = viewKind==="view" ? "show processed" : "show colour";
+}
+function toggleView(){ viewKind = viewKind==="view" ? "processed" : "view"; showImage(); }
+function setOverlay(o, quiet){ overlay = o; store.set("ocrOverlay", o); ["Areas","Words","None"].forEach(k=>$("#ov"+k).classList.toggle("on", o===k.toLowerCase())); if(!quiet) drawOverlay(); }
+function pct(v, total){ return (100*v/total)+"%" }
+function drawOverlay(){
+  const st = $("#stage"); st.querySelectorAll(".area,.wbox").forEach(b=>b.remove());
+  if(!rec) return;
+  const [W,H] = rec.size;
+  if(overlay==="areas"){
+    blocks.forEach(b=>{
+      const d = document.createElement("div");
+      d.className = "area"+(b.id===selId?" sel":"")+(b.type==="ignore"?" ignore":""); d.dataset.id = b.id;
+      d.style.cssText = `--c:${COLOR(b.type)};left:${pct(b.bbox[0],W)};top:${pct(b.bbox[1],H)};width:${pct(b.bbox[2],W)};height:${pct(b.bbox[3],H)}`;
+      d.innerHTML = `<span>${TYPES[b.type]||b.type}</span>`;
+      d.onclick = e=>{ e.stopPropagation(); selectBlock(b.id, true); };
+      st.append(d);
+    });
+  } else if(overlay==="words"){
+    rec.words.forEach((w,i)=>{
+      if(w.conf>=85 || w.conf<0) return;
+      const d = document.createElement("div");
+      d.className = "wbox "+(w.conf<70?"lo":"mid"); d.dataset.i=i;
+      d.style.cssText = `left:${pct(w.box[0],W)};top:${pct(w.box[1],H)};width:${pct(w.box[2],W)};height:${pct(w.box[3],H)}`;
+      d.title = `${w.text} — ${w.conf}%`; d.onclick = ()=>findWord(w.text);
+      st.append(d);
+    });
+  }
+}
+function zoom(d){ scale = Math.min(4, Math.max(.15, scale+d)); $("#pimg").dataset.fit="0"; applyZoom(); }
+function fit(){ const img=$("#pimg"), v=$("#viewer"); if(!img.naturalWidth) return; scale = Math.min(1.5,(v.clientWidth-32)/img.naturalWidth); img.dataset.fit="1"; applyZoom(); }
+function applyZoom(){ const img=$("#pimg"); $("#stage").style.width = (img.naturalWidth*scale)+"px"; $("#zLbl").textContent = Math.round(scale*100)+"%"; }
+window.addEventListener("resize", ()=>{ if($("#pimg").dataset.fit==="1") fit() });
+
+/* ---------- drawing areas ---------- */
+function setTool(t){
+  tool = tool===t ? null : t;
+  document.querySelectorAll("#drawSeg button").forEach(b=>b.classList.toggle("on", b.dataset.t===tool));
+  $("#stage").classList.toggle("drawing", !!tool);
+  if(tool){ if(overlay!=="areas") setOverlay("areas"); toast(`Drag on the scan to read that area as ${TYPES[tool]}. Esc to cancel.`); }
+}
+(function(){
+  const st = $("#stage"); let start=null, rb=null;
+  const pos = e => { const r = st.getBoundingClientRect(); return [Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)), Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))]; };
+  st.addEventListener("mousedown", e=>{
+    if(!tool || !rec) return; e.preventDefault(); start = pos(e);
+    rb = document.createElement("div"); rb.className="rubber"; rb.style.setProperty("--c", COLOR(tool)); st.append(rb);
+  });
+  window.addEventListener("mousemove", e=>{
+    if(!start) return; const p = pos(e);
+    const [x0,y0] = [Math.min(start[0],p[0]), Math.min(start[1],p[1])], [x1,y1] = [Math.max(start[0],p[0]), Math.max(start[1],p[1])];
+    Object.assign(rb.style,{left:x0*100+"%",top:y0*100+"%",width:(x1-x0)*100+"%",height:(y1-y0)*100+"%"});
+  });
+  window.addEventListener("mouseup", async e=>{
+    if(!start) return; const p = pos(e), s = start; start = null; rb.remove();
+    const [W,H] = rec.size;
+    const bbox = [Math.min(s[0],p[0])*W, Math.min(s[1],p[1])*H, Math.abs(p[0]-s[0])*W, Math.abs(p[1]-s[1])*H].map(Math.round);
+    if(bbox[2]<15 || bbox[3]<15) return;
+    await readRegion({type:tool, bbox});
+  });
+})();
+async function readRegion(body){
+  if(dirty && !confirm("Unsaved edits on this page will be lost. Continue?")) return;
+  busy(true);
+  try{ const r = await jput(`/api/books/${book.id}/pages/${page}/region`, body, "POST"); setRec(r); selectBlock(r.new_block, true); toast(`Read as ${TYPES[body.type]}`); }
+  catch(e){ toast(e.message) }
+  busy(false);
+}
+function busy(on, msg="Reading…"){ const eb=$("#edbody"); eb.querySelector(".busy")?.remove(); if(on){ const d=document.createElement("div"); d.className="busy"; d.textContent=msg; eb.append(d);} }
+
+/* ---------- editor ---------- */
+function setTab(t, quiet){ tab=t; ["blocks","preview","text"].forEach(k=>$("#tab"+k[0].toUpperCase()+k.slice(1)).classList.toggle("on",k===t));
+  $("#blocks").classList.toggle("hidden",t!=="blocks"); $("#preview").classList.toggle("hidden",t!=="preview"); $("#plainWrap").classList.toggle("hidden",t!=="text");
+  if(!quiet) renderEditor(); }
+function renderEditor(){
+  if(tab==="preview") return renderPreview();
+  if(tab==="text") return ($("#plain").textContent = plainText());
+  const box = $("#blocks");
+  if(!rec){
+    const st = book.pages[page-1]?.status;
+    box.innerHTML = `<div class="empty" style="padding:40px">${st==="error"?"OCR failed on this page — try Re-OCR.":"Waiting for OCR… this page is in the queue."}</div>`; return;
+  }
+  if(!blocks.length){ box.innerHTML = `<div class="empty" style="padding:40px">No text found. Draw an area on the scan to read it.</div>`; return; }
+  box.innerHTML = "";
+  blocks.forEach((b,i)=>box.append(blockCard(b,i)));
+  box.querySelectorAll("textarea").forEach(autosize);
+}
+function blockCard(b, i){
+  const el = document.createElement("div");
+  el.className = `blk ${b.type}${b.id===selId?" sel":""}`; el.dataset.id = b.id; el.style.setProperty("--c", COLOR(b.type));
+  const opts = Object.entries(TYPES).filter(([k])=> b.type==="table"||b.type==="image" ? k===b.type||k==="ignore" : k!=="table"&&k!=="image")
+    .map(([k,v])=>`<option value="${k}" ${k===b.type?"selected":""}>${v}</option>`).join("");
+  const st = b.style||{};
+  el.innerHTML = `<div class="bh">
+      <select title="Block type">${opts}</select>
+      ${b.lang?`<span class="lang" title="${esc(langLabel(b.lang))}">${esc(b.lang)}</span>`:""}
+      ${b.conf!=null?`<span class="cf" style="color:${confCol(b.conf)}">${Math.round(b.conf)}%</span>`:""}
+      ${st.size&&b.type!=="table"&&b.type!=="image"?`<span class="cf">${st.size}pt${st.bold?" B":""} · ${st.align||""}</span>`:""}
+      ${b.edited?`<span class="ed" title="edited">✎</span>`:""}
+      <span class="spacer"></span>
+      <button class="btn ghost xs" title="Move up" ${i===0?"disabled":""} data-a="up">↑</button>
+      <button class="btn ghost xs" title="Move down" ${i===blocks.length-1?"disabled":""} data-a="down">↓</button>
+      ${b.type!=="image"?`<button class="btn ghost xs" title="Read this area again" data-a="reread">⟳</button>`:""}
+      <button class="btn ghost xs" title="Delete block" data-a="del">✕</button>
+    </div>`;
+  if(b.type==="table"){
+    const w = document.createElement("div"); w.className="tw";
+    const t = document.createElement("table");
+    b.rows.forEach((r,ri)=>{ const tr=t.insertRow(); r.forEach((c,ci)=>{ const td=tr.insertCell(); td.contentEditable="true"; td.innerText=c;
+      td.oninput=()=>{ b.rows[ri][ci]=td.innerText.replace(/\n$/,""); markDirty(b); }; td.onfocus=()=>{ lastField=td; selectBlock(b.id); }; }); });
+    w.append(t); el.append(w);
+    const ops = document.createElement("div"); ops.className="tops";
+    ops.innerHTML = `<button class="btn xs" data-t="addr">+ row</button><button class="btn xs" data-t="addc">+ column</button><button class="btn xs" data-t="delr">− last row</button><button class="btn xs" data-t="delc">− last column</button><button class="btn xs" data-t="hdr" title="Merge first two rows into the header">merge header rows</button>`;
+    ops.onclick = e=>{ const a=e.target.dataset.t; if(!a) return; const nc=b.rows[0]?.length||1;
+      if(a==="addr") b.rows.push(Array(nc).fill("")); if(a==="addc") b.rows.forEach(r=>r.push("")); if(a==="delr"&&b.rows.length>1) b.rows.pop(); if(a==="delc"&&nc>1) b.rows.forEach(r=>r.pop());
+      if(a==="hdr"&&b.rows.length>2){ const [r0,r1]=b.rows; b.rows.splice(0,2,r0.map((c,i)=>[c,r1[i]].filter(Boolean).join(" "))); }
+      markDirty(b); renderEditor(); };
+    el.append(ops);
+  } else if(b.type==="image"){
+    el.insertAdjacentHTML("beforeend", `<div class="im"><img src="/api/books/${book.id}/figures/${encodeURIComponent(b.image)}?${qs()}" alt=""></div>`);
+  } else {
+    const ta = document.createElement("textarea"); ta.value = b.text; ta.spellcheck=false; ta.lang = (b.lang||"").split("+")[0];
+    if(st.align==="center"&&b.type!=="paragraph") ta.style.textAlign="center";
+    ta.oninput = ()=>{ b.text = ta.value; autosize(ta); markDirty(b); };
+    ta.onfocus = ()=>{ lastField=ta; selectBlock(b.id); };
+    el.append(ta);
+  }
+  el.querySelector("select").onchange = e=>{ b.type = e.target.value; markDirty(b); renderEditor(); drawOverlay(); };
+  el.querySelector(".bh").onclick = e=>{
+    const a = e.target.closest("button")?.dataset.a; if(!a) return selectBlock(b.id, false);
+    if(a==="up"||a==="down"){ const j = a==="up"?i-1:i+1; [blocks[i],blocks[j]]=[blocks[j],blocks[i]]; dirty=true; renderEditor(); renderStatus(); }
+    if(a==="del"){ blocks.splice(i,1); dirty=true; renderEditor(); drawOverlay(); renderStatus(); }
+    if(a==="reread") readRegion({type:b.type==="ignore"?"paragraph":b.type, bbox:b.bbox, replace:b.id});
+  };
+  return el;
+}
+function autosize(ta){ ta.style.height="auto"; ta.style.height=(ta.scrollHeight+2)+"px"; }
+function markDirty(b){ b.edited = true; dirty = true; renderStatus(); }
+function selectBlock(id, scrollEditor){
+  selId = id;
+  document.querySelectorAll(".blk").forEach(e=>e.classList.toggle("sel", e.dataset.id===id));
+  document.querySelectorAll(".area").forEach(e=>e.classList.toggle("sel", e.dataset.id===id));
+  if(scrollEditor){ if(tab!=="blocks") setTab("blocks"); document.querySelector(`.blk[data-id="${id}"]`)?.scrollIntoView({block:"center",behavior:"smooth"}); }
+  const ar = document.querySelector(`.area[data-id="${id}"]`); if(ar && !scrollEditor) ar.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"});
+}
+function plainText(){
+  return blocks.filter(b=>b.type!=="ignore").map(b=> b.type==="table" ? b.rows.map(r=>r.join("\t")).join("\n") : b.type==="image" ? "[Picture]" : b.text).join("\n\n");
+}
+function renderPreview(){
+  const out = blocks.filter(b=>b.type!=="ignore").map(b=>{
+    const st=b.style||{}, la=(b.lang||"").split("+")[0], al = st.align&&st.align!=="left"?` style="text-align:${st.align}"`:"";
+    const flow = b.type==="paragraph"||b.type==="caption";  // reflow like the exports do
+    const t = flow ? esc((b.text||"").replace(/(\w)-\n(\w)/g,"$1$2").replace(/\s*\n\s*/g," ")) : esc(b.text||"").replace(/\n/g,"<br>");
+    if(b.type.startsWith("heading")){ const n=b.type.slice(-1); return `<h${n} lang="${la}"${al}>${t}</h${n}>`; }
+    if(b.type==="table") return `<table lang="${la}">${b.rows.map((r,i)=>"<tr>"+r.map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join("")+"</tr>").join("")}</table>`;
+    if(b.type==="image") return `<figure><img src="/api/books/${book.id}/figures/${encodeURIComponent(b.image)}?${qs()}"></figure>`;
+    if(b.type==="caption") return `<p class="cap" lang="${la}">${t}</p>`;
+    if(b.type==="header"||b.type==="footer") return `<p class="hf"${al}>${t}</p>`;
+    return `<p lang="${la}"${al}${st.bold?' style="font-weight:600"':''}>${t}</p>`;
+  }).join("");
+  $("#preview").innerHTML = out || `<p class="hf">Nothing on this page yet.</p>`;
+}
+function copyText(){ navigator.clipboard?.writeText(plainText()).then(()=>toast("Copied")); }
+
+function renderLow(){
+  const box = $("#lowBox");
+  if(!rec){ box.innerHTML=""; return; }
+  const low = rec.words.map((w,i)=>({...w,i})).filter(w=>w.conf>=0 && w.conf<70).sort((a,b)=>a.conf-b.conf).slice(0,50);
+  box.innerHTML = low.length ? `<h4>Check these words (${low.length}) — click to locate</h4>` + low.map(w=>`<span class="w" onclick="locate(${w.i})">${esc(w.text)}<small>${Math.round(w.conf)}</small></span>`).join("")
+    : `<h4 style="margin:0;color:var(--ok)">No low-confidence words on this page.</h4>`;
+}
+function locate(i){
+  const w = rec.words[i];
+  if(overlay!=="words") setOverlay("words");
+  setTimeout(()=>{ const el = document.querySelector(`.wbox[data-i="${i}"]`); if(el){ el.scrollIntoView({block:"center",inline:"center",behavior:"smooth"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),2400);} },50);
+  findWord(w.text);
+}
+function findWord(word){
+  if(tab!=="blocks") setTab("blocks");
+  for(const ta of document.querySelectorAll(".blk textarea, .blk td")){
+    const v = ta.value ?? ta.innerText, i = v.indexOf(word);
+    if(i<0) continue;
+    ta.closest(".blk").scrollIntoView({block:"center",behavior:"smooth"});
+    if(ta.setSelectionRange){ ta.focus(); ta.setSelectionRange(i, i+word.length); } else ta.focus();
+    return;
+  }
+}
+function renderStatus(){
+  if(!rec){ $("#status").innerHTML=""; return; }
+  const t = plainText(), nb = blocks.length, nt = blocks.filter(b=>b.type==="table").length, ni = blocks.filter(b=>b.type==="image").length;
+  $("#status").innerHTML = `<span>${nb} blocks${nt?` · ${nt} table${nt>1?"s":""}`:""}${ni?` · ${ni} picture${ni>1?"s":""}`:""}</span><span>${t.split(/\s+/).filter(Boolean).length} words</span>
+     <span style="color:${confCol(rec.mean_conf)}">conf ${rec.mean_conf}%</span><span title="${rec.auto_lang?"auto-detected":"chosen"}">${rec.auto_lang?"auto ":""}${rec.langs.join("+")}</span>
+     ${rec.rotate?`<span>↻ ${rec.rotate}°</span>`:""}${rec.deskew?`<span>deskew ${rec.deskew}°</span>`:""}<span>${rec.seconds}s</span>
+     ${dirty?'<span class="dirty">● unsaved</span>':""}<span class="spacer"></span><span><kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Alt</kbd>+<kbd>→</kbd> next</span>`;
+}
+function updateRevBtn(){ const r = rec && rec.reviewed; $("#revBtn").textContent = r ? "✓ Reviewed" : "Mark reviewed"; $("#revBtn").classList.toggle("on", !!r); }
+async function savePage(extra = {}){
+  if(!rec) return;
+  const body = Object.assign({blocks: blocks.map(b=>({id:b.id,type:b.type,text:b.text,rows:b.rows,style:b.style}))}, extra);
+  try{ const r = await jput(`/api/books/${book.id}/pages/${page}`, body); const keepSel = selId; setRec(r); selId = keepSel;
+    toast("reviewed" in extra ? (extra.reviewed ? "Saved & marked reviewed" : "Unmarked") : "Saved"); }
+  catch(e){ toast("Save failed: "+e.message) }
+}
+async function toggleReviewed(){ const r = !rec?.reviewed; await savePage({reviewed:r}); if(r && page<book.total_pages) pick(page+1); }
+async function reocr(opts){
+  toggleMenu();
+  if(dirty && !confirm("Re-OCR replaces your unsaved edits on this page. Continue?")) return;
+  busy(true, "Running OCR…");
+  try{ const r = await jput(`/api/books/${book.id}/pages/${page}/reocr`, opts, "POST"); setRec(r); showImage(); toast(`Page re-read · ${r.langs.join("+")} · ${r.mean_conf}%`); }
+  catch(e){ toast("OCR failed: "+e.message) }
+  busy(false);
+}
+function toggleMenu(id){ document.querySelectorAll(".menu .list").forEach(l=>{ if(l.id!==id) l.classList.add("hidden") }); if(id) $("#"+id).classList.toggle("hidden"); }
+document.addEventListener("click", e=>{ if(!e.target.closest(".menu")) toggleMenu(); });
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && tool) setTool(tool);
+  if($("#wsView").classList.contains("hidden")) return;
+  if((e.ctrlKey||e.metaKey) && e.key==="s"){ e.preventDefault(); savePage(); }
+  if(e.altKey && e.key==="ArrowRight"){ e.preventDefault(); step(1); }
+  if(e.altKey && e.key==="ArrowLeft"){ e.preventDefault(); step(-1); }
+});
+window.addEventListener("beforeunload", e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+/* ---------- symbols ---------- */
+async function togglePalette(){
+  const p = $("#palette"); p.classList.toggle("hidden"); $("#palBtn").classList.toggle("on", !p.classList.contains("hidden"));
+  if(!SYMBOLS){ SYMBOLS = await api("/api/symbols"); renderSymbols(); }
+}
+function renderSymbols(){
+  const q = $("#symFilter").value.toLowerCase();
+  $("#symList").innerHTML = SYMBOLS.map(g=>{
+    const items = g.symbols.filter(s=>!q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.char===q);
+    return items.length ? `<h5>${esc(g.group)}</h5>` + items.map(s=>`<span class="sym" title="${esc(s.name)} (${s.code})" onmousedown="event.preventDefault();insertSym('${s.char}')">${s.char}</span>`).join("") : "";
+  }).join("") || `<span class="hint">No symbol matches “${esc(q)}”.</span>`;
+}
+$("#symFilter").addEventListener("input", renderSymbols);
+function insertSym(ch){
+  const f = lastField; if(!f || !document.body.contains(f)) return toast("Click into a text block or table cell first");
+  if(f.tagName==="TEXTAREA"){ f.setRangeText(ch, f.selectionStart, f.selectionEnd, "end"); f.focus(); f.dispatchEvent(new Event("input")); }
+  else { f.focus(); document.execCommand("insertText", false, ch); }
+}
+
+/* ---------- export ---------- */
+function openExport(b){
+  expBook = b || {id:book.id,title:book.title,total_pages:book.total_pages};
+  $("#fmts").innerHTML = FORMATS.map(([k,t,d])=>`<div class="fmt ${k===expFmt?"on":""}" data-k="${k}"><b>${t}</b><small>${d}</small></div>`).join("");
+  $("#fmts").onclick = e=>{ const f=e.target.closest(".fmt"); if(!f) return; expFmt=f.dataset.k; openExport(expBook); };
+  $("#expThis").classList.toggle("hidden", !b && !book ? true : !!b);
+  const textOnly = ["txt","json","pdf"].includes(expFmt);
+  $("#eImages").disabled = textOnly; $("#eLines").disabled = ["xlsx","pdf","json"].includes(expFmt);
+  $("#expNote").textContent = {pdf:"Searchable PDF keeps the scanned look; the hidden text layer comes from the OCR engine (edits in the dashboard are not included — use Word/HTML for edited text).",
+    xlsx:"Tables go to their own sheets; all other text is listed on the Content sheet.", md:"Downloads a .zip containing book.md and an images folder."}[expFmt] || "";
+  $("#expSum").textContent = `${expBook.title} · ${expBook.total_pages} pages`;
+  if(!expDlg.open) expDlg.showModal();
+}
+function doExport(){
+  if(dirty) savePage();
+  const p = new URLSearchParams({format:expFmt, pages:$("#expPages").value.trim(), images:$("#eImages").checked, headers:$("#eHeaders").checked, line_breaks:$("#eLines").checked, page_breaks:$("#ePB").checked});
+  if(KEY) p.set("key", KEY);
+  location.href = `/api/books/${expBook.id}/export?${p}`;
+  expDlg.close(); toast("Preparing download…");
+}
+
+/* ---------- rules ---------- */
+async function openRules(){ RULES = await api("/api/rules"); renderRules(); $("#reapplyBtn").classList.toggle("hidden", !book); rulesDlg.showModal(); }
+function renderRules(){
+  $("#rulesBody").innerHTML = RULES.map((r,i)=>`<tr>
+    <td><input type="checkbox" ${r.enabled!==false?"checked":""} onchange="RULES[${i}].enabled=this.checked"></td>
+    <td><input type="text" value="${esc(r.find)}" oninput="RULES[${i}].find=this.value"></td>
+    <td><input type="text" value="${esc(r.replace)}" oninput="RULES[${i}].replace=this.value"></td>
+    <td><input type="checkbox" ${r.regex?"checked":""} onchange="RULES[${i}].regex=this.checked"></td>
+    <td><input type="text" value="${esc(r.note||"")}" oninput="RULES[${i}].note=this.value"></td>
+    <td><button class="btn ghost sm" onclick="RULES.splice(${i},1);renderRules()">✕</button></td></tr>`).join("");
+}
+function addRule(){ RULES.push({find:"",replace:"",regex:false,enabled:true,note:""}); renderRules(); }
+async function saveRules(apply){
+  await jput("/api/rules", RULES.filter(r=>r.find));
+  if(apply && book){ const r = await api(`/api/books/${book.id}/reapply-rules`,{method:"POST"}); toast(`Rules applied to ${r.updated_blocks} unedited blocks`); loadPage(page); }
+  else toast("Rules saved — used for all new OCR");
+  rulesDlg.close();
+}
+
+/* ---------- API help ---------- */
+function openApi(){
+  const o = location.origin, k = INFO?.auth ? ` \\\n  -H "X-API-Key: YOUR_KEY"` : "";
+  $("#apiBody").innerHTML = `<p style="margin-top:0">Everything in this dashboard is a REST API on your own machine — no quotas, no per-page fees. Interactive docs: <a href="/docs" target="_blank">${o}/docs</a></p>
+  <h4>Convert in one call (scan → Word / Excel / HTML / EPUB / searchable PDF)</h4>
+  <pre class="code">curl -X POST ${o}/api/convert${k} \\
+  -F file=@scan.pdf -F format=docx -F langs=auto \\
+  -o scan.docx</pre>
+  <h4>OCR → JSON with layout blocks (headings, tables, pictures)</h4>
+  <pre class="code">curl -X POST ${o}/api/ocr${k} \\
+  -F file=@page.jpg -F langs=auto</pre>
+  <h4>Queue a whole book, then export a page range</h4>
+  <pre class="code">curl -X POST ${o}/api/books${k} \\
+  -F files=@book.pdf -F title="My book" -F langs=tam+eng
+curl -OJ "${o}/api/books/BOOK_ID/export?format=xlsx&pages=10-20"${k}</pre>
+  <h4>Python</h4>
+  <pre class="code">import requests
+r = requests.post("${o}/api/convert",
+    files={"file": open("scan.pdf", "rb")},
+    data={"format": "docx", "langs": "auto"}${INFO?.auth?`,
+    headers={"X-API-Key": "YOUR_KEY"}`:""})
+open("scan.docx", "wb").write(r.content)</pre>`;
+  apiDlg.showModal();
+}
+boot();
+</script>
+</body>
+</html>

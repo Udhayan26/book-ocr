@@ -1,0 +1,14 @@
+services:
+  book-ocr:
+    build:
+      context: .
+      args:
+        LANGS: "tam eng"          # e.g. "tam eng hin mal tel kan san"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data              # books, page images, OCR text and rules live here
+    environment:
+      OCR_WORKERS: "2"            # pages processed in parallel (≈ CPU cores / 2)
+      API_KEY: ""                 # set a secret to protect the API if exposed on a network
+    restart: unless-stopped

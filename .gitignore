@@ -1,0 +1,13 @@
+# runtime data (books, page images, OCR results)
+data/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
