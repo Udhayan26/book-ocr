@@ -124,11 +124,27 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .opts{padding:16px}
 label.f{display:block;margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:9px;padding:9px 10px;background:var(--paper)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line-2);border-radius:99px;padding:4px 11px;cursor:pointer;font-size:13.5px;user-select:none;background:var(--paper);display:inline-flex;gap:5px;align-items:center}
-.chip .tk{display:inline-grid;place-items:center;width:15px;height:15px;border:1.5px solid var(--line-2);border-radius:4px;font-size:10px;line-height:1}
-.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.chip.on .tk{border-color:var(--paper);background:var(--paper);color:var(--ink);font:700 10px var(--mono)}
+.ms{position:relative}
+.ms-btn{width:100%;display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;min-height:42px;background:var(--paper);cursor:pointer;text-align:left}
+.ms-btn:hover,.ms.open .ms-btn{border-color:var(--ink)}
+.ms-btn .tags{display:flex;gap:5px;flex-wrap:wrap;min-width:0;flex:1}
+.ms-btn .tg{background:var(--ink);color:var(--paper);border-radius:6px;padding:1px 8px;font-size:13.5px;white-space:nowrap}
+.ms-btn .tg.auto{background:var(--accent);color:var(--accent-ink)}
+.ms-btn .tg.found{background:var(--accent-soft);color:var(--ink)}
+.ms-btn .caret{color:var(--muted);font-size:12px}
+.ms-pop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:0 10px 32px rgba(30,20,10,.18);padding:8px}
+.ms-pop input[type=text]{margin-bottom:6px;padding:7px 10px}
+.ms-list{max-height:min(330px,50vh);overflow:auto}
+.ms-opt{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:14px}
+.ms-opt:hover,.ms-opt.kb{background:var(--paper)}
+.ms-opt input{width:16px;height:16px;accent-color:var(--accent);flex:none;margin:0}
+.ms-opt .nm{flex:1;display:flex;justify-content:space-between;gap:8px;min-width:0}
+.ms-opt .nm small{color:var(--muted)}
+.ms-opt .ord{font:11px var(--mono);background:var(--ink);color:var(--paper);border-radius:4px;padding:0 5px}
+.ms-opt.auto .nm{display:block}.ms-opt.auto .nm small{display:block;font-size:12px;margin-top:1px}
+.ms-sep{border-top:1px solid var(--line);margin:5px 0}
+.ms-grp{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px 2px}
+.ms-foot{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:8px;margin-top:6px}
 .langhint{font-size:12.5px;color:var(--muted);margin-top:6px}
 .langhint.warn{color:var(--warn)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -280,15 +296,25 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 
     <div class="side">
       <div class="card opts">
-        <label class="f">Languages on this page <span style="text-transform:none;font-weight:400">— tick all that appear</span></label>
-        <div class="chips" id="langChips"></div>
+        <label class="f" id="langLbl">Language</label>
+        <div class="ms" id="langMs">
+          <button type="button" class="ms-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="langLbl"><span class="tags" id="langTags"></span><span class="caret">▾</span></button>
+          <div class="ms-pop hidden" id="langPop">
+            <input type="text" id="langQ" placeholder="Search language…" autocomplete="off">
+            <div class="ms-list" id="langList" role="listbox" aria-multiselectable="true"></div>
+            <div class="ms-foot"><button type="button" class="btn sm ghost" id="langReset">✦ Back to auto-detect</button><span class="spacer"></span><button type="button" class="btn sm primary" id="langDone">Done</button></div>
+          </div>
+        </div>
         <div class="langhint" id="langHint"></div>
         <div class="grid2">
           <div><label class="f" for="psm">Layout</label>
             <select id="psm">
               <option value="3">Auto</option>
-              <option value="6">One block of text</option>
               <option value="4">Single column</option>
+              <option value="col2">Two columns</option>
+              <option value="col3">Three columns</option>
+              <option value="colauto">Multi-column (find columns)</option>
+              <option value="6">One block of text</option>
               <option value="7">Single line</option>
               <option value="11">Scattered text</option>
             </select></div>
@@ -395,44 +421,139 @@ function toggleTheme(){ const r=document.documentElement; const dark = r.dataset
 ["psm","prep"].forEach(id=>{ const v = store.get("ez_"+id); if(v && [...$("#"+id).options].some(o=>o.value===v)) $("#"+id).value = v; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.value)); });
 ["keepLines","append","pageMarks","withPics","autoLayout"].forEach(id=>{ const v = store.get("ez_"+id); if(v!==null) $("#"+id).checked = v==="1"; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.checked?"1":"0")); });
 
-/* ===================== languages (multi-select) ===================== */
-const LANGS = [["tam","Tamil","தமிழ்"],["eng","English","English"],["san","Sanskrit","संस्कृतम्"],["hin","Hindi","हिन्दी"],["mar","Marathi","मराठी"],
-  ["mal","Malayalam","മലയാളം"],["tel","Telugu","తెలుగు"],["kan","Kannada","ಕನ್ನಡ"],["ben","Bengali","বাংলা"],["guj","Gujarati","ગુજરાતી"],
-  ["pan","Punjabi","ਪੰਜਾਬੀ"],["ori","Odia","ଓଡ଼ିଆ"],["sin","Sinhala","සිංහල"],["urd","Urdu","اردو"],["ara","Arabic","العربية"],["fra","French","Français"],["deu","German","Deutsch"]];
+/* ===================== languages: multi-select dropdown + auto-detect ===================== */
+const LANGS = [["tam","Tamil","தமிழ்","in"],["eng","English","English","w"],["san","Sanskrit","संस्कृतम्","in"],["hin","Hindi","हिन्दी","in"],["mar","Marathi","मराठी","in"],
+  ["mal","Malayalam","മലയാളം","in"],["tel","Telugu","తెలుగు","in"],["kan","Kannada","ಕನ್ನಡ","in"],["ben","Bengali","বাংলা","in"],["guj","Gujarati","ગુજરાતી","in"],
+  ["pan","Punjabi","ਪੰਜਾਬੀ","in"],["ori","Odia","ଓଡ଼ିଆ","in"],["sin","Sinhala","සිංහල","in"],["urd","Urdu","اردو","in"],["ara","Arabic","العربية","w"],["fra","French","Français","w"],["deu","German","Deutsch","w"]];
 const LNAME = Object.fromEntries(LANGS.map(([c,n])=>[c,n]));
-let langSel = (params.get("lang") || store.get("ez_langs") || "tam+eng").split(/[+,]/).filter(c=>LNAME[c]);
-if (!langSel.length) langSel = ["tam","eng"];
-function langStr(){ return langSel.join("+"); }
+/* langSel = [] means auto-detect (the default) */
+let langSel = (params.get("lang") || store.get("ez_langs") || "auto").split(/[+,]/).filter(c=>LNAME[c]);
+let docLangs = null;                                         // what auto-detect found for this document
+const isAuto = () => !langSel.length;
+const effLangs = () => isAuto() ? (docLangs || ["eng"]) : langSel;
+const langStr = () => effLangs().join("+");
+const rtl = () => effLangs().some(c=>c==="urd"||c==="ara");
+const names = a => a.map(c=>LNAME[c]).join(" + ");
+let msKb = -1;
 function renderLangs(){
-  const box = $("#langChips");
-  box.innerHTML = LANGS.map(([c,n,native])=>{ const i = langSel.indexOf(c);
-    return `<span class="chip${i>=0?" on":""}" data-c="${c}" title="${native}"><span class="tk">${i>=0?i+1:""}</span>${n}</span>`; }).join("");
+  const q = $("#langQ").value.trim().toLowerCase();
+  const match = ([c,n,nat]) => !q || n.toLowerCase().includes(q) || nat.toLowerCase().includes(q) || c.startsWith(q);
+  const opt = ([c,n,nat]) => { const i = langSel.indexOf(c);
+    return `<label class="ms-opt" role="option" aria-selected="${i>=0}" data-c="${c}"><input type="checkbox" ${i>=0?"checked":""} tabindex="-1"><span class="nm"><span>${n}</span><small>${nat!==n?nat:""}</small></span>${i>=0?`<span class="ord" title="Priority">${i+1}</span>`:""}</label>`; };
+  const indian = LANGS.filter(l=>l[3]==="in" && match(l)), world = LANGS.filter(l=>l[3]==="w" && match(l));
+  $("#langList").innerHTML = (!q || "auto detect".includes(q) ? `<label class="ms-opt auto" role="option" aria-selected="${isAuto()}" data-c="auto"><input type="checkbox" ${isAuto()?"checked":""} tabindex="-1"><span class="nm"><b>✦ Auto-detect language</b><small>${docLangs?`Found: ${names(docLangs)}. `:""}Finds the script on the first page; re-checks pages that read poorly.</small></span></label><div class="ms-sep"></div>` : "")
+    + (indian.length ? `<div class="ms-grp">Indian</div>` + indian.map(opt).join("") : "")
+    + (world.length ? `<div class="ms-grp">Other</div>` + world.map(opt).join("") : "")
+    + (!indian.length && !world.length ? `<div class="ms-grp" style="text-transform:none">No language matches “${esc(q)}”</div>` : "");
+  $("#langTags").innerHTML = isAuto()
+    ? `<span class="tg auto">✦ Auto-detect</span>` + (docLangs ? docLangs.map(c=>`<span class="tg found" title="Detected">${LNAME[c]}</span>`).join("") : "")
+    : (langSel.length <= 4 ? langSel.map(c=>`<span class="tg">${LNAME[c]}</span>`).join("") : `<span class="tg">${langSel.length} languages</span>`);
   const h = $("#langHint");
   h.classList.toggle("warn", langSel.length > 3);
-  h.textContent = langSel.length > 3 ? `Reading with ${langSel.length} languages is slower and less accurate — tick only the ones on the page.`
-    : `Reading as ${langSel.map(c=>LNAME[c]).join(" + ")}. The number shows priority (first ticked = main language).`;
+  h.textContent = isAuto() ? (docLangs ? `Detected ${names(docLangs)} for this document. Pick languages yourself to override.` : "The language is found automatically when you convert the first page.")
+    : langSel.length > 3 ? `Reading with ${langSel.length} languages is slower and less accurate — pick only the ones on the page.`
+    : `Reading as ${names(langSel)}${langSel.length>1?" · the number is the priority (first = main language)":""}.`;
+  msKb = -1;
 }
-$("#langChips").addEventListener("click", e=>{
-  const c = e.target.closest(".chip")?.dataset.c; if(!c) return;
-  const i = langSel.indexOf(c);
-  if (i>=0){ if(langSel.length===1) return toast("Keep at least one language"); langSel.splice(i,1); } else langSel.push(c);
-  store.set("ez_langs", langStr()); renderLangs();
-  if (pages.length) getPool(1).catch(()=>{});
+function setLangs(next){
+  langSel = next; store.set("ez_langs", isAuto() ? "auto" : langSel.join("+")); renderLangs();
+  if (pages.length && (!isAuto() || docLangs)) getPool(1).catch(()=>{});
+}
+function toggleLang(c){
+  if (c === "auto") return setLangs([]);
+  const i = langSel.indexOf(c), next = [...langSel];
+  i>=0 ? next.splice(i,1) : next.push(c);
+  setLangs(next);                                   // unticking the last language falls back to auto-detect
+}
+function openMs(open){
+  const ms = $("#langMs"); open = open ?? !ms.classList.contains("open");
+  ms.classList.toggle("open", open); $("#langPop").classList.toggle("hidden", !open); $("#langBtn").setAttribute("aria-expanded", open);
+  if (open){ $("#langQ").value = ""; renderLangs(); setTimeout(()=>$("#langQ").focus(), 0); }
+}
+$("#langBtn").onclick = ()=>openMs();
+$("#langDone").onclick = ()=>openMs(false);
+$("#langReset").onclick = ()=>{ setLangs([]); };
+$("#langQ").addEventListener("input", renderLangs);
+$("#langList").addEventListener("click", e=>{ const o = e.target.closest(".ms-opt"); if(!o) return; e.preventDefault(); toggleLang(o.dataset.c); });
+$("#langPop").addEventListener("keydown", e=>{
+  const opts = [...document.querySelectorAll("#langList .ms-opt")];
+  if (e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); msKb = Math.max(0, Math.min(opts.length-1, msKb + (e.key==="ArrowDown"?1:-1))); opts.forEach((o,i)=>o.classList.toggle("kb", i===msKb)); opts[msKb]?.scrollIntoView({block:"nearest"}); }
+  else if (e.key==="Enter" && msKb>=0){ e.preventDefault(); const c = opts[msKb].dataset.c, k = msKb; toggleLang(c); msKb = k; document.querySelectorAll("#langList .ms-opt")[k]?.classList.add("kb"); }
+  else if (e.key==="Escape"){ e.stopPropagation(); openMs(false); $("#langBtn").focus(); }
 });
+document.addEventListener("click", e=>{ if (!e.composedPath().some(n=>n.id==="langMs")) openMs(false); });   // composedPath: the clicked option may have been re-drawn
 renderLangs();
+
+/* auto-detect: try script models on a reduced page, keep the one that reads best (+ English if present) */
+const SCRIPT = {tam:"ta",hin:"dev",san:"dev",mar:"dev",mal:"ml",tel:"te",kan:"kn",ben:"bn",guj:"gu",pan:"pa",ori:"or",sin:"si",urd:"ar",ara:"ar",eng:"lat",fra:"lat",deu:"lat"};
+const RANGES = [["ta",0x0B80,0x0BFF],["ta",0x11FC0,0x11FFF],["dev",0x0900,0x097F],["bn",0x0980,0x09FF],["pa",0x0A00,0x0A7F],["gu",0x0A80,0x0AFF],["or",0x0B00,0x0B7F],["te",0x0C00,0x0C7F],["kn",0x0C80,0x0CFF],["ml",0x0D00,0x0D7F],["si",0x0D80,0x0DFF],["ar",0x0600,0x06FF]];
+function scriptOf(ch){ const o = ch.codePointAt(0); for (const [k,a,b] of RANGES) if (o>=a && o<=b) return k; return /[A-Za-z]/.test(ch) ? "lat" : null; }
+const PROBES = ["tam","hin","mal","tel","kan","ben","guj","pan","ori","sin","urd"];
+let probeW = null, probeLock = Promise.resolve();
+function detectLangs(canvas){ const run = probeLock.then(()=>_detect(canvas)); probeLock = run.catch(()=>{}); return run; }
+async function _detect(canvas){
+  const k = Math.min(1, 1300/canvas.width), sm = document.createElement("canvas");
+  sm.width = Math.round(canvas.width*k); sm.height = Math.round(canvas.height*k*0.88);
+  sm.getContext("2d").drawImage(canvas, 0, canvas.height*0.06, canvas.width, canvas.height*0.88, 0, 0, sm.width, sm.height);   // skip running header/footer
+  probeW ||= Tesseract.createWorker("eng", 1);
+  const w = await probeW;
+  const score = async l => {
+    if (!batch.running) setProg(.03, `Detecting language… checking ${LNAME[l]}`);
+    await w.reinitialize(l, 1);
+    await w.setParameters({ tessedit_pageseg_mode: "3" });
+    const { data } = await w.recognize(sm, {}, { blocks:true });
+    const words = (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines).flatMap(l=>l.words);
+    let s = 0, n = 0, sum = 0;
+    for (const wd of words){ if (wd.confidence < 50) continue; const sc = [...wd.text].map(scriptOf).filter(Boolean);
+      if (sc.length && sc.filter(x=>x===SCRIPT[l]).length / sc.length > 0.6){ s += wd.confidence*sc.length; n++; sum += wd.confidence; } }
+    return { s, n, mean: n ? sum/n : 0, all: words.length };
+  };
+  const lat = await score("eng");
+  if (lat.n >= 10 && lat.n >= 0.85*lat.all && lat.mean >= 80) return ["eng"];       // a plain English page
+  let best = null;
+  for (const l of PROBES){
+    const r = await score(l);
+    if (r.n >= 3 && (!best || r.s > best.s)) best = {l, ...r};
+    if (r.n >= 12 && r.mean >= 75) break;                                            // clearly found — stop early
+  }
+  const out = best ? [best.l] : [];
+  if (lat.n >= 3 || !out.length) out.push("eng");
+  return out;
+}
+async function ensureLangs(p, f){
+  if (!isAuto() || docLangs) return;
+  const c = sub(await fullCanvas(p), f || p.crop || globalCrop || {x:0,y:0,w:1,h:1});
+  docLangs = await detectLangs(c);
+  renderLangs(); saveSoon();
+  setProg(.05, `Detected ${names(docLangs)} — loading…`);
+}
+/* read a page; in auto mode re-check the language of pages that read poorly */
+async function readAuto(w, p, live){
+  let r = await readPage(w, p, live); r.langs = poolLangs;
+  if (isAuto() && docLangs && r.conf != null && r.conf < 60 && (r.text||"").trim()){
+    const alt = await detectLangs(sub(await fullCanvas(p), live || p.crop || globalCrop || {x:0,y:0,w:1,h:1}));
+    if (alt.join("+") !== docLangs.join("+")){
+      const tw = await Tesseract.createWorker(alt, 1);
+      try{ const r2 = await readPage(tw, p, live); if ((r2.conf||0) > r.conf + 5){ r = r2; r.langs = alt.join("+"); } }
+      finally{ tw.terminate(); }
+    }
+  }
+  return r;
+}
 
 /* ===================== saved work (IndexedDB) ===================== */
 const idb = (()=>{ let dbp; const open = ()=> dbp ||= new Promise((ok,err)=>{ const r = indexedDB.open("ezhuthu-ocr",1); r.onupgradeneeded=()=>r.result.createObjectStore("docs"); r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); });
   const tx = async (m, fn) => { const db = await open(); return new Promise((ok,err)=>{ const t = db.transaction("docs",m); const req = fn(t.objectStore("docs")); t.oncomplete=()=>ok(req && req.result); t.onerror=()=>err(t.error); }); };
   return { get:k=>tx("readonly",s=>s.get(k)).catch(()=>null), put:(k,v)=>tx("readwrite",s=>s.put(v,k)).catch(()=>{}), all:()=>tx("readonly",s=>s.getAll()).catch(()=>[]) }; })();
 let saveT = null;
-function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(()=>idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop,
+function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(()=>idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs,
   pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null}))}), 700); }
 async function restore(){
   const rec = docKey && await idb.get(docKey);
   if (!rec || rec.total !== pages.length) return;
   rec.pages.forEach((r,i)=>Object.assign(pages[i], r));
   if (rec.globalCrop){ globalCrop = rec.globalCrop; $("#sameCrop").checked = true; }
+  if (rec.docLangs){ docLangs = rec.docLangs; renderLangs(); }
   const n = rec.pages.filter(p=>p.status==="done").length;
   if (n) toast(`Restored your earlier work: ${n} page${n>1?"s":""} already read`);
 }
@@ -465,7 +586,7 @@ async function openFiles(files, append = false){
   files = files.filter(f=>f && (f.type.startsWith("image/") || f.type==="application/pdf" || /\.(pdf|tiff?)$/i.test(f.name||"")));
   if (!files.length) return toast("Please choose images or a PDF");
   files.sort((a,b)=>(a.name||"").localeCompare(b.name||"", undefined, {numeric:true}));
-  if (!append){ stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; $("#sameCrop").checked = false; out.value = ""; }
+  if (!append){ stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; docLangs = null; renderLangs(); $("#sameCrop").checked = false; out.value = ""; }
   const startLen = pages.length;
   for (const f of files){
     if (f.type === "application/pdf" || /\.pdf$/i.test(f.name||"")){
@@ -499,7 +620,8 @@ function enterWork(){
   $("#docName").textContent = docName;
   if (!book && tab==="book") setTab("page");
   setMode(mode, true); renderRail(); sendHeight();
-  getPool(1).catch(()=>{});
+  if (isAuto() && !docLangs){ probeW ||= Tesseract.createWorker("eng", 1); setProg(0, "Ready — the language will be detected when you convert."); }
+  else getPool(1).catch(()=>{});
 }
 function reset(){
   if (batch.running && !confirm("Reading is still running. Stop and close?")) return;
@@ -729,8 +851,8 @@ async function getPool(n){
   if (poolLangs !== langs){ const old = pool; pool = []; poolLangs = langs; old.forEach(p=>p.then(w=>w.terminate()).catch(()=>{})); }
   while (pool.length < n){
     const first = pool.length === 0;
-    if (first) setProg(0, `Loading ${langSel.map(c=>LNAME[c]).join(" + ")}…`);
-    const wp = Tesseract.createWorker(langSel, 1, {
+    if (first) setProg(0, `Loading ${names(effLangs())}…`);
+    const wp = Tesseract.createWorker(effLangs(), 1, {
       logger: m => { if(!first) return;
         if (m.status === "recognizing text" && busyOne) setProg(m.progress, `Reading text… ${Math.round(m.progress*100)}%`);
         else if (/load|initializ/.test(m.status) && !batch.running && !busyOne) setProg(m.progress||0, m.status.replace(/^./, c=>c.toUpperCase()) + "…"); }
@@ -756,7 +878,7 @@ function otsu(hist, total){ let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t]; le
   for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t]; const mB=sB/wB, mF=(sum-sB)/wF, b=wB*wF*(mB-mF)*(mB-mF); if(b>max){max=b;thr=t;} } return thr; }
 /* run Tesseract; returns words with boxes in the source canvas' pixels */
 async function ocr(worker, canvas, psm){
-  await worker.setParameters({ tessedit_pageseg_mode: String(psm || $("#psm").value), preserve_interword_spaces: "1", user_defined_dpi: "300" });
+  await worker.setParameters({ tessedit_pageseg_mode: String(psm || basePsm()), preserve_interword_spaces: "1", user_defined_dpi: "300" });
   const pc = preprocess(canvas, $("#prep").value), k = pc.k;
   const { data } = await worker.recognize(pc, {}, { text:true, blocks:true });
   const paras = [];
@@ -816,7 +938,7 @@ function findPictures(B, words, exclude){
   const {w,h,ink,gray,s} = B, cs = Math.max(6, Math.round(w/110)), gw = Math.ceil(w/cs), gh = Math.ceil(h/cs);
   const mask = new Uint8Array(w*h);
   const blank = (x0,y0,x1,y1) => { for(let y=Math.max(0,y0|0); y<Math.min(h,y1); y++) mask.fill(1, y*w+Math.max(0,x0|0), y*w+Math.min(w,Math.ceil(x1))); };
-  words.forEach(t=>{ if (t.conf>=45 && /[^\W\d_]/u.test(t.text)) blank(t.box.x*s-2, t.box.y*s-2, (t.box.x+t.box.w)*s+2, (t.box.y+t.box.h)*s+2); });
+  words.forEach(t=>{ if (t.conf>=45 && /[\p{L}\p{M}]/u.test(t.text)) blank(t.box.x*s-2, t.box.y*s-2, (t.box.x+t.box.w)*s+2, (t.box.y+t.box.h)*s+2); });
   exclude.forEach(b=>blank(b.x0, b.y0, b.x1, b.y1));
   const cell = new Uint8Array(gw*gh);
   for (let gy=0; gy<gh; gy++) for (let gx=0; gx<gw; gx++){
@@ -833,7 +955,7 @@ function findPictures(B, words, exclude){
     const bw = b.x1-b.x0, bh = b.y1-b.y0;
     if (bw*bh < 0.012*w*h || bw < 0.08*w || bh < 0.05*h || cnt < 0.25*((x1-x0+1)*(y1-y0+1))) continue;
     const inside = words.filter(t=>{ const cx=(t.box.x+t.box.w/2)*s, cy=(t.box.y+t.box.h/2)*s; return cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1; });
-    const good = inside.filter(t=>t.conf>=60 && /[^\W\d_]/u.test(t.text));
+    const good = inside.filter(t=>t.conf>=60 && /[\p{L}\p{M}]/u.test(t.text));
     if (good.length > 8 && good.length > inside.length*0.5) continue;
     boxes.push(b);
   }
@@ -885,8 +1007,8 @@ const cleanTable = t => finishText(t);
 function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createElement("canvas"); o.width = Math.round(c.width*k); o.height = Math.round(c.height*k); o.getContext("2d").drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg", 0.85); }
 
 /* auto layout of one (cropped) canvas -> areas + blocks, all in that canvas' pixels */
-async function autoLayout(worker, c){
-  const r = await ocr(worker, c, 3);
+async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true){
+  const r = await ocr(worker, c, psm);
   const B = binarize(c), L = lineSegs(B), T = findTables(B, L), s = B.s;
   const tables = [];
   for (const t of T){
@@ -912,11 +1034,22 @@ async function autoLayout(worker, c){
   const bodyH = median(hAll.length ? hAll : r.paras.flatMap(p=>p.lines.map(l=>l.box.h))) || 1;
   const text = r.paras.filter(p=>!taken.some(b=>inBox(p.box, b)) && p.text.trim()).map(p=>{
     const lh = median(p.lines.map(l=>median(l.words.map(w=>w.box.h)))), nW = p.lines.reduce((a,l)=>a+l.words.length,0);
-    const edge = (p.box.y + p.box.h < c.height*0.07 || p.box.y > c.height*0.93) && nW <= 12;
+    const edge = ((edgeTop && p.box.y + p.box.h < c.height*0.07) || (edgeBottom && p.box.y > c.height*0.93)) && nW <= 12;   // running header / page number
     const type = edge ? "ignore" : (lh/bodyH >= 1.28 && p.lines.length <= 3 && nW <= 18) ? "heading" : "text";
     const confs = p.lines.flatMap(l=>l.words.map(w=>w.conf));
     return {type, box:p.box, text: type==="heading" ? p.text.replace(/\s*\n\s*/g," ") : finishText(p.text), conf: confs.length ? confs.reduce((a,b)=>a+b,0)/confs.length : 0};
   });
+  // re-join a paragraph Tesseract split mid-sentence (common in narrow, justified columns)
+  for (let i = text.length-1; i > 0; i--){
+    const a = text[i-1], b = text[i];
+    if (a.type!=="text" || b.type!=="text" || /[.!?।॥:;”"'’)\]]\s*$/.test(a.text)) continue;
+    const gap = b.box.y - (a.box.y + a.box.h);
+    if (gap > -5 && gap < bodyH*1.1 && Math.abs(b.box.x - a.box.x) < c.width*0.06){
+      a.text = $("#keepLines").checked ? a.text + "\n" + b.text : a.text.replace(/-$/, "") + (/-$/.test(a.text) ? "" : " ") + b.text;
+      a.box = {x:Math.min(a.box.x,b.box.x), y:a.box.y, w:Math.max(a.box.x+a.box.w, b.box.x+b.box.w)-Math.min(a.box.x,b.box.x), h:b.box.y+b.box.h-a.box.y};
+      a.conf = (a.conf + b.conf)/2; text.splice(i, 1);
+    }
+  }
   const order = [...text];
   for (const o of [...tables, ...pics].sort((a,b)=>a.box.y-b.box.y)){
     let pos = order.findIndex(t=> t.box.y >= o.box.y && Math.min(t.box.x+t.box.w, o.box.x+o.box.w) - Math.max(t.box.x, o.box.x) > 0);
@@ -926,6 +1059,65 @@ async function autoLayout(worker, c){
   return { blocks: order, conf: r.conf, words: r.words.filter(wd=>!pics.some(b=>inBox(wd.box, b.box))) };
 }
 const inBox = (b, o) => { const cx = b.x+b.w/2, cy = b.y+b.h/2; return cx>=o.x && cx<=o.x+o.w && cy>=o.y && cy<=o.y+o.h; };
+
+/* ===================== layout setting & columns ===================== */
+const layoutVal = () => $("#psm").value;
+const basePsm = () => /^\d+$/.test(layoutVal()) ? layoutVal() : "4";
+const colMode = () => layoutVal()==="colauto" ? "auto" : layoutVal().startsWith("col") ? +layoutVal().slice(3) : null;
+/* split a page into reading-order regions: full-width bands (titles, wide pictures) and columns */
+function columnRegions(c, want, rightToLeft){
+  const B = binarize(c, 1200), {w,h,ink} = B;
+  let top = -1, bot = -1;
+  for (let y=0;y<h && top<0;y++) for (let x=0;x<w;x++) if (ink[y*w+x]){ top = y; break; }
+  for (let y=h-1;y>=0 && bot<0;y--) for (let x=0;x<w;x++) if (ink[y*w+x]){ bot = y; break; }
+  if (top < 0) return [{x:0,y:0,w:1,h:1}];
+  const rows = bot-top+1, hit = new Uint32Array(w);              // rows with ink at x (dilated ±2px)
+  for (let y=top;y<=bot;y++){ let last = -9; for (let x=0;x<w;x++){ if (ink[y*w+x]){ for (let k=Math.max(last+1, x-2); k<=Math.min(w-1, x+2); k++) hit[k]++; last = Math.min(w-1, x+2); } } }
+  const frac = x => hit[x]/rows;
+  let xl = 0; while (xl<w && frac(xl) < 0.08) xl++;
+  let xr = w-1; while (xr>0 && frac(xr) < 0.08) xr--;
+  if (xr - xl < w*0.2) return [{x:0,y:0,w:1,h:1}];
+  const runs = []; let i = xl;                                   // white vertical gutters between xl and xr
+  while (i <= xr){ if (frac(i) < 0.08){ let j = i; while (j<=xr && frac(j) < 0.08) j++; if (j-i >= Math.max(5, w*0.012)) runs.push({a:i, b:j-1, m:(i+j-1)/2}); i = j; } else i++; }
+  let gut;
+  if (want === "auto") gut = runs.filter(r=>r.m > xl+(xr-xl)*0.12 && r.m < xr-(xr-xl)*0.12).slice(0, 4);
+  else {
+    gut = [];
+    for (let k=1;k<want;k++){
+      const ex = xl + (xr-xl)*k/want, near = runs.filter(r=>Math.abs(r.m-ex) < (xr-xl)*0.12).sort((p,q)=>Math.abs(p.m-ex)-Math.abs(q.m-ex))[0];
+      if (near) gut.push(near);
+      else { let bx = ex, bv = 2; for (let x=Math.round(ex-(xr-xl)*0.1); x<=ex+(xr-xl)*0.1; x++) if (x>xl && x<xr && frac(x) < bv){ bv = frac(x); bx = x; } gut.push({a:bx-2, b:bx+2, m:bx}); }
+    }
+  }
+  if (!gut.length) return [{x:0,y:0,w:1,h:1}];
+  gut.sort((p,q)=>p.m-q.m);
+  // rows where something crosses a gutter = a full-width band (title, wide picture, table)
+  const span = new Uint8Array(h);
+  for (let y=top;y<=bot;y++) for (const g of gut){ const a = Math.round(g.a+1), b = Math.round(g.b-1); for (let x=a; x<=Math.max(a,b); x++) if (ink[y*w+x]){ span[y] = 1; break; } if (span[y]) break; }
+  const gap = Math.max(4, Math.round(h*0.012));                  // join spanning rows of one title
+  for (let y=top, last=-1; y<=bot; y++) if (span[y]){ if (last>=0 && y-last <= gap) for (let k=last+1;k<y;k++) span[k] = 1; last = y; }
+  // grow full-width bands to cover tall vowel signs / descenders above and below the crossing rows
+  const ext = Math.max(3, Math.round(h*0.012)), grown = new Uint8Array(h);
+  for (let y=top;y<=bot;y++) if (span[y]) for (let k=Math.max(top,y-ext); k<=Math.min(bot,y+ext); k++) grown[k] = 1;
+  let bands = []; let y = top;
+  while (y <= bot){ const s0 = grown[y]; let e = y; while (e<=bot && grown[e]===s0) e++; bands.push({full: !!s0, y0:y, y1:e-1}); y = e; }
+  // a column band thinner than a text line is a cut-off piece of a neighbouring band
+  const minH = Math.round(h*0.013);
+  bands = bands.reduce((acc, bd) => { const prev = acc[acc.length-1];
+    if (prev && (!bd.full && bd.y1-bd.y0 < minH || !prev.full && prev.y1-prev.y0 < minH)){ prev.y1 = bd.y1; prev.full = prev.full || bd.full; return acc; }
+    acc.push({...bd}); return acc; }, []);
+  const has = (x0,x1,y0,y1) => { for (let yy=y0; yy<=y1; yy++) for (let xx=Math.max(0,x0); xx<=Math.min(w-1,x1); xx++) if (ink[yy*w+xx]) return true; return false; };
+  const pad = Math.round(w*0.006), out = [];
+  const push = (x0,y0,x1,y1) => { x0 = Math.max(0,x0-pad); y0 = Math.max(0,y0-pad); x1 = Math.min(w-1,x1+pad); y1 = Math.min(h-1,y1+pad);
+    if (y1-y0 >= 4 && has(x0,x1,y0,y1)) out.push({x:x0/w, y:y0/h, w:(x1-x0+1)/w, h:(y1-y0+1)/h}); };
+  const edges = [xl, ...gut.map(g=>g.m), xr];
+  for (const bd of bands){
+    if (bd.full){ push(xl, bd.y0, xr, bd.y1); continue; }
+    const cols = edges.slice(0,-1).map((e,k)=>[Math.round(e), Math.round(edges[k+1])]);
+    (rightToLeft ? cols.reverse() : cols).forEach(([x0,x1])=>push(x0, bd.y0, x1, bd.y1));
+  }
+  return out.length ? out : [{x:0,y:0,w:1,h:1}];
+}
 
 /* ===================== reading a page ===================== */
 async function readPage(worker, p, liveCrop){
@@ -945,15 +1137,26 @@ async function readPage(worker, p, liveCrop){
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : 0;
   } else {
     const f = liveCrop || p.crop || globalCrop || {x:0,y:0,w:1,h:1}, c = sub(full, f);
-    if ($("#autoLayout").checked){
-      const r = await autoLayout(worker, c);
-      blocks = r.blocks.filter(b=>b.type!=="ignore").map(({type,text,rows,img})=>({type,text,rows,img})); conf = r.conf; words = r.words;
-      // show what was found as editable areas (fractions of the full page)
-      p.areas = r.blocks.map(b=>({id: areaSeq++, type:b.type, auto:true,
-        x: f.x + b.box.x/c.width*f.w, y: f.y + b.box.y/c.height*f.h, w: b.box.w/c.width*f.w, h: b.box.h/c.height*f.h}));
-    } else {
-      const r = await ocr(worker, c); blocks = [{type:"text", text: finishText(r.text)}]; conf = r.conf; words = r.words;
+    const cm = colMode(), regions = cm ? columnRegions(c, cm, rtl()) : [{x:0,y:0,w:1,h:1}];
+    const auto = $("#autoLayout").checked, areas = [], confs = [];
+    for (const rg of regions){
+      const rc = regions.length > 1 ? sub(c, rg) : c;
+      // a region's box (in rc pixels) -> fraction of the full page
+      const toPage = bx => ({ x: f.x + (rg.x + bx.x/rc.width*rg.w)*f.w, y: f.y + (rg.y + bx.y/rc.height*rg.h)*f.h, w: bx.w/rc.width*rg.w*f.w, h: bx.h/rc.height*rg.h*f.h });
+      if (auto){
+        const r = await autoLayout(worker, rc, cm ? 4 : 3, rg.y < 0.02, rg.y + rg.h > 0.98);
+        blocks.push(...r.blocks.filter(b=>b.type!=="ignore").map(({type,text,rows,img})=>({type,text,rows,img})));
+        areas.push(...r.blocks.map(b=>({id: areaSeq++, type:b.type, auto:true, ...toPage(b.box)})));
+        words.push(...r.words); if (r.conf != null) confs.push(r.conf);
+      } else {
+        const r = await ocr(worker, rc, cm ? 4 : undefined);
+        if (r.text.trim()) blocks.push({type:"text", text: finishText(r.text)});
+        if (cm) areas.push({id: areaSeq++, type:"text", auto:true, ...toPage({x:0, y:0, w:rc.width, h:rc.height})});
+        words.push(...r.words); confs.push(r.conf);
+      }
     }
+    conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : (confs[0] ?? 0);
+    if (auto || cm) p.areas = areas;    // show what was found as editable areas
   }
   return { blocks, text: blocksToText(blocks, true), conf, weak: weakOf(words), secs: ((performance.now()-t0)/1000).toFixed(1) };
 }
@@ -966,11 +1169,13 @@ async function convertCurrent(){
   try{
     const live = mode==="crop" && cropper ? (cropFractions() || {x:0,y:0,w:1,h:1}) : null;
     if (live) rememberCrop();
+    p.status = "reading"; renderRail();
+    await ensureLangs(p, live);
     const [w] = await getPool(1);
-    p.status = "reading"; renderRail(); setProg(.05, "Reading…");
-    const r = await readPage(w, p, live);
+    setProg(.05, "Reading…");
+    const r = await readAuto(w, p, live);
     if (!isBook() && $("#append").checked && out.value.trim()) r.text = out.value.replace(/\s+$/,"") + "\n\n" + r.text;
-    Object.assign(p, r, {status:"done", edited:false, langs: poolLangs});
+    Object.assign(p, r, {status:"done", edited:false});
     if (mode==="areas") drawAreas();
     showView(); renderRail(); saveSoon();
     const nt = r.blocks.filter(b=>b.type==="table").length, ni = r.blocks.filter(b=>b.type==="image").length;
@@ -1010,14 +1215,14 @@ async function startBatch(){
   $("#allBtn").textContent = "■ Stop"; $("#allBtn").classList.add("on");
   setProg(0, `Starting ${nW} reader${nW>1?"s":""}…`);
   let workers;
-  try{ workers = await getPool(nW); }catch{ batch.running=false; $("#allBtn").textContent="▶ Start"; $("#allBtn").classList.remove("on"); return; }
+  try{ await ensureLangs(pages[todo[0]]); workers = await getPool(nW); }catch{ batch.running=false; $("#allBtn").textContent="▶ Start"; $("#allBtn").classList.remove("on"); return; }
   const queue = [...todo];
   const lane = async w => {
     while (queue.length && !batch.stop){
       const i = queue.shift(), p = pages[i];
       p.status = "reading"; renderRail(); if(i===cur) showView();
       try{
-        Object.assign(p, await readPage(w, p, null), {status:"done", edited:false, langs: poolLangs});
+        Object.assign(p, await readAuto(w, p, null), {status:"done", edited:false});
         if (i!==cur){ if (p.viewUrl){ URL.revokeObjectURL(p.viewUrl); p.viewUrl = null; } }
         else if (mode==="areas") drawAreas();
       }catch(e){ console.error(e); p.status = "error"; }

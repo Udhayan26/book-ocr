@@ -50,7 +50,9 @@ A page that runs entirely in the visitor's browser (Tesseract.js with the same "
 
 **Tables and pictures:** switch the page to **Areas** and draw boxes typed Text / Heading / Table / Picture / Skip (move, resize, reorder, change type), or press **✦ Detect automatically**. With "Find tables & pictures automatically" on, every page without drawn areas is split into headings, paragraphs, ruled and borderless tables, and pictures (captions kept as text, page numbers skipped). Word (.docx) and web-page downloads keep real tables and the pictures.
 
-**Languages:** tick any combination of Tamil, English, Sanskrit, Hindi, Marathi, Malayalam, Telugu, Kannada, Bengali, Gujarati, Punjabi, Odia, Sinhala, Urdu, Arabic, French, German; the tick order sets priority. Also: layout, image clean-up for old paper, keep line breaks for verse. Tamil clean-up, weak-word list, Tamil/Tamil Supplement symbol palette. Run locally with `cd docs && python -m http.server`.
+**Languages:** a multi-select dropdown (search, checkboxes, priority numbers). The default is **✦ Auto-detect**: on the first page it tries the script models (Tamil, Devanagari, Malayalam, Telugu, Kannada, Bengali, Gujarati, Gurmukhi, Odia, Sinhala, Urdu) and keeps the best plus English if present; pages that later read poorly are re-checked. Or pick any combination of 17 languages yourself.
+
+**Layout:** Auto, Single column, **Two columns**, **Three columns**, **Multi-column (find columns)**, One block, Single line, Scattered text. Column modes find the white gutters, keep full-width titles/pictures as their own bands, and read each column top to bottom (right-to-left for Urdu/Arabic). Image clean-up for old paper; keep line breaks for verse.
 
 ### Add it to your website
 
