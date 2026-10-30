@@ -35,31 +35,36 @@ Self-hosted, FineReader-style OCR for whole books: Tamil, English and mixed page
 
 Options: include pictures, include headers/footers/page numbers, keep original line breaks (for poetry/verse — otherwise paragraphs are re-flowed and hyphenated words re-joined), page breaks.
 
-## Quick web OCR (`docs/`) — paste, crop, convert
+## Quick web OCR — https://ocr.udhayam.in (`docs/`)
 
-A single-page tool that runs entirely in the visitor's browser (Tesseract.js, same "best" Tamil models), so it can be hosted for free on GitHub Pages and has no server or limits:
+A page that runs entirely in the visitor's browser (Tesseract.js with the same "best" Tamil models), hosted free on GitHub Pages. No server, no limits, nothing uploaded.
 
-- **Paste** a screenshot (Ctrl+V), **drop** a file, **upload**, or use the phone **camera**; PDFs open page by page.
-- **Crop** the area you want, rotate sideways pages, zoom.
-- Tamil + English (default), Tamil, English, Sanskrit, Hindi, Malayalam, Telugu, Kannada; layout and clean-up options.
-- Tamil clean-up, low-confidence word list, Tamil/Tamil Supplement symbol palette; copy, .txt or Word download.
-- **Embed** on any site with an iframe (`?embed=1`, optional `&lang=tam`). The frame reports its height and sends each result to the parent page as `{type: "ezhuthu-ocr", text}`.
+**Single image:** paste a screenshot (Ctrl+V), drop, upload, or use the phone camera → crop → Convert → copy / .txt / Word.
 
-Live at **https://ocr.udhayam.in** (GitHub Pages from `main` → `/docs`; DNS: CNAME `ocr` → `udhayan26.github.io`). To run it locally: `cd docs && python -m http.server` and open http://localhost:8000.
+**Whole books, page by page:** open a multi-page PDF or select many page photos at once.
+- Page strip with thumbnails, status and confidence per page (amber = check it); "+ Add pages" to append more photos.
+- Crop once and tick **Same crop for every page** to skip running headers and page numbers; rotate any sideways page.
+- **Read all pages** (or a range like `1-20, 25`) with 1–3 parallel readers, live progress and time left. You can keep reviewing and editing pages while it runs; Stop/Start resumes.
+- **This page / Whole book** tabs; download the book as .txt, Word, Markdown or JSON, with or without page numbers.
+- Work is saved in the browser (IndexedDB). Reopen the same file later to continue where you stopped.
 
-### Embed snippet
+Options: language (Tamil+English, Tamil, English, Sanskrit, Hindi, Malayalam, Telugu, Kannada, Tamil+Sanskrit), layout, image clean-up for old paper, keep line breaks for verse. Tamil clean-up, weak-word list, Tamil/Tamil Supplement symbol palette. Run locally with `cd docs && python -m http.server`.
+
+### Add it to your website
 
 ```html
-<iframe id="ezhuthu-ocr" src="https://ocr.udhayam.in/?embed=1&lang=tam+eng"
-  style="width:100%;height:760px;border:0" allow="clipboard-write; camera" title="Tamil OCR"></iframe>
-<script>
-addEventListener("message", e => {
-  if (e.data?.type === "ezhuthu-height")
-    document.getElementById("ezhuthu-ocr").style.height = e.data.height + "px";
-  // if (e.data?.type === "ezhuthu-ocr") console.log(e.data.text);
-});
-</script>
+<!-- 1. inline tool, sizes itself (works in a WordPress "Custom HTML" block) -->
+<script src="https://ocr.udhayam.in/embed.js" data-lang="tam+eng"></script>
+
+<!-- 2. a button that opens the tool in a pop-up (add data-floating="true" for a corner button) -->
+<script src="https://ocr.udhayam.in/embed.js" data-mode="button" data-label="தமிழ் OCR"></script>
+
+<!-- 3. plain iframe -->
+<iframe src="https://ocr.udhayam.in/?embed=1&lang=tam+eng" style="width:100%;height:820px;border:0"
+  allow="clipboard-write; camera" title="Tamil OCR"></iframe>
 ```
+
+For developers: `EzhuthuOCR.open({lang})`, `EzhuthuOCR.close()`, and `EzhuthuOCR.onText = (text, info) => …` (also fired as a `document` event `ezhuthu-ocr`).
 
 ## Run the full Book OCR app
 
