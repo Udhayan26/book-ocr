@@ -123,9 +123,29 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .area.ignore{border-style:dashed;background:repeating-linear-gradient(45deg,transparent 0 6px,color-mix(in srgb,var(--c) 14%,transparent) 6px 12px)}
 .area .rz{position:absolute;right:-6px;bottom:-6px;width:13px;height:13px;background:var(--c);border:2px solid #fff;border-radius:3px;cursor:nwse-resize}
 .stage.draw .area{pointer-events:none}
+.gl{position:absolute;z-index:3;touch-action:none}
+.gl.v{top:0;bottom:0;width:14px;margin-left:-7px;cursor:col-resize}
+.gl.h{left:0;right:0;height:14px;margin-top:-7px;cursor:row-resize}
+.gl::after{content:"";position:absolute;opacity:.9}
+.gl.v::after{left:6px;top:0;bottom:0;border-left:2px dashed var(--t-table)}
+.gl.h::after{top:6px;left:0;right:0;border-top:2px dashed var(--t-table)}
+.gl:hover::after,.gl.sel::after{border-color:var(--accent);border-left-style:solid;border-top-style:solid;opacity:1}
+.area.table:not(.sel) .gl{opacity:.5}
+.stage.draw .gl{pointer-events:none}
+.ptab{margin:.8em 0}
+.ptab .tt{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;font-family:var(--ui)}
+.ptab .tt .btn{font-size:12px;padding:3px 8px;min-height:0}
+.preview [contenteditable]{outline:none;border-radius:4px}
+.preview p[contenteditable]:focus,.preview h2[contenteditable]:focus{background:var(--accent-soft)}
+.preview td[contenteditable]:focus{box-shadow:inset 0 0 0 2px var(--accent);background:var(--panel)}
+.prevhint{font:12px var(--ui);color:var(--muted);margin:0 0 12px}
 .rubber{position:absolute;border:2px dashed var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);pointer-events:none}
 .hintbar{padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center;min-height:42px}
 .hintbar label{display:flex;gap:6px;align-items:center;color:var(--ink);cursor:pointer}
+.tabletools{background:color-mix(in srgb,var(--t-table) 8%,var(--panel));flex-wrap:wrap!important;row-gap:6px}
+.tabletools .tl{font:600 12px var(--ui);color:var(--t-table);text-transform:uppercase;letter-spacing:.05em}
+.tabletools .note{flex-basis:100%;font-size:12px;color:var(--muted)}
+.hintbar #hintText{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1 1 320px;min-width:0}
 .hintbar select{width:auto;padding:3px 8px;font-size:13px}
 .legend{display:flex;gap:10px;flex-wrap:wrap}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
@@ -329,6 +349,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
         <button class="btn sm" id="detectBtn" onclick="detectHere()" title="Find text, headings, tables and pictures on this page">✦ Detect automatically</button>
         <button class="btn sm ghost" onclick="clearAreas()" title="Remove all areas on this page">Clear</button>
       </div>
+      <div class="tb tabletools hidden" id="tableTools"></div>
       <div class="cropwrap" id="cropwrap">
         <img id="img" alt="">
         <div id="areaView" class="hidden"><div class="stage" id="stage"><img id="simg" alt=""></div></div>
@@ -409,6 +430,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
             <div class="list hidden" id="dlMenu">
               <button onclick="dl('docx')">Word (.docx)<small>Headings, tables and pictures kept</small></button>
               <button onclick="dl('html')">Web page (.html)<small>One file, pictures included</small></button>
+              <button onclick="dl('csv')">Tables for Excel (.csv)<small>Every table found, ready to open in Excel</small></button>
               <button onclick="dl('txt')">Text (.txt)<small>Plain UTF-8; tables tab-separated</small></button>
               <button onclick="dl('md')">Markdown (.md)</button>
               <button onclick="dl('json')">JSON<small>Blocks, text and confidence per page</small></button>
@@ -887,7 +909,7 @@ $("#sameCrop").onchange = e=>{ if(e.target.checked){ globalCrop = cropFractions(
 
 /* ===================== areas: draw / move / resize / edit ===================== */
 const TYPE = {text:["Text","var(--t-text)"], heading:["Heading","var(--t-head)"], table:["Table","var(--t-table)"], image:["Picture","var(--t-img)"], ignore:["Skip","var(--t-ign)"]};
-let tool = null, selArea = null;
+let tool = null, selArea = null, selLine = null, lastTap = null;
 $("#drawSeg").addEventListener("click", e=>{ const t = e.target.dataset.t; if(!t) return; tool = tool===t ? null : t; refreshTools(); });
 function refreshTools(){ document.querySelectorAll("#drawSeg button").forEach(b=>b.classList.toggle("on", b.dataset.t===tool)); $("#stage").classList.toggle("draw", !!tool); }
 function drawAreas(){
@@ -896,29 +918,115 @@ function drawAreas(){
   p.areas.forEach((a,i)=>{
     const [name, col] = TYPE[a.type];
     const d = document.createElement("div");
-    d.className = "area" + (a.id===selArea?" sel":"") + (a.type==="ignore"?" ignore":""); d.dataset.id = a.id;
+    d.className = "area" + (a.id===selArea?" sel":"") + (a.type==="ignore"?" ignore":"") + (a.type==="table"?" table":""); d.dataset.id = a.id;
     d.style.cssText = `--c:${col};left:${a.x*100}%;top:${a.y*100}%;width:${a.w*100}%;height:${a.h*100}%`;
-    d.innerHTML = `<span>${i+1} · ${name}${a.auto?" ✦":""}</span><div class="rz"></div>`;
+    const g = a.type==="table" && a.grid ? a.grid : null, isSel = (k,j) => selLine && selLine.aid===a.id && selLine.k===k && selLine.i===j ? " sel" : "";
+    d.innerHTML = `<span>${i+1} · ${name}${a.auto?" ✦":""}${g?` · ${g.cols.length+1}×${g.rows.length ? g.rows.length+1 : "auto"}`:""}</span><div class="rz"></div>`
+      + (g ? g.cols.map((f,j)=>`<div class="gl v${isSel("cols",j)}" data-k="cols" data-i="${j}" style="left:${f*100}%" title="Drag to move · double-click to remove"></div>`).join("")
+           + g.rows.map((f,j)=>`<div class="gl h${isSel("rows",j)}" data-k="rows" data-i="${j}" style="top:${f*100}%" title="Drag to move · double-click to remove"></div>`).join("") : "");
     st.append(d);
   });
   renderAreaBar(); renderRail();
 }
 function renderAreaBar(){
   const p = pages[cur], a = p?.areas.find(x=>x.id===selArea);
+  if (mode!=="areas" || !a || a.type!=="table") $("#tableTools").classList.add("hidden");
   if (mode!=="areas") return;
   if (!a){ $("#hintText").innerHTML = p?.areas.length ? `${p.areas.length} area${p.areas.length>1?"s":""} · read in number order · click one to change it` : "Pick a type above, then drag on the page — or press ✦ Detect automatically"; return; }
   const i = p.areas.indexOf(a);
+  const g = a.type==="table" ? (a.grid ||= {cols:[], rows:[]}) : null;
   $("#hintText").innerHTML = `Area ${i+1}: <select id="aType">${Object.entries(TYPE).map(([k,[n]])=>`<option value="${k}" ${k===a.type?"selected":""}>${n}</option>`).join("")}</select>
     <button class="btn sm ghost" id="aUp" ${i===0?"disabled":""} title="Read earlier">↑</button><button class="btn sm ghost" id="aDn" ${i===p.areas.length-1?"disabled":""} title="Read later">↓</button>
-    <button class="btn sm ghost" id="aDel" title="Delete area">✕ Delete</button>`;
+    <button class="btn sm ghost" id="aDel" title="Delete area">✕ Delete</button>`
+    ;
+  const tt = $("#tableTools");
+  tt.classList.toggle("hidden", !g);
+  tt.innerHTML = !g ? "" : `<span class="tl">Table ${i+1}</span>
+    <label title="Number of columns — lines are placed on the white gaps" style="display:flex;gap:6px;align-items:center;font-size:13px">Columns <input type="number" id="gN" min="1" max="30" value="${g.cols.length+1}" style="width:58px;padding:4px 6px;border:1px solid var(--line-2);border-radius:7px;background:var(--paper)"></label>
+    <button class="btn sm" id="gAddC" title="Add a column line in the widest column">+ Column line</button>
+    <button class="btn sm" id="gAddR" title="Add a row line in the tallest row">+ Row line</button>
+    <button class="btn sm ghost" id="gDelL" ${selLine && selLine.aid===a.id ? "" : "disabled"} title="Remove the selected line (or double-click a line)">✕ Line</button>
+    <button class="btn sm ghost" id="gAutoR" title="Remove row lines: rows follow the text lines">Auto rows</button>
+    <button class="btn sm ghost" id="gAutoC" title="Remove column lines: columns follow the white gaps">Auto columns</button>
+    <button class="btn sm primary" id="gRead" title="Read this table again with these lines">↻ Re-read table</button>
+    <span class="note">${a.gridEdited ? "<b style='color:var(--warn)'>Lines changed</b> — press ↻ Re-read table. " : ""}Drag the dashed lines to move them · double-click (double-tap) a line to remove it · no row lines = one row per text line.</span>`;
   $("#aType").onchange = e=>{ a.type = e.target.value; a.auto = false; changed(); };
   $("#aUp").onclick = ()=>{ p.areas.splice(i,1); p.areas.splice(i-1,0,a); changed(); };
   $("#aDn").onclick = ()=>{ p.areas.splice(i,1); p.areas.splice(i+1,0,a); changed(); };
   $("#aDel").onclick = ()=>{ p.areas.splice(i,1); selArea = null; changed(); };
+  if (!g) return;
+  const edited = () => { a.gridEdited = true; a.auto = false; changed(); };
+  $("#gN").onchange = e => { const n = Math.max(1, Math.min(30, +e.target.value || 1)); g.cols = bestGaps(a, "v", n-1); selLine = null; edited(); };
+  $("#gAddC").onclick = () => { g.cols = addLine(a, "v", g.cols); edited(); };
+  $("#gAddR").onclick = () => { g.rows = addLine(a, "h", g.rows); edited(); };
+  $("#gDelL").onclick = () => { if (!selLine) return; g[selLine.k].splice(selLine.i, 1); selLine = null; edited(); };
+  $("#gAutoR").onclick = () => { g.rows = []; selLine = null; edited(); };
+  $("#gAutoC").onclick = () => { g.cols = []; selLine = null; edited(); };
+  $("#gRead").onclick = () => rereadTable(a);
+}
+/* ink profile of an area on the scan (for snapping lines to white gaps) */
+function areaProfile(a, axis){
+  const im = $("#simg"); if (!im.naturalWidth) return null;
+  const sw = a.w*im.naturalWidth, sh = a.h*im.naturalHeight, k = Math.min(1, 900/Math.max(sw, sh));
+  const c = document.createElement("canvas"); c.width = Math.max(4, Math.round(sw*k)); c.height = Math.max(4, Math.round(sh*k));
+  c.getContext("2d").drawImage(im, a.x*im.naturalWidth, a.y*im.naturalHeight, sw, sh, 0, 0, c.width, c.height);
+  const B = binarize(c, 900), L = lineSegs(B), prof = new Float32Array(axis==="v" ? B.w : B.h);
+  const ruled = new Uint8Array(B.w*B.h);                      // ignore the table's own ruling lines
+  [...L.H, ...L.V].forEach(l=>{ for (let y=Math.max(0,l.y0-1); y<=Math.min(B.h-1,l.y1+1); y++) for (let x=Math.max(0,l.x0-1); x<=Math.min(B.w-1,l.x1+1); x++) ruled[y*B.w+x] = 1; });
+  for (let y=0;y<B.h;y++) for (let x=0;x<B.w;x++){ const j = y*B.w+x; if (B.ink[j] && !ruled[j]) prof[axis==="v" ? x : y]++; }
+  return prof;
+}
+/* the n widest white gaps (as fractions), falling back to even spacing */
+function bestGaps(a, axis, n){
+  if (n <= 0) return [];
+  const prof = areaProfile(a, axis); if (!prof) return Array.from({length:n}, (_,k)=>(k+1)/(n+1));
+  const len = prof.length, max = Math.max(...prof), thr = Math.max(0, max*0.02), runs = [];
+  for (let i=0; i<len; ){ if (prof[i] <= thr){ let j = i; while (j<len && prof[j] <= thr) j++; if (i > len*0.01 && j < len*0.99) runs.push({m:(i+j-1)/2/len, w:j-i}); i = j; } else i++; }
+  const picked = runs.sort((p,q)=>q.w-p.w).slice(0, n).map(r=>r.m);
+  for (let k=1; picked.length < n; k++){ const f = k/(n+1); if (!picked.some(x=>Math.abs(x-f) < 0.03)) picked.push(snapTo(prof, f)); if (k > 3*n) break; }
+  return picked.sort((p,q)=>p-q);
+}
+function snapTo(prof, f, win = 0.06){
+  const len = prof.length, c = Math.round(f*len), r = Math.round(win*len); let best = c, bv = Infinity;
+  for (let i=Math.max(1,c-r); i<=Math.min(len-2,c+r); i++){ const v = prof[i] + Math.abs(i-c)*0.001; if (v < bv){ bv = v; best = i; } }
+  let lo = best, hi = best; while (lo > 0 && prof[lo-1] <= prof[best]) lo--; while (hi < len-1 && prof[hi+1] <= prof[best]) hi++;
+  return (lo+hi)/2/len;
+}
+function addLine(a, axis, lines){
+  const edges = [0, ...lines, 1].sort((p,q)=>p-q); let gi = 0;
+  for (let i=1;i<edges.length-1+1;i++) if (edges[i]-edges[i-1] > edges[gi+1]-edges[gi]) gi = i-1;
+  const mid = (edges[gi]+edges[gi+1])/2, prof = areaProfile(a, axis);
+  const f = prof ? snapTo(prof, mid, (edges[gi+1]-edges[gi])/2.2) : mid;
+  return [...lines, f].sort((p,q)=>p-q);
+}
+/* read just this table again with its (edited) lines */
+async function rereadTable(a){
+  const p = pages[cur]; if (busyOne) return;
+  if (p.status !== "done") return convertCurrent();          // page not read yet: read everything (uses these lines)
+  saveEdits(); pageBlocks(p);
+  busyOne = true; setGo(true); setProg(.2, "Reading the table with your lines…");
+  try{
+    await ensureLangs(p);
+    const [w] = await getPool(1);
+    const t = await readTable(w, sub(await fullCanvas(p), a), a.grid);
+    a.grid = t.grid; a.gridEdited = false; a.auto = false;
+    const nb = {type:"table", rows:t.rows, aid:a.id}, blocks = p.blocks || [];
+    const i = blocks.findIndex(b=>b.aid===a.id);
+    if (i >= 0) blocks[i] = nb;
+    else { const order = id => p.areas.findIndex(x=>x.id===id), me = order(a.id);
+      let pos = blocks.findIndex(b=>b.aid!=null && order(b.aid) > me); if (pos < 0) pos = blocks.length; blocks.splice(pos, 0, nb); }
+    p.blocks = blocks; p.text = blocksToText(blocks, true); p.edited = true; p.v2 = true;
+    showView(); drawAreas(); saveSoon();
+    setProg(1, `Table read: ${t.rows.length} rows × ${t.rows[0]?.length||0} columns — see it in Preview.`);
+  }catch(e){ console.error(e); setProg(0, "Couldn't read the table: " + (e.message||e)); }
+  busyOne = false; setGo(false);
 }
 function changed(){ drawAreas(); saveSoon(); }
 function clearAreas(){ const p = pages[cur]; if(!p || !p.areas.length) return; p.areas = []; selArea = null; changed(); }
-document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspace") && selArea && mode==="areas" && document.activeElement===document.body){ const p = pages[cur]; p.areas = p.areas.filter(a=>a.id!==selArea); selArea=null; changed(); } });
+document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspace") && selArea && mode==="areas" && document.activeElement===document.body){ const p = pages[cur];
+  if (selLine){ const a = p.areas.find(z=>z.id===selLine.aid); a?.grid?.[selLine.k]?.splice(selLine.i, 1); if (a){ a.gridEdited = true; a.auto = false; } selLine = null; }
+  else { p.areas = p.areas.filter(a=>a.id!==selArea); selArea=null; }
+  changed(); } });
 (function(){
   const st = $("#stage"); let act = null;
   const pt = e => { const r = st.getBoundingClientRect(); return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)), Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]; };
@@ -928,8 +1036,17 @@ document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspa
     if (tool){
       const rb = document.createElement("div"); rb.className = "rubber"; rb.style.setProperty("--c", TYPE[tool][1]); st.append(rb);
       act = {kind:"new", x0:x, y0:y, rb};
+    } else if (e.target.classList.contains("gl")){
+      const el = e.target.closest(".area"), a = p.areas.find(z=>z.id==el.dataset.id), k = e.target.dataset.k, i = +e.target.dataset.i;
+      const now = performance.now(), same = lastTap && lastTap.aid===a.id && lastTap.k===k && lastTap.i===i && now - lastTap.t < 450;
+      lastTap = {aid:a.id, k, i, t:now};
+      if (same){ a.grid[k].splice(i, 1); a.gridEdited = true; a.auto = false; selLine = null; lastTap = null; e.preventDefault(); changed(); return; }   // double-click / double-tap removes
+      selArea = a.id; selLine = {aid:a.id, k, i};
+      act = {kind:"line", a, k:selLine.k, i:selLine.i, el:e.target, moved:false};
+      renderAreaBar(); document.querySelectorAll(".gl.sel").forEach(x=>x.classList.remove("sel")); e.target.classList.add("sel");
     } else {
-      const el = e.target.closest(".area"); if(!el){ selArea = null; drawAreas(); return; }
+      const el = e.target.closest(".area"); if(!el){ selArea = null; selLine = null; drawAreas(); return; }
+      if (selLine && selLine.aid != el.dataset.id) selLine = null;
       const a = p.areas.find(z=>z.id==el.dataset.id); selArea = a.id;
       act = {kind: e.target.classList.contains("rz") ? "resize" : "move", a, x0:x, y0:y, orig:{...a}};
       drawAreas();
@@ -939,6 +1056,11 @@ document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspa
   st.addEventListener("pointermove", e=>{
     if(!act) return; const [x,y] = pt(e);
     if (act.kind==="new"){ const l=Math.min(x,act.x0), t=Math.min(y,act.y0); Object.assign(act.rb.style,{left:l*100+"%",top:t*100+"%",width:Math.abs(x-act.x0)*100+"%",height:Math.abs(y-act.y0)*100+"%"}); return; }
+    if (act.kind==="line"){
+      const a = act.a, f = act.k==="cols" ? (x-a.x)/a.w : (y-a.y)/a.h, v = Math.min(0.99, Math.max(0.01, f));
+      a.grid[act.k][act.i] = v; act.moved = true;
+      act.el.style[act.k==="cols" ? "left" : "top"] = v*100 + "%"; return;
+    }
     const a = act.a, o = act.orig, dx = x-act.x0, dy = y-act.y0;
     if (act.kind==="move"){ a.x = Math.min(1-o.w, Math.max(0, o.x+dx)); a.y = Math.min(1-o.h, Math.max(0, o.y+dy)); }
     else { a.w = Math.max(.01, Math.min(1-o.x, o.w+dx)); a.h = Math.max(.01, Math.min(1-o.y, o.h+dy)); }
@@ -954,6 +1076,9 @@ document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspa
         let pos = p.areas.findIndex(b=> b.y > a.y && Math.min(b.x+b.w, a.x+a.w) - Math.max(b.x, a.x) > 0);
         if (pos<0) pos = p.areas.length; p.areas.splice(pos, 0, a); selArea = a.id;
       }
+    } else if (act.kind==="line"){
+      if (!act.moved){ act = null; return; }                      // a plain click only selects the line (no redraw, so a double-click can follow)
+      const v = act.a.grid[act.k][act.i]; act.a.grid[act.k].sort((p,q)=>p-q); selLine.i = act.a.grid[act.k].indexOf(v); act.a.gridEdited = true; act.a.auto = false; lastTap = null;
     } else if (act.a) act.a.auto = false;
     act = null; changed();
   });
@@ -1080,6 +1205,8 @@ function findPictures(B, words, exclude){
   return boxes;
 }
 /* cells from words: ruled columns (vs) or vertical white gaps; rows from lines (hs) or clustering */
+/* words -> cells. Rows come from hs (row lines) or from text lines; columns from vs (column lines) or from white gaps.
+   Returns {rows, vs, hs} so the lines that were used can be shown and edited. */
 function tableFromWords(words, box, hs, vs){
   words = words.filter(t=>!/^[|\[\]_—–\-=~:;.,'`"!]+$/.test(t.text));
   if (!words.length) return null;
@@ -1088,7 +1215,11 @@ function tableFromWords(words, box, hs, vs){
   if (hs && hs.length > 2){ for (let i=0;i<hs.length-1;i++){ const r = words.filter(t=>cy(t)>=hs[i] && cy(t)<hs[i+1]); if(r.length) rows.push(r); } }
   else { let curR = [], bottom = -1;
     for (const t of [...words].sort((a,b)=>cy(a)-cy(b))){ if (curR.length && cy(t) > bottom){ rows.push(curR); curR = []; } bottom = curR.length ? Math.max(bottom, t.box.y+t.box.h) : t.box.y+t.box.h; curR.push(t); }
-    if (curR.length) rows.push(curR); }
+    if (curR.length) rows.push(curR);
+    // the row lines that this grouping implies: halfway between neighbouring rows
+    const b = rows.map(r=>[Math.min(...r.map(t=>t.box.y)), Math.max(...r.map(t=>t.box.y+t.box.h))]);
+    hs = [box.y0 ?? 0, ...b.slice(1).map((x,i)=>(b[i][1]+x[0])/2), box.y1 ?? b[b.length-1][1]];
+  }
   if (!vs){
     const W = Math.ceil(box.x1-box.x0)+2, occ = new Uint8Array(W);
     rows.forEach(r=>{ const sorted = [...r].sort((a,b)=>a.box.x-b.box.x); let ph = null;
@@ -1102,7 +1233,7 @@ function tableFromWords(words, box, hs, vs){
   const grid = rows.map(r=>{ const cells = Array.from({length:nc}, ()=>[]);
     r.sort((a,b)=> (a.box.y/mh|0)-(b.box.y/mh|0) || a.box.x-b.box.x).forEach(t=>{ let j = vs.findIndex((v,k)=>k<nc && cx(t)>=v && cx(t)<vs[k+1]); if(j<0) j = cx(t)<vs[0]?0:nc-1; cells[j].push(t.text); });
     return cells.map(c=>c.join(" ").trim()); }).filter(r=>r.some(Boolean));
-  return grid.length >= 2 ? grid : null;
+  return grid.length >= 1 && (grid.length >= 2 || nc >= 2) ? {rows: grid, vs, hs} : null;
 }
 const median = a => { const s=[...a].sort((x,y)=>x-y); return s.length ? s[s.length>>1] : 0; };
 function eraseLines(c, L, s){
@@ -1111,15 +1242,22 @@ function eraseLines(c, L, s){
   [...L.H, ...L.V].forEach(l=> g.fillRect(l.x0/s-3, l.y0/s-3, (l.x1-l.x0)/s+6, (l.y1-l.y0)/s+6));
   return o;
 }
-async function readTable(worker, c, presetVs){
+/* read one table area. grid = {cols:[fractions], rows:[fractions]} = the user's lines (empty list = find automatically) */
+async function readTable(worker, c, grid){
   const B = binarize(c), L = lineSegs(B), clean = eraseLines(c, L, B.s);
   const r = await ocr(worker, clean, 6);
-  const T = findTables(B, L).sort((a,b)=>(b.box.x1-b.box.x0)*(b.box.y1-b.box.y0)-(a.box.x1-a.box.x0)*(a.box.y1-a.box.y0))[0];
-  const box = {x0:0, y0:0, x1:c.width, y1:c.height};
-  let rows = null;
-  if (T && T.ruled) rows = tableFromWords(r.words, {x0:T.box.x0/B.s, x1:T.box.x1/B.s}, T.hs.map(v=>v/B.s), T.vs.map(v=>v/B.s));
-  if (!rows) rows = tableFromWords(r.words, box, null, presetVs || null);
-  return { rows: rows || [[cleanTable(r.text)]], conf: r.conf, words: r.words };
+  const W = c.width, H = c.height, box = {x0:0, y0:0, x1:W, y1:H};
+  const userCols = grid?.cols?.length ? [0, ...[...grid.cols].sort((a,b)=>a-b).map(f=>f*W), W] : null;
+  const userRows = grid?.rows?.length ? [0, ...[...grid.rows].sort((a,b)=>a-b).map(f=>f*H), H] : null;
+  let t = null;
+  if (userCols || userRows) t = tableFromWords(r.words, box, userRows, userCols);
+  else {
+    const T = findTables(B, L).sort((a,b)=>(b.box.x1-b.box.x0)*(b.box.y1-b.box.y0)-(a.box.x1-a.box.x0)*(a.box.y1-a.box.y0))[0];
+    if (T && T.ruled) t = tableFromWords(r.words, {x0:T.box.x0/B.s, x1:T.box.x1/B.s, y0:T.box.y0/B.s, y1:T.box.y1/B.s}, T.hs.map(v=>v/B.s), T.vs.map(v=>v/B.s));
+    if (!t) t = tableFromWords(r.words, box, null, null);
+  }
+  const inner = (a, len) => a ? a.slice(1, -1).map(v=>v/len).filter(f=>f > 0.005 && f < 0.995) : [];
+  return { rows: t ? t.rows : [[cleanTable(r.text)]], grid: t ? {cols: inner(t.vs, W), rows: inner(t.hs, H)} : (grid || {cols:[], rows:[]}), conf: r.conf, words: r.words };
 }
 const cleanTable = t => finishText(t);
 function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createElement("canvas"); o.width = Math.round(c.width*k); o.height = Math.round(c.height*k); o.getContext("2d").drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg", 0.85); }
@@ -1135,7 +1273,7 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
     if (!t.ruled && inside.length < 4) continue;
     const res = await readTable(worker, sub(c, {x:bx.x/c.width, y:bx.y/c.height, w:bx.w/c.width, h:bx.h/c.height}), null);
     if (!t.ruled && (res.rows.length < 3 || res.rows[0].length < 2)) continue;
-    tables.push({type:"table", box:bx, rows:res.rows, conf:res.conf});
+    tables.push({type:"table", box:bx, rows:res.rows, grid:res.grid, conf:res.conf});
   }
   const pics = findPictures(B, r.words, T.map(t=>t.box)).map(b=>({type:"image", box:{x:b.x0/s, y:b.y0/s, w:(b.x1-b.x0)/s, h:(b.y1-b.y0)/s}}));
   // a caption printed right under (or over) a picture is text, not part of the picture
@@ -1247,10 +1385,10 @@ async function readPage(worker, p, liveCrop){
     for (const a of p.areas){
       if (a.type === "ignore") continue;
       const c = sub(full, a);
-      if (a.type === "image"){ blocks.push({type:"image", img: picture(c)}); continue; }
-      if (a.type === "table"){ const t = await readTable(worker, c); blocks.push({type:"table", rows:t.rows}); words.push(...t.words); continue; }
+      if (a.type === "image"){ blocks.push({type:"image", img: picture(c), aid:a.id}); continue; }
+      if (a.type === "table"){ const t = await readTable(worker, c, a.grid); a.grid = t.grid; blocks.push({type:"table", rows:t.rows, aid:a.id}); words.push(...t.words); continue; }
       const r = await ocr(worker, c, a.type==="heading" ? 7 : 6);
-      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text)}); words.push(...r.words);
+      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text), aid:a.id}); words.push(...r.words);
     }
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : 0;
   } else {
@@ -1263,13 +1401,17 @@ async function readPage(worker, p, liveCrop){
       const toPage = bx => ({ x: f.x + (rg.x + bx.x/rc.width*rg.w)*f.w, y: f.y + (rg.y + bx.y/rc.height*rg.h)*f.h, w: bx.w/rc.width*rg.w*f.w, h: bx.h/rc.height*rg.h*f.h });
       if (auto){
         const r = await autoLayout(worker, rc, cm ? 4 : 3, rg.y < 0.02, rg.y + rg.h > 0.98);
-        blocks.push(...r.blocks.filter(b=>b.type!=="ignore").map(({type,text,rows,img})=>({type,text,rows,img})));
-        areas.push(...r.blocks.map(b=>({id: areaSeq++, type:b.type, auto:true, ...toPage(b.box)})));
+        for (const b of r.blocks){
+          const id = areaSeq++;
+          areas.push({id, type:b.type, auto:true, ...toPage(b.box), ...(b.grid ? {grid:b.grid} : {})});
+          if (b.type !== "ignore") blocks.push({type:b.type, text:b.text, rows:b.rows, img:b.img, aid:id});
+        }
         words.push(...r.words); if (r.conf != null) confs.push(r.conf);
       } else {
         const r = await ocr(worker, rc, cm ? 4 : undefined);
-        if (r.text.trim()) blocks.push({type:"text", text: finishText(r.text)});
-        if (cm) areas.push({id: areaSeq++, type:"text", auto:true, ...toPage({x:0, y:0, w:rc.width, h:rc.height})});
+        const id = areaSeq++;
+        if (r.text.trim()) blocks.push({type:"text", text: finishText(r.text), aid: cm ? id : undefined});
+        if (cm) areas.push({id, type:"text", auto:true, ...toPage({x:0, y:0, w:rc.width, h:rc.height})});
         words.push(...r.words); confs.push(r.conf);
       }
     }
@@ -1278,7 +1420,25 @@ async function readPage(worker, p, liveCrop){
   }
   return { blocks, text: blocksToText(blocks, true), conf, weak: weakOf(words), secs: ((performance.now()-t0)/1000).toFixed(1) };
 }
-function blocksToText(blocks, pics){ return blocks.map(b=> b.type==="table" ? b.rows.map(r=>r.join("\t")).join("\n") : b.type==="image" ? (pics?"[Picture]":"") : (b.text||"")).filter(Boolean).join("\n\n"); }
+/* text form of a page: tables as tab-separated lines, pictures as [Picture] — and back again (so text edits keep the structure) */
+const cellTxt = c => String(c??"").replace(/[\t\r\n]+/g, " ").trim();
+function blocksToText(blocks, pics){ return blocks.map(b=> b.type==="table" ? b.rows.map(r=>r.map(cellTxt).join("\t")).join("\n") : b.type==="image" ? (pics?"[Picture]":"") : (b.text||"")).filter(Boolean).join("\n\n"); }
+function textToBlocks(text, old){
+  old = old || [];
+  const oldT = old.filter(b=>b.type==="table"), oldI = old.filter(b=>b.type==="image"), heads = new Set(old.filter(b=>b.type==="heading").map(b=>(b.text||"").trim()));
+  let ti = 0, ii = 0; const out = [];
+  for (const part of (text||"").split(/\n[ \t]*\n/)){
+    const t = part.replace(/^\n+|\n+$/g, ""); if (!t.trim()) continue;
+    if (t.trim() === "[Picture]"){ if (oldI[ii]) out.push(oldI[ii++]); continue; }      // deleting the marker deletes the picture
+    const lines = t.split("\n");
+    if (lines.every(l=>l.includes("\t")) && (lines.length >= 2 || oldT[ti])){
+      const rows = lines.map(l=>l.split("\t").map(x=>x.trim())), nc = Math.max(...rows.map(r=>r.length));
+      out.push({type:"table", rows: rows.map(r=>r.concat(Array(nc-r.length).fill(""))), aid: oldT[ti++]?.aid}); continue;
+    }
+    out.push({type: heads.has(t.trim()) ? "heading" : "text", text: t, aid: undefined});
+  }
+  return out;
+}
 
 async function convertCurrent(){
   if (busyOne || !pages.length) return;
@@ -1293,7 +1453,7 @@ async function convertCurrent(){
     setProg(.05, "Reading…");
     const r = await readAuto(w, p, live);
     if (!isBook() && $("#append").checked && out.value.trim()) r.text = out.value.replace(/\s+$/,"") + "\n\n" + r.text;
-    Object.assign(p, r, {status:"done", edited:false});
+    Object.assign(p, r, {status:"done", edited:false, textDirty:false, v2:true});
     if (mode==="areas") drawAreas();
     showView(); renderRail(); saveSoon();
     const nt = r.blocks.filter(b=>b.type==="table").length, ni = r.blocks.filter(b=>b.type==="image").length;
@@ -1340,7 +1500,7 @@ async function startBatch(){
       const i = queue.shift(), p = pages[i];
       p.status = "reading"; renderRail(); if(i===cur) showView();
       try{
-        Object.assign(p, await readAuto(w, p, null), {status:"done", edited:false});
+        Object.assign(p, await readAuto(w, p, null), {status:"done", edited:false, textDirty:false, v2:true});
         if (i!==cur){ if (p.viewUrl){ URL.revokeObjectURL(p.viewUrl); p.viewUrl = null; } }
         else if (mode==="areas") drawAreas();
       }catch(e){ console.error(e); p.status = "error"; }
@@ -1377,7 +1537,7 @@ function showView(){
     weak.classList.add("hidden"); return;
   }
   if (tab === "preview"){
-    $("#preview").innerHTML = p && p.status==="done" ? blocksHtml(pageBlocks(p), true) : `<p style="color:var(--muted)">Convert this page to see its headings, tables and pictures here.</p>`;
+    $("#preview").innerHTML = p && p.status==="done" ? `<p class="prevhint">Click any text or table cell to edit it — changes go into Word, web page, CSV and text downloads.</p>` + blocksHtml(pageBlocks(p), true, true) : `<p style="color:var(--muted)">Convert this page to see its headings, tables and pictures here.</p>`;
   }
   if (!p) return;
   if (isBook() || p.status==="done") { if (tab==="page" && (isBook() || !$("#append").checked)) out.value = p.text || ""; }
@@ -1386,30 +1546,58 @@ function showView(){
   const nt = (p.blocks||[]).filter(b=>b.type==="table").length, ni = (p.blocks||[]).filter(b=>b.type==="image").length;
   stats.innerHTML = p.status==="done" ? `<span>${(p.text||"").split(/\s+/).filter(Boolean).length} words</span>${nt?`<span>${nt} table${nt>1?"s":""}</span>`:""}${ni?`<span>${ni} picture${ni>1?"s":""}</span>`:""}<span style="color:${confCol(p.conf)}">confidence ${Math.round(p.conf||0)}%</span>${p.langs?`<span>${p.langs}</span>`:""}${p.secs?`<span>${p.secs}s</span>`:""}${p.edited?"<span>✎ edited</span>":""}` : "";
 }
-/* if the text was edited by hand, that text wins over the detected blocks (tables/pictures are kept) */
+/* a page's structure (headings, text, tables, pictures). Edits in the Text tab are parsed back into it. */
 function pageBlocks(p){
-  if (!p.edited || !p.blocks) return p.blocks || [{type:"text", text:p.text||""}];
-  const keep = p.blocks.filter(b=>b.type==="table"||b.type==="image");
-  const textParts = (p.text||"").split(/\n\s*\n/).filter(t=>t.trim() && t.trim()!=="[Picture]" && !keep.some(k=>k.type==="table" && k.rows.map(r=>r.join("\t")).join("\n")===t.trim()));
-  return [...textParts.map(t=>({type:"text", text:t})), ...keep];
+  if (p.textDirty || (p.edited && p.blocks && !p.v2)){ p.blocks = textToBlocks(p.text, p.blocks); p.textDirty = false; p.v2 = true; }
+  return p.blocks || [{type:"text", text:p.text||""}];
 }
 function saveEdits(){
-  if (tab !== "page") return;
   const p = pages[cur]; if (!p || p.status!=="done") return;
-  if (out.value !== (p.text||"")){ p.text = out.value; p.edited = true; saveSoon(); renderRail(); }
+  if (tab === "page" && out.value !== (p.text||"")){ p.text = out.value; p.edited = true; p.textDirty = true; }
+  if (p.textDirty){ pageBlocks(p); saveSoon(); renderRail(); }
 }
-out.addEventListener("input", ()=>{ if(tab==="page"){ const p = pages[cur]; if(p && p.status==="done"){ p.text = out.value; p.edited = true; saveSoon(); } } });
+out.addEventListener("input", ()=>{ if(tab==="page"){ const p = pages[cur]; if(p && p.status==="done"){ p.text = out.value; p.edited = true; p.textDirty = true; p.v2 = true; saveSoon(); } } });
 function bookText(marks){
   return pages.map((p,i)=> p.status==="done" ? (marks && isBook() ? `===== Page ${i+1} =====\n` : "") + (p.text||"").trim() : (marks && isBook() ? `===== Page ${i+1} =====\n[not read yet]` : "")).filter(Boolean).join("\n\n");
 }
-function blocksHtml(blocks, pics){
-  return blocks.map(b=>{
-    if (b.type==="heading") return `<h2>${esc(b.text)}</h2>`;
-    if (b.type==="table") return `<table>${b.rows.map(r=>"<tr>"+r.map(c=>`<td>${esc(c).replace(/\n/g,"<br>")}</td>`).join("")+"</tr>").join("")}</table>`;
+function blocksHtml(blocks, pics, edit){
+  const ce = edit ? ' contenteditable="true" spellcheck="false"' : "";
+  return blocks.map((b, bi)=>{
+    if (b.type==="heading") return `<h2${ce} data-bi="${bi}">${esc(b.text)}</h2>`;
+    if (b.type==="table"){
+      const tbl = `<table>${b.rows.map((r,ri)=>"<tr>"+r.map((c,ci)=>`<td${ce} data-bi="${bi}" data-r="${ri}" data-c="${ci}">${esc(c).replace(/\n/g,"<br>")}</td>`).join("")+"</tr>").join("")}</table>`;
+      if (!edit) return tbl;
+      return `<div class="ptab" data-bi="${bi}"><div class="tt">
+        <button class="btn sm" data-op="addr" title="Add a row at the end">+ Row</button><button class="btn sm" data-op="addc" title="Add a column at the end">+ Column</button>
+        <button class="btn sm" data-op="delr" title="Remove the last row">− Row</button><button class="btn sm" data-op="delc" title="Remove the last column">− Column</button>
+        <button class="btn sm" data-op="merge" title="Join the first two rows into one header row">Merge header rows</button>
+        ${b.aid ? `<button class="btn sm" data-op="grid" title="Show this table's row and column lines on the scan">Adjust lines on scan</button>` : ""}</div>${tbl}</div>`;
+    }
     if (b.type==="image") return pics ? `<figure><img src="${b.img}" alt=""></figure>` : "";
-    return (b.text||"").split(/\n\s*\n/).map(t=>`<p>${esc(t).replace(/\n/g,"<br>")}</p>`).join("");
+    return edit ? `<p${ce} data-bi="${bi}" style="white-space:pre-wrap">${esc(b.text||"")}</p>`
+                : (b.text||"").split(/\n\s*\n/).map(t=>`<p>${esc(t).replace(/\n/g,"<br>")}</p>`).join("");
   }).join("\n");
 }
+/* preview edits -> blocks -> text */
+function previewChanged(p){ p.text = blocksToText(p.blocks, true); p.edited = true; p.textDirty = false; p.v2 = true; saveSoon(); renderRail(); }
+$("#preview").addEventListener("input", e=>{
+  const el = e.target.closest("[data-bi]"), p = pages[cur]; if (!el || !p?.blocks) return;
+  const b = p.blocks[+el.dataset.bi]; if (!b) return;
+  if (el.tagName === "TD") b.rows[+el.dataset.r][+el.dataset.c] = el.innerText.replace(/\n$/, "");
+  else b.text = el.innerText.replace(/\n$/, "");
+  previewChanged(p);
+});
+$("#preview").addEventListener("click", e=>{
+  const op = e.target.closest("[data-op]")?.dataset.op; if (!op) return;
+  const p = pages[cur], bi = +e.target.closest(".ptab").dataset.bi, b = p.blocks[bi], nc = b.rows[0]?.length || 1;
+  if (op === "grid"){ setTab("page"); setMode("areas"); selArea = b.aid; setTimeout(()=>{ drawAreas(); document.querySelector(`.area[data-id="${b.aid}"]`)?.scrollIntoView({block:"center", behavior:"smooth"}); }, 600); return; }
+  if (op==="addr") b.rows.push(Array(nc).fill(""));
+  if (op==="addc") b.rows.forEach(r=>r.push(""));
+  if (op==="delr" && b.rows.length > 1) b.rows.pop();
+  if (op==="delc" && nc > 1) b.rows.forEach(r=>r.pop());
+  if (op==="merge" && b.rows.length > 2){ const [r0, r1] = b.rows; b.rows.splice(0, 2, r0.map((c,i)=>[c, r1[i]].filter(Boolean).join(" "))); }
+  previewChanged(p); showView();
+});
 
 /* ===================== weak words, Tamil clean-up ===================== */
 const confCol = c => c>=85 ? "var(--ok)" : c>=70 ? "var(--warn)" : "var(--bad)";
@@ -1439,6 +1627,13 @@ async function dl(kind){
   $("#dlMenu").classList.add("hidden");
   const marks = $("#pageMarks").checked && isBook(), pics = $("#withPics").checked, list = donePages();
   if (!list.length || !list.some(x=>(x.p.text||"").trim() || x.p.blocks?.length)) return toast("Nothing to download yet — convert a page first");
+  if (kind==="csv"){
+    const tbls = list.flatMap(({p,i})=>pageBlocks(p).filter(b=>b.type==="table").map((b,k)=>({page:i+1, k:k+1, rows:b.rows})));
+    if (!tbls.length) return toast("No tables yet — mark a Table area or turn on “Find tables & pictures automatically”");
+    const q = c => `"${String(c??"").replace(/"/g,'""')}"`;
+    const csv = tbls.map(t=>(tbls.length>1 ? q(`${isBook()?`Page ${t.page} · `:""}Table ${t.k}`)+"\r\n" : "") + t.rows.map(r=>r.map(q).join(",")).join("\r\n")).join("\r\n\r\n");
+    return save(new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8"}), fname("csv"));
+  }
   if (kind==="txt") return save(new Blob(["﻿"+bookText(marks)], {type:"text/plain;charset=utf-8"}), fname("txt"));
   if (kind==="md"){
     const md = `# ${docName}\n\n` + list.map(({p,i})=>(marks?`## Page ${i+1}\n\n`:"") + pageBlocks(p).map(b=> b.type==="heading" ? `### ${b.text}` : b.type==="table" ? [b.rows[0], b.rows[0].map(()=>"---"), ...b.rows.slice(1)].map(r=>"| "+r.map(c=>c.replace(/\|/g,"\\|").replace(/\n/g," ")).join(" | ")+" |").join("\n") : b.type==="image" ? (pics?`![picture](${b.img})`:"") : b.text).filter(Boolean).join("\n\n")).join("\n\n");
