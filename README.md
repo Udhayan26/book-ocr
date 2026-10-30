@@ -45,12 +45,12 @@ A single-page tool that runs entirely in the visitor's browser (Tesseract.js, sa
 - Tamil clean-up, low-confidence word list, Tamil/Tamil Supplement symbol palette; copy, .txt or Word download.
 - **Embed** on any site with an iframe (`?embed=1`, optional `&lang=tam`). The frame reports its height and sends each result to the parent page as `{type: "ezhuthu-ocr", text}`.
 
-Live at **https://udhayan26.github.io/book-ocr/** once GitHub Pages is switched on (Settings → Pages → Deploy from branch `main`, folder `/docs`). To run it locally: `cd docs && python -m http.server` and open http://localhost:8000.
+Live at **https://ocr.udhayam.in** (GitHub Pages from `main` → `/docs`; DNS: CNAME `ocr` → `udhayan26.github.io`). To run it locally: `cd docs && python -m http.server` and open http://localhost:8000.
 
 ### Embed snippet
 
 ```html
-<iframe id="ezhuthu-ocr" src="https://udhayan26.github.io/book-ocr/?embed=1&lang=tam+eng"
+<iframe id="ezhuthu-ocr" src="https://ocr.udhayam.in/?embed=1&lang=tam+eng"
   style="width:100%;height:760px;border:0" allow="clipboard-write; camera" title="Tamil OCR"></iframe>
 <script>
 addEventListener("message", e => {
@@ -132,6 +132,6 @@ backend/ocr_engine.py   rotate/deskew/clean, language auto-detect, Tesseract
 backend/exporters.py    Word, Excel, HTML, EPUB, Markdown, text
 backend/tamil_text.py   Tamil clean-up, replacement rules, symbol catalogue
 frontend/index.html     the dashboard (single file, no build step)
-docs/                   quick browser-only OCR page for GitHub Pages (udhayan26.github.io/book-ocr)
+docs/                   quick browser-only OCR page for GitHub Pages (ocr.udhayam.in)
 samples/                test PDFs (Tamil+English text; layout with tables, picture, sideways page)
 ```
