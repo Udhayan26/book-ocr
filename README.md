@@ -45,10 +45,12 @@ A page that runs entirely in the visitor's browser (Tesseract.js with the same "
 - Page strip with thumbnails, status and confidence per page (amber = check it); "+ Add pages" to append more photos.
 - Crop once and tick **Same crop for every page** to skip running headers and page numbers; rotate any sideways page.
 - **Read all pages** (or a range like `1-20, 25`) with 1–3 parallel readers, live progress and time left. You can keep reviewing and editing pages while it runs; Stop/Start resumes.
-- **This page / Whole book** tabs; download the book as .txt, Word, Markdown or JSON, with or without page numbers.
+- **This page / Whole book** tabs; download the book as Word (.docx), web page, .txt, Markdown or JSON, with or without page numbers.
 - Work is saved in the browser (IndexedDB). Reopen the same file later to continue where you stopped.
 
-Options: language (Tamil+English, Tamil, English, Sanskrit, Hindi, Malayalam, Telugu, Kannada, Tamil+Sanskrit), layout, image clean-up for old paper, keep line breaks for verse. Tamil clean-up, weak-word list, Tamil/Tamil Supplement symbol palette. Run locally with `cd docs && python -m http.server`.
+**Tables and pictures:** switch the page to **Areas** and draw boxes typed Text / Heading / Table / Picture / Skip (move, resize, reorder, change type), or press **✦ Detect automatically**. With "Find tables & pictures automatically" on, every page without drawn areas is split into headings, paragraphs, ruled and borderless tables, and pictures (captions kept as text, page numbers skipped). Word (.docx) and web-page downloads keep real tables and the pictures.
+
+**Languages:** tick any combination of Tamil, English, Sanskrit, Hindi, Marathi, Malayalam, Telugu, Kannada, Bengali, Gujarati, Punjabi, Odia, Sinhala, Urdu, Arabic, French, German; the tick order sets priority. Also: layout, image clean-up for old paper, keep line breaks for verse. Tamil clean-up, weak-word list, Tamil/Tamil Supplement symbol palette. Run locally with `cd docs && python -m http.server`.
 
 ### Add it to your website
 

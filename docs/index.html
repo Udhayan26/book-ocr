@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>எழுத்து OCR · Tamil & English image and book to text</title>
-<meta name="description" content="Free Tamil, English and Indic OCR in your browser. Paste, drop or upload an image, PDF or a whole book; crop and convert page by page to editable Unicode text. Nothing is uploaded.">
+<title>எழுத்து OCR · Tamil & Indic image and book to text</title>
+<meta name="description" content="Free Tamil, English and Indic OCR in your browser. Paste, drop or upload an image, PDF or a whole book; mark text, tables and pictures or detect them automatically; convert page by page to Word or text. Nothing is uploaded.">
 <meta property="og:title" content="எழுத்து OCR — Tamil image & book to text">
-<meta property="og:description" content="Paste, drop or upload, crop, convert — single pages or whole books. Free, unlimited, runs in your browser.">
+<meta property="og:description" content="Paste, drop or upload, crop, convert — single pages or whole books, with tables and pictures. Free, unlimited, runs in your browser.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23b4471f'/><text x='32' y='45' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'>அ</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@500;700&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -16,6 +16,7 @@
   --paper:#f6f2ea; --panel:#fffdf8; --ink:#1f1b16; --muted:#6f665a; --line:#e4dccd; --line-2:#d3c8b4;
   --accent:#b4471f; --accent-ink:#fff; --accent-soft:#f6e3d8;
   --ok:#2f7a4c; --ok-soft:#dcefe2; --warn:#b07a00; --warn-soft:#f8ecc9; --bad:#b42a2a; --bad-soft:#f7dada;
+  --t-text:#2563b8; --t-head:#7b3fb0; --t-table:#2f8a3c; --t-img:#d07a12; --t-ign:#8a8a8a;
   --shadow:0 1px 2px rgba(40,30,10,.06),0 6px 24px rgba(40,30,10,.07);
   --ta:"Noto Sans Tamil","Noto Sans Tamil Supplement","IBM Plex Sans",sans-serif;
   --ui:"IBM Plex Sans","Noto Sans Tamil",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
@@ -23,11 +24,13 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
   --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
   --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b; --ok:#6cc08c; --ok-soft:#1d3326; --warn:#e3b44a; --warn-soft:#3a2f14; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+  --t-text:#6fa3ec; --t-head:#b98ae6; --t-table:#6cc07a; --t-img:#f0a650; --t-ign:#a0a0a0;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
 }}
 :root[data-theme=dark]{
   --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
   --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b; --ok:#6cc08c; --ok-soft:#1d3326; --warn:#e3b44a; --warn-soft:#3a2f14; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+  --t-text:#6fa3ec; --t-head:#b98ae6; --t-table:#6cc07a; --t-img:#f0a650; --t-ign:#a0a0a0;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -38,22 +41,19 @@ a{color:var(--accent)}
 .hidden{display:none!important}
 .spacer{flex:1}
 
-header{max-width:1280px;margin:0 auto;padding:22px 20px 6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header{max-width:1320px;margin:0 auto;padding:22px 20px 6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:10px;text-decoration:none;color:inherit}
 .brand b{font:700 30px/1 "Noto Serif Tamil",serif;color:var(--accent)}
 .brand span{font-weight:600;font-size:17px}
 header nav{display:flex;gap:16px;font-size:14px}
 header nav a{color:var(--muted);text-decoration:none}
-header nav a:hover{color:var(--ink)}
-.lede{max-width:1280px;margin:0 auto;padding:0 20px 18px;color:var(--muted)}
+.lede{max-width:1320px;margin:0 auto;padding:0 20px 18px;color:var(--muted)}
 body.embed header,body.embed .lede,body.embed footer,body.embed .how{display:none}
-
-main{max-width:1280px;margin:0 auto;padding:0 20px 40px}
+main{max-width:1320px;margin:0 auto;padding:0 20px 40px}
 body.embed main{padding:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
 body.embed .card{box-shadow:none}
 
-/* drop zone */
 .drop{display:grid;place-items:center;text-align:center;padding:52px 20px;border:2px dashed var(--line-2);border-radius:16px;background:var(--panel);cursor:pointer;transition:.15s;outline:none}
 .drop:hover,.drop.over,.drop:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
 .drop .glyph{font:700 44px/1 "Noto Serif Tamil",serif;color:var(--accent);letter-spacing:.06em}
@@ -74,15 +74,20 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .btn:disabled{opacity:.5;cursor:default}
 .btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .big{padding:12px 20px;font-size:16px;width:100%;justify-content:center}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:5px 11px;font-size:13px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.seg button:hover:not(.on){background:var(--paper)}
 
 /* workspace */
 .work{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
 .work.book{grid-template-columns:150px minmax(0,1.2fr) minmax(0,1fr)}
 @media (max-width:1100px){.work.book{grid-template-columns:120px minmax(0,1fr)} .work.book .side{grid-column:1/-1}}
-@media (max-width:760px){.work,.work.book{grid-template-columns:1fr} .rail{max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:86px}}
+@media (max-width:760px){.work,.work.book{grid-template-columns:1fr} .rail{position:static!important;max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:86px}}
 .rail{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .rail .rh{padding:10px 10px 8px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:grid;gap:6px}
-.rail .rh b{color:var(--ink);font-size:14px}
+.rail .rh b{color:var(--ink);font-size:14px;word-break:break-word}
 .rail .pages{overflow:auto;padding:8px;display:grid;gap:8px}
 .pg{position:relative;border:2px solid transparent;border-radius:9px;cursor:pointer;background:var(--paper);padding:4px;text-align:center}
 .pg:hover{border-color:var(--line-2)}
@@ -91,24 +96,45 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .pg .n{display:flex;align-items:center;justify-content:space-between;font:11.5px var(--mono);margin-top:3px;padding:0 2px}
 .pg .st{font-size:11px}
 .pg.done .st{color:var(--ok)} .pg.weak .st{color:var(--warn)} .pg.err .st{color:var(--bad)} .pg.reading .st{color:var(--accent)}
-.pg.reading::after{content:"";position:absolute;inset:4px 4px 22px;border-radius:4px;background:repeating-linear-gradient(-45deg,transparent 0 8px,color-mix(in srgb,var(--accent) 18%,transparent) 8px 16px);animation:mv 1s linear infinite}
-@keyframes mv{to{background-position:22px 0}}
+.pg.reading::after{content:"";position:absolute;inset:4px 4px 22px;border-radius:4px;background:repeating-linear-gradient(-45deg,transparent 0 8px,color-mix(in srgb,var(--accent) 18%,transparent) 8px 16px)}
 .imgcard{overflow:hidden}
 .tb{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .tb .lbl{font-size:13px;color:var(--muted);font-family:var(--mono)}
-.cropwrap{height:min(68vh,660px);background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px;position:relative}
+.cropwrap{height:min(70vh,680px);background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px;position:relative;overflow:hidden}
 .cropwrap img{display:block;max-width:100%}
-.cropwrap .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px}
-.hintbar{padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.cropwrap .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;z-index:3;background:color-mix(in srgb,var(--paper) 55%,transparent)}
+#areaView{position:absolute;inset:0;overflow:auto}
+.stage{position:relative;margin:12px auto;background:#fff;box-shadow:var(--shadow);touch-action:none;user-select:none}
+.stage img{display:block;width:100%;height:auto;pointer-events:none;max-width:none}
+.stage.draw{cursor:crosshair}
+.area{position:absolute;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);border-radius:2px;cursor:move}
+.area>span{position:absolute;left:-2px;top:-19px;background:var(--c);color:#fff;font:600 10.5px/17px var(--ui);padding:0 6px;border-radius:3px 3px 0 0;white-space:nowrap;pointer-events:none}
+.area.sel{background:color-mix(in srgb,var(--c) 22%,transparent);outline:2px solid var(--c);outline-offset:2px}
+.area.ignore{border-style:dashed;background:repeating-linear-gradient(45deg,transparent 0 6px,color-mix(in srgb,var(--c) 14%,transparent) 6px 12px)}
+.area .rz{position:absolute;right:-6px;bottom:-6px;width:13px;height:13px;background:var(--c);border:2px solid #fff;border-radius:3px;cursor:nwse-resize}
+.stage.draw .area{pointer-events:none}
+.rubber{position:absolute;border:2px dashed var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);pointer-events:none}
+.hintbar{padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center;min-height:42px}
 .hintbar label{display:flex;gap:6px;align-items:center;color:var(--ink);cursor:pointer}
+.hintbar select{width:auto;padding:3px 8px;font-size:13px}
+.legend{display:flex;gap:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
 
 .side{display:grid;gap:14px}
 .opts{padding:16px}
 label.f{display:block;margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:9px;padding:9px 10px;background:var(--paper)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.checks{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 14px;font-size:14px}
-.checks label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);border-radius:99px;padding:4px 11px;cursor:pointer;font-size:13.5px;user-select:none;background:var(--paper);display:inline-flex;gap:5px;align-items:center}
+.chip .tk{display:inline-grid;place-items:center;width:15px;height:15px;border:1.5px solid var(--line-2);border-radius:4px;font-size:10px;line-height:1}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.on .tk{border-color:var(--paper);background:var(--paper);color:var(--ink);font:700 10px var(--mono)}
+.langhint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.langhint.warn{color:var(--warn)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.checks{display:grid;gap:7px;margin:14px 0;font-size:14px}
+.checks label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checks small{color:var(--muted);display:block;font-size:12px}
 .prog{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:12px}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
 .pstat{font-size:13px;color:var(--muted);margin-top:6px;min-height:20px}
@@ -122,6 +148,14 @@ select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:
 .tabs button.on{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
 .result textarea{border:0;resize:vertical;min-height:320px;padding:16px 18px;background:transparent;font:18px/1.9 var(--ta);outline:none;width:100%}
 .result textarea[readonly]{background:color-mix(in srgb,var(--paper) 55%,transparent)}
+.preview{padding:18px 22px;font:17px/1.85 var(--ta);min-height:320px;max-height:70vh;overflow:auto}
+.preview h2{font-size:21px;margin:.4em 0 .3em;line-height:1.35}
+.preview p{margin:0 0 .8em}
+.preview table{border-collapse:collapse;margin:.8em 0;font-size:15px}
+.preview td{border:1px solid var(--line-2);padding:4px 8px;vertical-align:top}
+.preview tr:first-child td{background:var(--paper);font-weight:600}
+.preview figure{margin:.8em 0;text-align:center}.preview img{max-width:100%;border:1px solid var(--line)}
+.preview .pmark{font:12px var(--mono);color:var(--muted);border-top:1px dashed var(--line-2);padding-top:6px;margin-top:18px}
 .stats{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--line);font:12.5px var(--mono);color:var(--muted)}
 .weak{padding:8px 14px;border-top:1px solid var(--line);font-size:13px}
 .weak .w{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;margin:0 4px 4px 0;cursor:pointer;font:15px var(--ta);background:var(--paper)}
@@ -131,7 +165,7 @@ select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:
 .sym{display:inline-grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:8px;margin:0 4px 4px 0;cursor:pointer;font:20px "Noto Sans Tamil Supplement","Noto Sans Tamil",serif;background:var(--paper)}
 .sym:hover{border-color:var(--accent);background:var(--accent-soft)}
 .menu{position:relative;display:inline-block}
-.menu .list{position:absolute;right:0;top:calc(100% + 4px);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:4px;z-index:30;min-width:230px}
+.menu .list{position:absolute;right:0;top:calc(100% + 4px);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:4px;z-index:30;min-width:240px}
 .menu .list button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:14px}
 .menu .list button:hover{background:var(--paper)}
 .menu .list small{color:var(--muted);display:block;font-size:11.5px}
@@ -143,7 +177,7 @@ select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:
 .how div{padding:16px 18px}
 .how b{display:block;margin-bottom:4px}
 .how p{margin:0;color:var(--muted);font-size:14px}
-footer{max-width:1280px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:13px;display:flex;gap:14px;flex-wrap:wrap}
+footer{max-width:1320px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:13px}
 pre.code{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;font:12.5px/1.55 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(680px,94vw);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(20,15,10,.45)}
@@ -152,7 +186,7 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 .db{padding:4px 18px 16px;max-height:72vh;overflow:auto}
 .db h4{margin:16px 0 4px;font-size:14px}
 .db p{margin:4px 0;font-size:14px;color:var(--muted)}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:14px;z-index:50;box-shadow:var(--shadow)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:14px;z-index:50;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 .cropper-view-box{outline:2px solid var(--accent);outline-color:color-mix(in srgb,var(--accent) 85%,transparent)}
 .cropper-line,.cropper-point{background-color:var(--accent)}
 </style>
@@ -161,14 +195,11 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 <header>
   <a class="brand" href="./"><b>எழுத்து</b><span>OCR</span></a>
   <span class="spacer"></span>
-  <nav>
-    <a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a>
-  </nav>
+  <nav><a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a></nav>
 </header>
-<p class="lede">Tamil, English & Indic image-to-text — single pages or whole books. Free and unlimited: it runs inside your browser, so nothing is uploaded anywhere.</p>
+<p class="lede">Tamil, English & Indic image-to-text — single pages or whole books, with tables and pictures. Free and unlimited: it runs inside your browser, so nothing is uploaded anywhere.</p>
 
 <main>
-  <!-- step 1 -->
   <section id="dropView">
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload images or a PDF">
       <div>
@@ -187,13 +218,12 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
     <div class="card resume hidden" id="resumeBox"></div>
     <div class="how">
       <div class="card"><b>1 · Add pages</b><p>A screenshot, a photo, a stack of page photos, or a PDF of a whole book.</p></div>
-      <div class="card"><b>2 · Crop once</b><p>Box the text area. For books, tick “same crop for every page” to skip headers and page numbers.</p></div>
+      <div class="card"><b>2 · Crop or mark areas</b><p>Crop the text area, or mark text, headings, tables and pictures — or let it detect them.</p></div>
       <div class="card"><b>3 · Read page by page</b><p>Convert one page, or “Read all pages” and keep reviewing while it works.</p></div>
-      <div class="card"><b>4 · Copy or download</b><p>Fix weak words, add Tamil symbols, then copy or save the whole book as text or Word.</p></div>
+      <div class="card"><b>4 · Copy or download</b><p>Fix weak words, add Tamil symbols, then save as Word (with tables & pictures), web page or text.</p></div>
     </div>
   </section>
 
-  <!-- step 2 -->
   <section id="workView" class="work hidden">
     <aside class="card rail hidden" id="rail">
       <div class="rh">
@@ -213,36 +243,46 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           <span class="lbl" id="pLbl"></span>
           <button class="btn sm" onclick="go(cur+1)" title="Next page (Alt+→)">›</button>
         </span>
+        <div class="seg" title="Crop the page, or mark separate areas (text, table, picture)">
+          <button id="mCrop" onclick="setMode('crop')">Crop</button>
+          <button id="mAreas" onclick="setMode('areas')">Areas</button>
+        </div>
         <span class="spacer"></span>
-        <button class="btn sm ghost" onclick="rotate(-90)" title="Rotate left">⟲</button>
-        <button class="btn sm ghost" onclick="rotate(90)" title="Rotate right">⟳</button>
-        <button class="btn sm ghost" onclick="cropper&&cropper.zoom(.15)" title="Zoom in">＋</button>
-        <button class="btn sm ghost" onclick="cropper&&cropper.zoom(-.15)" title="Zoom out">－</button>
-        <button class="btn sm" onclick="selectAll()" title="Use the whole page">Whole page</button>
+        <span id="cropTools" style="display:inline-flex;gap:4px">
+          <button class="btn sm ghost" onclick="rotate(-90)" title="Rotate left">⟲</button>
+          <button class="btn sm ghost" onclick="rotate(90)" title="Rotate right">⟳</button>
+          <button class="btn sm ghost" onclick="zoomBy(.15)" title="Zoom in">＋</button>
+          <button class="btn sm ghost" onclick="zoomBy(-.15)" title="Zoom out">－</button>
+          <button class="btn sm" id="wholeBtn" onclick="selectAll()" title="Use the whole page">Whole page</button>
+        </span>
       </div>
-      <div class="cropwrap"><img id="img" alt=""><div class="loading hidden" id="imgLoading">Rendering page…</div></div>
-      <div class="hintbar">
-        <span>Drag to draw a crop box · scroll to zoom</span>
+      <div class="tb hidden" id="areaTools">
+        <span class="lbl" style="font-family:var(--ui)">Draw:</span>
+        <div class="seg" id="drawSeg">
+          <button data-t="text">Text</button><button data-t="heading">Heading</button><button data-t="table">Table</button><button data-t="image">Picture</button><button data-t="ignore">Skip</button>
+        </div>
         <span class="spacer"></span>
-        <label id="sameCropLbl" class="hidden" title="Use this page's crop box (as a share of the page) for every page you haven't cropped yourself"><input type="checkbox" id="sameCrop"> Same crop for every page</label>
+        <button class="btn sm" id="detectBtn" onclick="detectHere()" title="Find text, headings, tables and pictures on this page">✦ Detect automatically</button>
+        <button class="btn sm ghost" onclick="clearAreas()" title="Remove all areas on this page">Clear</button>
+      </div>
+      <div class="cropwrap" id="cropwrap">
+        <img id="img" alt="">
+        <div id="areaView" class="hidden"><div class="stage" id="stage"><img id="simg" alt=""></div></div>
+        <div class="loading hidden" id="imgLoading">Rendering page…</div>
+      </div>
+      <div class="hintbar" id="hintbar">
+        <span id="hintText">Drag to draw a crop box · scroll to zoom</span>
+        <span class="spacer"></span>
+        <label id="sameCropLbl" class="hidden" title="Use this page's crop box for every page you haven't cropped yourself"><input type="checkbox" id="sameCrop"> Same crop for every page</label>
         <span id="dims"></span>
       </div>
     </div>
 
     <div class="side">
       <div class="card opts">
-        <label class="f" for="lang">Language</label>
-        <select id="lang">
-          <option value="tam+eng">Tamil + English</option>
-          <option value="tam">Tamil only</option>
-          <option value="eng">English only</option>
-          <option value="san+eng">Sanskrit (Devanagari) + English</option>
-          <option value="hin+eng">Hindi + English</option>
-          <option value="mal+eng">Malayalam + English</option>
-          <option value="tel+eng">Telugu + English</option>
-          <option value="kan+eng">Kannada + English</option>
-          <option value="tam+san">Tamil + Sanskrit</option>
-        </select>
+        <label class="f">Languages on this page <span style="text-transform:none;font-weight:400">— tick all that appear</span></label>
+        <div class="chips" id="langChips"></div>
+        <div class="langhint" id="langHint"></div>
         <div class="grid2">
           <div><label class="f" for="psm">Layout</label>
             <select id="psm">
@@ -260,10 +300,11 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
             </select></div>
         </div>
         <div class="checks">
-          <label title="Keep the line endings of the scan (poetry, verse). Otherwise paragraphs are joined."><input type="checkbox" id="keepLines"> Keep line breaks</label>
-          <label id="appendLbl"><input type="checkbox" id="append"> Add to existing text</label>
+          <label><input type="checkbox" id="autoLayout" checked><span>Find tables & pictures automatically<small>Pages without marked areas are split into text, headings, tables and pictures</small></span></label>
+          <label><input type="checkbox" id="keepLines"><span>Keep line breaks<small>For poetry and verse; otherwise paragraphs are joined</small></span></label>
+          <label id="appendLbl"><input type="checkbox" id="append"><span>Add to existing text</span></label>
         </div>
-        <button class="btn primary big" id="goBtn" onclick="convertCurrent()">Convert this page</button>
+        <button class="btn primary big" id="goBtn" onclick="convertCurrent()">Convert to text</button>
 
         <div class="bookbar hidden" id="bookbar">
           <label class="f" for="range">Read all pages</label>
@@ -274,27 +315,34 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
           <label style="display:flex;gap:7px;align-items:center;font-size:13px;margin-top:8px;color:var(--muted);cursor:pointer"><input type="checkbox" id="redo"> Also re-read pages already done</label>
         </div>
         <div class="prog"><i id="bar"></i></div>
-        <div class="pstat" id="pstat">The language model downloads once (Tamil ≈ 4 MB) and is cached.</div>
+        <div class="pstat" id="pstat">Language models download once (≈ 2–5 MB each) and are cached.</div>
       </div>
 
       <div class="card result">
         <div class="tb">
-          <div class="tabs" id="tabs"><button class="on" data-t="page" onclick="setTab('page')">This page</button><button data-t="book" onclick="setTab('book')">Whole book</button></div>
+          <div class="tabs" id="tabs">
+            <button class="on" data-t="page" onclick="setTab('page')">Text</button>
+            <button data-t="preview" onclick="setTab('preview')">Preview</button>
+            <button data-t="book" id="tabBook" onclick="setTab('book')">Whole book</button>
+          </div>
           <span class="spacer"></span>
           <button class="btn sm" onclick="copyText()">Copy</button>
           <div class="menu">
             <button class="btn sm" onclick="toggleMenu()">Download ▾</button>
             <div class="list hidden" id="dlMenu">
-              <button onclick="dl('txt')">Text (.txt)<small>UTF-8, works everywhere</small></button>
-              <button onclick="dl('doc')">Word (.doc)<small>Opens in Word, LibreOffice, Google Docs</small></button>
+              <button onclick="dl('docx')">Word (.docx)<small>Headings, tables and pictures kept</small></button>
+              <button onclick="dl('html')">Web page (.html)<small>One file, pictures included</small></button>
+              <button onclick="dl('txt')">Text (.txt)<small>Plain UTF-8; tables tab-separated</small></button>
               <button onclick="dl('md')">Markdown (.md)</button>
-              <button onclick="dl('json')">JSON<small>Text + confidence per page</small></button>
+              <button onclick="dl('json')">JSON<small>Blocks, text and confidence per page</small></button>
               <label id="markLbl"><input type="checkbox" id="pageMarks" checked> Page numbers between pages</label>
+              <label><input type="checkbox" id="withPics" checked> Include pictures</label>
             </div>
           </div>
           <button class="btn sm ghost" id="palBtn" onclick="togglePal()" title="Tamil & Tamil Supplement symbols">ௐ</button>
         </div>
         <textarea id="out" spellcheck="false" lang="ta" placeholder="Converted text appears here — you can edit it."></textarea>
+        <div class="preview hidden" id="preview"></div>
         <div class="palette hidden" id="pal"><input type="text" id="symQ" placeholder="Filter: fraction, rupee, day, digit…" style="margin-bottom:6px"><div id="symList"></div></div>
         <div class="weak hidden" id="weak"></div>
         <div class="stats" id="stats"></div>
@@ -303,24 +351,15 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
   </section>
 </main>
 
-<footer>
-  <span>எழுத்து OCR · runs locally in your browser · your work is kept in this browser only</span>
-</footer>
+<footer>எழுத்து OCR · runs locally in your browser · your work is kept in this browser only</footer>
 
 <dialog id="embedDlg">
   <div class="dh"><h3>Add this OCR to your website</h3><span class="spacer"></span><button class="btn ghost sm" onclick="embedDlg.close()">✕</button></div>
   <div class="db">
-    <h4>1 · One-line widget (easiest — works in WordPress “Custom HTML”)</h4>
-    <p>Shows the OCR tool right where you paste it, sized to fit automatically.</p>
-    <pre class="code" id="codeInline"></pre>
-    <h4>2 · Button that opens OCR in a pop-up</h4>
-    <p>Adds a small button; the tool opens over your page and closes when done.</p>
-    <pre class="code" id="codeButton"></pre>
-    <h4>3 · Plain iframe</h4>
-    <pre class="code" id="codeIframe"></pre>
-    <h4>4 · Just a link</h4>
-    <pre class="code" id="codeLink"></pre>
-    <p style="margin-top:12px">Options: <code>data-lang="tam"</code> (or <code>eng</code>, <code>san+eng</code>…). For developers, results also arrive as <code>EzhuthuOCR.onText = (text, info) => …</code> or a window <code>message</code> event <code>{type:"ezhuthu-ocr", text}</code>.</p>
+    <h4>1 · One-line widget (works in WordPress “Custom HTML”)</h4><pre class="code" id="codeInline"></pre>
+    <h4>2 · Button that opens OCR in a pop-up</h4><pre class="code" id="codeButton"></pre>
+    <h4>3 · Plain iframe</h4><pre class="code" id="codeIframe"></pre>
+    <h4>4 · Just a link</h4><pre class="code" id="codeLink"></pre>
   </div>
 </dialog>
 
@@ -330,40 +369,69 @@ dialog::backdrop{background:rgba(20,15,10,.45)}
 const $ = s => document.querySelector(s);
 const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const DOCXJS = "https://cdn.jsdelivr.net/npm/docx@9.15.0/dist/index.iife.js";
 const SYMBOLS = [["Tamil digits & signs",[["ஃ","U+0B83","Tamil Sign Visarga"],["ௐ","U+0BD0","Tamil Om"],["௦","U+0BE6","Tamil Digit Zero"],["௧","U+0BE7","Tamil Digit One"],["௨","U+0BE8","Tamil Digit Two"],["௩","U+0BE9","Tamil Digit Three"],["௪","U+0BEA","Tamil Digit Four"],["௫","U+0BEB","Tamil Digit Five"],["௬","U+0BEC","Tamil Digit Six"],["௭","U+0BED","Tamil Digit Seven"],["௮","U+0BEE","Tamil Digit Eight"],["௯","U+0BEF","Tamil Digit Nine"],["௰","U+0BF0","Tamil Number Ten"],["௱","U+0BF1","Tamil Number One Hundred"],["௲","U+0BF2","Tamil Number One Thousand"],["௳","U+0BF3","Tamil Day Sign"],["௴","U+0BF4","Tamil Month Sign"],["௵","U+0BF5","Tamil Year Sign"],["௶","U+0BF6","Tamil Debit Sign"],["௷","U+0BF7","Tamil Credit Sign"],["௸","U+0BF8","Tamil As Above Sign"],["௹","U+0BF9","Tamil Rupee Sign"],["௺","U+0BFA","Tamil Number Sign"]]],["Tamil Supplement (fractions, measures, clerical)",[["𑿀","U+11FC0","Tamil Fraction One Three-Hundred-And-Twentieth"],["𑿁","U+11FC1","Tamil Fraction One One-Hundred-And-Sixtieth"],["𑿂","U+11FC2","Tamil Fraction One Eightieth"],["𑿃","U+11FC3","Tamil Fraction One Sixty-Fourth"],["𑿄","U+11FC4","Tamil Fraction One Fortieth"],["𑿅","U+11FC5","Tamil Fraction One Thirty-Second"],["𑿆","U+11FC6","Tamil Fraction Three Eightieths"],["𑿇","U+11FC7","Tamil Fraction Three Sixty-Fourths"],["𑿈","U+11FC8","Tamil Fraction One Twentieth"],["𑿉","U+11FC9","Tamil Fraction One Sixteenth-1"],["𑿊","U+11FCA","Tamil Fraction One Sixteenth-2"],["𑿋","U+11FCB","Tamil Fraction One Tenth"],["𑿌","U+11FCC","Tamil Fraction One Eighth"],["𑿍","U+11FCD","Tamil Fraction Three Twentieths"],["𑿎","U+11FCE","Tamil Fraction Three Sixteenths"],["𑿏","U+11FCF","Tamil Fraction One Fifth"],["𑿐","U+11FD0","Tamil Fraction One Quarter"],["𑿑","U+11FD1","Tamil Fraction One Half-1"],["𑿒","U+11FD2","Tamil Fraction One Half-2"],["𑿓","U+11FD3","Tamil Fraction Three Quarters"],["𑿔","U+11FD4","Tamil Fraction Downscaling Factor Kiizh"],["𑿕","U+11FD5","Tamil Sign Nel"],["𑿖","U+11FD6","Tamil Sign Cevitu"],["𑿗","U+11FD7","Tamil Sign Aazhaakku"],["𑿘","U+11FD8","Tamil Sign Uzhakku"],["𑿙","U+11FD9","Tamil Sign Muuvuzhakku"],["𑿚","U+11FDA","Tamil Sign Kuruni"],["𑿛","U+11FDB","Tamil Sign Pathakku"],["𑿜","U+11FDC","Tamil Sign Mukkuruni"],["𑿝","U+11FDD","Tamil Sign Kaacu"],["𑿞","U+11FDE","Tamil Sign Panam"],["𑿟","U+11FDF","Tamil Sign Pon"],["𑿠","U+11FE0","Tamil Sign Varaakan"],["𑿡","U+11FE1","Tamil Sign Paaram"],["𑿢","U+11FE2","Tamil Sign Kuzhi"],["𑿣","U+11FE3","Tamil Sign Veli"],["𑿤","U+11FE4","Tamil Wet Cultivation Sign"],["𑿥","U+11FE5","Tamil Dry Cultivation Sign"],["𑿦","U+11FE6","Tamil Land Sign"],["𑿧","U+11FE7","Tamil Salt Pan Sign"],["𑿨","U+11FE8","Tamil Traditional Credit Sign"],["𑿩","U+11FE9","Tamil Traditional Number Sign"],["𑿪","U+11FEA","Tamil Current Sign"],["𑿫","U+11FEB","Tamil And Odd Sign"],["𑿬","U+11FEC","Tamil Spent Sign"],["𑿭","U+11FED","Tamil Total Sign"],["𑿮","U+11FEE","Tamil In Possession Sign"],["𑿯","U+11FEF","Tamil Starting From Sign"],["𑿰","U+11FF0","Tamil Sign Muthaliya"],["𑿱","U+11FF1","Tamil Sign Vakaiyaraa"],["𑿿","U+11FFF","Tamil Punctuation End Of Text"]]],["Punctuation",[["‘","U+2018","Left Single Quotation Mark"],["’","U+2019","Right Single Quotation Mark"],["“","U+201C","Left Double Quotation Mark"],["”","U+201D","Right Double Quotation Mark"],["–","U+2013","En Dash"],["—","U+2014","Em Dash"],["…","U+2026","Horizontal Ellipsis"],["।","U+0964","Devanagari Danda"],["॥","U+0965","Devanagari Double Danda"],["·","U+00B7","Middle Dot"]]]];
 const params = new URLSearchParams(location.search);
 const EMBED = params.has("embed");
 const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
 const out = $("#out"), stats = $("#stats"), weak = $("#weak");
+const esc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2600); }
+function copy(t){ navigator.clipboard.writeText(t).then(()=>toast("Copied"), ()=>toast("Copy failed — select and press Ctrl+C")); }
+function loadScript(src){ return new Promise((ok,err)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=err; document.head.append(s); }); }
 
-/* ---------- document model ----------
-   pages[i] = { src:{kind:'img',url}|{kind:'pdf',doc,n}, rot, crop:{x,y,w,h} as fractions | null,
-                text, conf, weak:[], status:'new'|'queued'|'reading'|'done'|'error', edited } */
-let pages = [], cur = 0, cropper = null, docKey = null, docName = "", tab = "page", busyOne = false;
+/* ===================== state =====================
+ pages[i] = { src, rot, crop (fractions of the rotated page) | null,
+              areas: [{id,type:'text'|'heading'|'table'|'image'|'ignore', x,y,w,h (fractions), auto}],
+              blocks: [{type, text | rows | img}], text, conf, weak, status, edited } */
+let pages = [], cur = 0, cropper = null, docKey = null, docName = "", tab = "page", busyOne = false, mode = "crop";
 let batch = { running:false, stop:false, done:0, total:0, t0:0 };
-let globalCrop = null;  // fractions, when "same crop for every page" is on
+let globalCrop = null, areaSeq = 1;
+const isBook = () => pages.length > 1;
 
 if (EMBED) document.body.classList.add("embed");
 if (store.get("ezTheme")) document.documentElement.dataset.theme = store.get("ezTheme");
 function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches; r.dataset.theme = dark?"light":"dark"; store.set("ezTheme", r.dataset.theme); }
-["lang","psm","prep"].forEach(id=>{ const v = (id==="lang" && params.get("lang")) || store.get("ez_"+id); if(v && [...$("#"+id).options].some(o=>o.value===v)) $("#"+id).value = v; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.value)); });
-["keepLines","append","pageMarks"].forEach(id=>{ const v = store.get("ez_"+id); if(v!==null) $("#"+id).checked = v==="1"; $("#"+id).onchange = e=>store.set("ez_"+id, e.target.checked?"1":"0"); });
-function toast(m){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2400); }
-function copy(t){ navigator.clipboard.writeText(t).then(()=>toast("Copied"), ()=>toast("Copy failed — select and press Ctrl+C")); }
-const esc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const isBook = () => pages.length > 1;
+["psm","prep"].forEach(id=>{ const v = store.get("ez_"+id); if(v && [...$("#"+id).options].some(o=>o.value===v)) $("#"+id).value = v; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.value)); });
+["keepLines","append","pageMarks","withPics","autoLayout"].forEach(id=>{ const v = store.get("ez_"+id); if(v!==null) $("#"+id).checked = v==="1"; $("#"+id).addEventListener("change", e=>store.set("ez_"+id, e.target.checked?"1":"0")); });
 
-/* ---------- saved work (IndexedDB, this browser only) ---------- */
+/* ===================== languages (multi-select) ===================== */
+const LANGS = [["tam","Tamil","தமிழ்"],["eng","English","English"],["san","Sanskrit","संस्कृतम्"],["hin","Hindi","हिन्दी"],["mar","Marathi","मराठी"],
+  ["mal","Malayalam","മലയാളം"],["tel","Telugu","తెలుగు"],["kan","Kannada","ಕನ್ನಡ"],["ben","Bengali","বাংলা"],["guj","Gujarati","ગુજરાતી"],
+  ["pan","Punjabi","ਪੰਜਾਬੀ"],["ori","Odia","ଓଡ଼ିଆ"],["sin","Sinhala","සිංහල"],["urd","Urdu","اردو"],["ara","Arabic","العربية"],["fra","French","Français"],["deu","German","Deutsch"]];
+const LNAME = Object.fromEntries(LANGS.map(([c,n])=>[c,n]));
+let langSel = (params.get("lang") || store.get("ez_langs") || "tam+eng").split(/[+,]/).filter(c=>LNAME[c]);
+if (!langSel.length) langSel = ["tam","eng"];
+function langStr(){ return langSel.join("+"); }
+function renderLangs(){
+  const box = $("#langChips");
+  box.innerHTML = LANGS.map(([c,n,native])=>{ const i = langSel.indexOf(c);
+    return `<span class="chip${i>=0?" on":""}" data-c="${c}" title="${native}"><span class="tk">${i>=0?i+1:""}</span>${n}</span>`; }).join("");
+  const h = $("#langHint");
+  h.classList.toggle("warn", langSel.length > 3);
+  h.textContent = langSel.length > 3 ? `Reading with ${langSel.length} languages is slower and less accurate — tick only the ones on the page.`
+    : `Reading as ${langSel.map(c=>LNAME[c]).join(" + ")}. The number shows priority (first ticked = main language).`;
+}
+$("#langChips").addEventListener("click", e=>{
+  const c = e.target.closest(".chip")?.dataset.c; if(!c) return;
+  const i = langSel.indexOf(c);
+  if (i>=0){ if(langSel.length===1) return toast("Keep at least one language"); langSel.splice(i,1); } else langSel.push(c);
+  store.set("ez_langs", langStr()); renderLangs();
+  if (pages.length) getPool(1).catch(()=>{});
+});
+renderLangs();
+
+/* ===================== saved work (IndexedDB) ===================== */
 const idb = (()=>{ let dbp; const open = ()=> dbp ||= new Promise((ok,err)=>{ const r = indexedDB.open("ezhuthu-ocr",1); r.onupgradeneeded=()=>r.result.createObjectStore("docs"); r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error); });
-  const tx = async (mode, fn) => { const db = await open(); return new Promise((ok,err)=>{ const t = db.transaction("docs",mode); const req = fn(t.objectStore("docs")); t.oncomplete=()=>ok(req && req.result); t.onerror=()=>err(t.error); }); };
-  return { get:k=>tx("readonly",s=>s.get(k)).catch(()=>null), put:(k,v)=>tx("readwrite",s=>s.put(v,k)).catch(()=>{}), del:k=>tx("readwrite",s=>s.delete(k)).catch(()=>{}), all:()=>tx("readonly",s=>s.getAll()).catch(()=>[]) }; })();
+  const tx = async (m, fn) => { const db = await open(); return new Promise((ok,err)=>{ const t = db.transaction("docs",m); const req = fn(t.objectStore("docs")); t.oncomplete=()=>ok(req && req.result); t.onerror=()=>err(t.error); }); };
+  return { get:k=>tx("readonly",s=>s.get(k)).catch(()=>null), put:(k,v)=>tx("readwrite",s=>s.put(v,k)).catch(()=>{}), all:()=>tx("readonly",s=>s.getAll()).catch(()=>[]) }; })();
 let saveT = null;
-function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(()=>idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(),
-  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null})), globalCrop}), 600); }
+function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(()=>idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop,
+  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null}))}), 700); }
 async function restore(){
   const rec = docKey && await idb.get(docKey);
   if (!rec || rec.total !== pages.length) return;
-  rec.pages.forEach((r,i)=>Object.assign(pages[i], {text:r.text, conf:r.conf, status:r.status, edited:r.edited, rot:r.rot, crop:r.crop}));
+  rec.pages.forEach((r,i)=>Object.assign(pages[i], r));
   if (rec.globalCrop){ globalCrop = rec.globalCrop; $("#sameCrop").checked = true; }
   const n = rec.pages.filter(p=>p.status==="done").length;
   if (n) toast(`Restored your earlier work: ${n} page${n>1?"s":""} already read`);
@@ -377,12 +445,12 @@ async function showResume(){
     `<span class="spacer"></span><span style="color:var(--muted)">Open the same file again to continue where you stopped.</span>`;
 }
 
-/* ---------- input: paste / drop / upload / camera ---------- */
+/* ===================== input ===================== */
 const drop = $("#drop"), fileIn = $("#fileIn"), camIn = $("#camIn"), addIn = $("#addIn");
 drop.onclick = ()=>fileIn.click();
 drop.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } };
 fileIn.onchange = ()=>{ if(fileIn.files.length) openFiles([...fileIn.files]); fileIn.value=""; };
-camIn.onchange  = ()=>{ if(camIn.files.length) openFiles([...camIn.files], !$("#workView").classList.contains("hidden")); camIn.value=""; };
+camIn.onchange  = ()=>{ if(camIn.files.length) openFiles([...camIn.files], pages.length>0); camIn.value=""; };
 addIn.onchange  = ()=>{ if(addIn.files.length) openFiles([...addIn.files], true); addIn.value=""; };
 ["dragenter","dragover"].forEach(ev=>document.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave","drop"].forEach(ev=>document.addEventListener(ev, e=>{ e.preventDefault(); if(ev==="drop"||!e.relatedTarget) drop.classList.remove("over"); }));
@@ -392,66 +460,54 @@ document.addEventListener("paste", e=>{
   const item = [...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));
   if (item){ e.preventDefault(); openFiles([item.getAsFile()], false); }
 });
-
+const newPage = src => ({src, rot:0, crop:null, areas:[], blocks:null, status:"new"});
 async function openFiles(files, append = false){
   files = files.filter(f=>f && (f.type.startsWith("image/") || f.type==="application/pdf" || /\.(pdf|tiff?)$/i.test(f.name||"")));
   if (!files.length) return toast("Please choose images or a PDF");
   files.sort((a,b)=>(a.name||"").localeCompare(b.name||"", undefined, {numeric:true}));
-  if (!append){ stopBatch(); destroyCropper(); pages = []; cur = 0; globalCrop = null; $("#sameCrop").checked = false; out.value = ""; }
+  if (!append){ stopBatch(); destroyViews(); pages = []; cur = 0; globalCrop = null; $("#sameCrop").checked = false; out.value = ""; }
   const startLen = pages.length;
   for (const f of files){
     if (f.type === "application/pdf" || /\.pdf$/i.test(f.name||"")){
       try{
         if (!window.pdfjsLib){ await loadScript(PDFJS); pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; }
         const doc = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
-        for (let n=1; n<=doc.numPages; n++) pages.push({src:{kind:"pdf",doc,n}, rot:0, crop:null, status:"new"});
+        for (let n=1; n<=doc.numPages; n++) pages.push(newPage({kind:"pdf",doc,n}));
       }catch(e){ console.error(e); toast(`Couldn't open ${f.name}`); }
     } else if (/tiff?$/i.test(f.type) || /\.tiff?$/i.test(f.name||"")){
-      try{ pages.push({src:{kind:"img", url: await tiffToPng(f)}, rot:0, crop:null, status:"new"}); }catch{ toast(`Can't open ${f.name} here — save it as PNG/JPG`); }
-    } else {
-      pages.push({src:{kind:"img", url: URL.createObjectURL(f)}, rot:0, crop:null, status:"new"});
-    }
+      try{ pages.push(newPage({kind:"img", url: await tiffToPng(f)})); }catch{ toast(`Can't open ${f.name} here — save it as PNG/JPG`); }
+    } else pages.push(newPage({kind:"img", url: URL.createObjectURL(f)}));
   }
   if (pages.length === startLen) return;
   if (!append){
     docName = files.length === 1 ? (files[0].name || "Pasted image").replace(/\.[^.]+$/,"") : `${files.length} images`;
-    docKey = files.map(f=>`${f.name}|${f.size}|${f.lastModified}`).join(";") + `#${pages.length}`;
-    if (files.length===1 && !files[0].name) docKey = null;   // pasted screenshots aren't saved
+    docKey = (files.length===1 && !files[0].name) ? null : files.map(f=>`${f.name}|${f.size}|${f.lastModified}`).join(";") + `#${pages.length}`;
     await restore();
-  } else if (docKey) { docKey += `+${files.length}`; }
-  enterWork();
-  go(append ? startLen : 0);
+  } else if (docKey) docKey += `+${files.length}`;
+  enterWork(); go(append ? startLen : 0);
 }
-async function tiffToPng(f){
-  const w = (await getPool(1))[0];  // Tesseract's Leptonica decodes TIFF
-  const { data } = await w.recognize(f, {}, { imageColor: true, text: false });
-  return data.imageColor;
-}
-function loadScript(src){ return new Promise((ok,err)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=err; document.head.append(s); }); }
+async function tiffToPng(f){ const [w] = await getPool(1); const { data } = await w.recognize(f, {}, { imageColor:true, text:false }); return data.imageColor; }
 async function loadSample(){ const b = await (await fetch("sample.png")).blob(); openFiles([new File([b], "sample.png", {type:"image/png"})]); }
 
 function enterWork(){
   $("#dropView").classList.add("hidden"); $("#workView").classList.remove("hidden");
   const book = isBook();
   $("#workView").classList.toggle("book", book);
-  ["#rail","#pnav","#bookbar","#sameCropLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
-  $("#tabs").classList.toggle("hidden", !book);
-  $("#markLbl").classList.toggle("hidden", !book);
+  ["#rail","#pnav","#bookbar","#sameCropLbl","#tabBook","#markLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
   $("#appendLbl").classList.toggle("hidden", book);
   $("#goBtn").textContent = book ? "Convert this page" : "Convert to text";
   $("#docName").textContent = docName;
-  if (!book) setTab("page");
-  renderRail(); sendHeight();
-  getPool(1).catch(()=>{});            // warm up the model while the user crops
+  if (!book && tab==="book") setTab("page");
+  setMode(mode, true); renderRail(); sendHeight();
+  getPool(1).catch(()=>{});
 }
 function reset(){
   if (batch.running && !confirm("Reading is still running. Stop and close?")) return;
-  stopBatch(); destroyCropper(); pages = []; docKey = null;
+  stopBatch(); destroyViews(); pages = []; docKey = null;
   $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); showResume(); sendHeight();
 }
 
-/* ---------- page rail ---------- */
-const thumbs = new Map();
+/* ===================== page strip ===================== */
 function renderRail(){
   if (!isBook()) return;
   const done = pages.filter(p=>p.status==="done").length;
@@ -465,7 +521,8 @@ function renderRail(){
   [...box.children].forEach((el,i)=>{
     const p = pages[i], weakp = p.status==="done" && p.conf!=null && p.conf<75;
     el.className = "pg" + (i===cur?" cur":"") + (p.status==="done"?(weakp?" weak":" done"):p.status==="reading"?" reading":p.status==="error"?" err":"");
-    el.querySelector(".st").textContent = p.status==="done" ? (p.conf!=null?Math.round(p.conf)+"%":"✓") + (p.edited?" ✎":"") : p.status==="reading" ? "…" : p.status==="queued" ? "⋯" : p.status==="error" ? "!" : "";
+    const kinds = (p.blocks||[]).reduce((a,b)=>a+(b.type==="table"?"▦":b.type==="image"?"▣":""),"");
+    el.querySelector(".st").textContent = p.status==="done" ? kinds.slice(0,3) + " " + (p.conf!=null?Math.round(p.conf)+"%":"✓") + (p.edited?"✎":"") : p.status==="reading" ? "…" : p.status==="queued" ? "⋯" : p.status==="error" ? "!" : (p.areas?.length ? "▭"+p.areas.length : "");
   });
 }
 let thumbObs = null;
@@ -473,44 +530,51 @@ function lazyThumbs(){
   thumbObs?.disconnect();
   thumbObs = new IntersectionObserver(es=>es.forEach(async en=>{
     if(!en.isIntersecting) return; const el = en.target; thumbObs.unobserve(el);
-    const i = +el.closest(".pg").dataset.i, p = pages[i]; if(!p) return;
+    const p = pages[+el.closest(".pg").dataset.i]; if(!p) return;
     if (p.src.kind === "img"){ el.innerHTML = `<img src="${p.src.url}" alt="">`; return; }
     const c = await renderPdfPage(p.src.doc, p.src.n, 0.18); el.innerHTML = ""; el.append(c);
   }), {root: $("#pages"), rootMargin: "300px"});
   document.querySelectorAll("#pages .th").forEach(t=>thumbObs.observe(t));
 }
 
-/* ---------- page images ---------- */
+/* ===================== page images ===================== */
 async function renderPdfPage(doc, n, scale){
-  const pg = await doc.getPage(n);
-  const vp = pg.getViewport({scale});
+  const pg = await doc.getPage(n), vp = pg.getViewport({scale});
   const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
-  await pg.render({canvasContext: c.getContext("2d"), viewport: vp}).promise;
-  return c;
+  await pg.render({canvasContext: c.getContext("2d"), viewport: vp}).promise; return c;
 }
-function canvasToUrl(c){ return new Promise(ok=>c.toBlob(b=>ok(URL.createObjectURL(b)), "image/png")); }
+const toUrl = c => new Promise(ok=>c.toBlob(b=>ok(URL.createObjectURL(b)), "image/png"));
 async function pageUrl(p){
   if (p.src.kind === "img") return p.src.url;
-  if (!p.viewUrl) p.viewUrl = await canvasToUrl(await renderPdfPage(p.src.doc, p.src.n, 300/72));   // 300 DPI
+  if (!p.viewUrl) p.viewUrl = await toUrl(await renderPdfPage(p.src.doc, p.src.n, 300/72));
   return p.viewUrl;
 }
-function loadImage(url){ return new Promise((ok,err)=>{ const im = new Image(); im.onload=()=>ok(im); im.onerror=err; im.src=url; }); }
-/* full-resolution page -> rotated -> cropped canvas (no Cropper needed: used for batch reading) */
-async function pageCanvas(p){
+const loadImage = url => new Promise((ok,err)=>{ const im = new Image(); im.onload=()=>ok(im); im.onerror=err; im.src=url; });
+/* the full page, rotated — every area and crop is in fractions of this */
+async function fullCanvas(p){
   const im = await loadImage(await pageUrl(p));
   const r = ((p.rot||0)%360+360)%360, sw = r%180 ? im.naturalHeight : im.naturalWidth, sh = r%180 ? im.naturalWidth : im.naturalHeight;
   const c = document.createElement("canvas"); c.width = sw; c.height = sh;
   const x = c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,sw,sh);
   x.translate(sw/2, sh/2); x.rotate(r*Math.PI/180); x.drawImage(im, -im.naturalWidth/2, -im.naturalHeight/2);
-  const f = p.crop || globalCrop || {x:0,y:0,w:1,h:1};
-  const cx = Math.round(f.x*sw), cy = Math.round(f.y*sh), cw = Math.max(10, Math.round(f.w*sw)), ch = Math.max(10, Math.round(f.h*sh));
-  const o = document.createElement("canvas"); o.width = cw; o.height = ch;
-  o.getContext("2d").drawImage(c, cx, cy, cw, ch, 0, 0, cw, ch);
-  return o;
+  return c;
+}
+function sub(c, f){
+  const x = Math.round(f.x*c.width), y = Math.round(f.y*c.height), w = Math.max(8, Math.round(f.w*c.width)), h = Math.max(8, Math.round(f.h*c.height));
+  const o = document.createElement("canvas"); o.width = w; o.height = h;
+  const g = o.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,w,h); g.drawImage(c, x, y, w, h, 0, 0, w, h); return o;
 }
 
-/* ---------- viewing / cropping one page ---------- */
-function destroyCropper(){ if(cropper){ cropper.destroy(); cropper = null; } }
+/* ===================== view: crop mode (Cropper) or areas mode ===================== */
+function destroyViews(){ if(cropper){ cropper.destroy(); cropper = null; } $("#simg").removeAttribute("src"); }
+function setMode(m, quiet){
+  if (!quiet && pages.length) { rememberCrop(); }
+  mode = m;
+  $("#mCrop").classList.toggle("on", m==="crop"); $("#mAreas").classList.toggle("on", m==="areas");
+  $("#areaTools").classList.toggle("hidden", m!=="areas");
+  $("#wholeBtn").classList.toggle("hidden", m!=="crop");
+  if (!quiet && pages.length) go(cur);
+}
 function cropFractions(){
   if (!cropper) return null;
   const d = cropper.getData(true), im = cropper.getImageData();
@@ -521,21 +585,32 @@ function cropFractions(){
 function rememberCrop(){
   const p = pages[cur]; if (!p || !cropper) return;
   const f = cropFractions(); p.rot = cropper.getData().rotate || 0;
-  if ($("#sameCrop").checked){ globalCrop = f; if (p.crop) p.crop = f; }
-  else p.crop = f;
+  if ($("#sameCrop").checked){ globalCrop = f; if (p.crop) p.crop = f; } else p.crop = f;
   saveSoon();
 }
+let goToken = 0;
 async function go(i){
   if (i<0 || i>=pages.length) return;
-  if (pages.length && cropper) { rememberCrop(); saveEdits(); }
-  cur = i; const p = pages[i];
+  if (cropper) rememberCrop();
+  saveEdits();
+  cur = i; const p = pages[i], token = ++goToken;
   $("#pLbl").textContent = `${i+1} / ${pages.length}`;
   renderRail(); document.querySelector(`.pg[data-i="${i}"]`)?.scrollIntoView({block:"nearest", inline:"nearest"});
-  showPageText();
-  destroyCropper();
+  selArea = null; showView();
+  destroyViews();
   $("#imgLoading").classList.remove("hidden");
-  const url = await pageUrl(p);
-  if (cur !== i) return;
+  $("#img").classList.toggle("hidden", mode!=="crop"); $("#areaView").classList.toggle("hidden", mode!=="areas");
+  $("#hintText").textContent = mode==="crop" ? "Drag to draw a crop box · scroll to zoom" : "Pick a type above, then drag on the page · drag an area to move it, its corner to resize";
+  $("#sameCropLbl").classList.toggle("hidden", !isBook() || mode!=="crop");
+  if (mode === "areas"){
+    const c = await fullCanvas(p); if (token !== goToken) return;
+    p.rotUrl && URL.revokeObjectURL(p.rotUrl); p.rotUrl = await toUrl(c); p.size = [c.width, c.height];
+    const im = $("#simg");
+    im.onload = ()=>{ $("#imgLoading").classList.add("hidden"); fitStage(); drawAreas(); $("#dims").textContent = `${c.width} × ${c.height}px`; sendHeight(); };
+    im.src = p.rotUrl;
+    return;
+  }
+  const url = await pageUrl(p); if (token !== goToken) return;
   const img = $("#img");
   img.onload = ()=>{
     $("#imgLoading").classList.add("hidden");
@@ -558,115 +633,361 @@ function fitRotation(deg){
   cropper.setCanvasData({ width:cv.width*k, height:cv.height*k, left:(c.width-cv.width*k)/2, top:(c.height-cv.height*k)/2 });
   cropper.crop(); selectAll();
 }
-function rotate(deg){ if(!cropper) return; fitRotation((cropper.getData().rotate||0) + deg); pages[cur].rot = cropper.getData().rotate; pages[cur].crop = null; saveSoon(); }
+async function rotate(deg){
+  const p = pages[cur]; if(!p) return;
+  if (mode==="crop" && cropper){ fitRotation((cropper.getData().rotate||0) + deg); p.rot = cropper.getData().rotate; }
+  else { p.rot = ((p.rot||0) + deg + 360) % 360; if (p.areas.length) toast("Areas were cleared because the page was rotated"); p.areas = []; go(cur); }
+  p.crop = null; saveSoon();
+}
 function selectAll(){ if(!cropper) return; const d = cropper.getCanvasData(); cropper.setCropBoxData({left:d.left, top:d.top, width:d.width, height:d.height}); }
-$("#sameCrop").onchange = e=>{ if(e.target.checked){ globalCrop = cropFractions(); pages.forEach(p=>{ if(p!==pages[cur]) p.crop = null; }); pages[cur].crop = null; toast("This crop will be used for every page you haven't cropped yourself"); } else { globalCrop = null; } saveSoon(); };
+let stageScale = 1;
+function fitStage(){ const v = $("#areaView"), im = $("#simg"); if(!im.naturalWidth) return; stageScale = Math.min((v.clientWidth-24)/im.naturalWidth, (v.clientHeight-24)/im.naturalHeight); applyStage(); }
+function applyStage(){ $("#stage").style.width = ($("#simg").naturalWidth*stageScale) + "px"; }
+function zoomBy(d){ if (mode==="crop") cropper && cropper.zoom(d); else { stageScale = Math.max(.05, stageScale*(1+d*1.4)); applyStage(); } }
+window.addEventListener("resize", ()=>{ if(mode==="areas") fitStage(); });
+$("#sameCrop").onchange = e=>{ if(e.target.checked){ globalCrop = cropFractions(); pages.forEach(p=>{ p.crop = null; }); toast("This crop will be used for every page you haven't cropped yourself"); } else globalCrop = null; saveSoon(); };
 
-/* ---------- text panel ---------- */
-function setTab(t){
-  saveEdits(); tab = t;
-  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
-  out.readOnly = t==="book";
-  showPageText();
+/* ===================== areas: draw / move / resize / edit ===================== */
+const TYPE = {text:["Text","var(--t-text)"], heading:["Heading","var(--t-head)"], table:["Table","var(--t-table)"], image:["Picture","var(--t-img)"], ignore:["Skip","var(--t-ign)"]};
+let tool = null, selArea = null;
+$("#drawSeg").addEventListener("click", e=>{ const t = e.target.dataset.t; if(!t) return; tool = tool===t ? null : t; refreshTools(); });
+function refreshTools(){ document.querySelectorAll("#drawSeg button").forEach(b=>b.classList.toggle("on", b.dataset.t===tool)); $("#stage").classList.toggle("draw", !!tool); }
+function drawAreas(){
+  const st = $("#stage"); st.querySelectorAll(".area").forEach(a=>a.remove());
+  const p = pages[cur]; if(!p) return;
+  p.areas.forEach((a,i)=>{
+    const [name, col] = TYPE[a.type];
+    const d = document.createElement("div");
+    d.className = "area" + (a.id===selArea?" sel":"") + (a.type==="ignore"?" ignore":""); d.dataset.id = a.id;
+    d.style.cssText = `--c:${col};left:${a.x*100}%;top:${a.y*100}%;width:${a.w*100}%;height:${a.h*100}%`;
+    d.innerHTML = `<span>${i+1} · ${name}${a.auto?" ✦":""}</span><div class="rz"></div>`;
+    st.append(d);
+  });
+  renderAreaBar(); renderRail();
 }
-function showPageText(){
-  const p = pages[cur];
-  if (tab === "book"){
-    out.value = bookText($("#pageMarks").checked);
-    const done = pages.filter(p=>p.status==="done");
-    stats.innerHTML = `<span>${done.length}/${pages.length} pages read</span><span>${out.value.split(/\s+/).filter(Boolean).length} words</span>` + (done.length?`<span>avg confidence ${Math.round(done.reduce((a,p)=>a+(p.conf||0),0)/done.length)}%</span>`:"");
-    weak.classList.add("hidden"); return;
-  }
-  if (!p) return;
-  if (isBook()) out.value = p.text || "";
-  out.placeholder = isBook() ? (p.status==="reading" ? "Reading this page…" : p.status==="queued" ? "Waiting in the queue…" : "Not read yet — press “Convert this page” or “Start”.") : "Converted text appears here — you can edit it.";
-  showWeak(p.weak||[]);
-  stats.innerHTML = p.status==="done" ? `<span>${(p.text||"").split(/\s+/).filter(Boolean).length} words</span><span style="color:${confCol(p.conf)}">confidence ${Math.round(p.conf||0)}%</span>${p.langs?`<span>${p.langs}</span>`:""}${p.secs?`<span>${p.secs}s</span>`:""}${p.edited?"<span>✎ edited</span>":""}` : "";
+function renderAreaBar(){
+  const p = pages[cur], a = p?.areas.find(x=>x.id===selArea);
+  if (mode!=="areas") return;
+  if (!a){ $("#hintText").innerHTML = p?.areas.length ? `${p.areas.length} area${p.areas.length>1?"s":""} · read in number order · click one to change it` : "Pick a type above, then drag on the page — or press ✦ Detect automatically"; return; }
+  const i = p.areas.indexOf(a);
+  $("#hintText").innerHTML = `Area ${i+1}: <select id="aType">${Object.entries(TYPE).map(([k,[n]])=>`<option value="${k}" ${k===a.type?"selected":""}>${n}</option>`).join("")}</select>
+    <button class="btn sm ghost" id="aUp" ${i===0?"disabled":""} title="Read earlier">↑</button><button class="btn sm ghost" id="aDn" ${i===p.areas.length-1?"disabled":""} title="Read later">↓</button>
+    <button class="btn sm ghost" id="aDel" title="Delete area">✕ Delete</button>`;
+  $("#aType").onchange = e=>{ a.type = e.target.value; a.auto = false; changed(); };
+  $("#aUp").onclick = ()=>{ p.areas.splice(i,1); p.areas.splice(i-1,0,a); changed(); };
+  $("#aDn").onclick = ()=>{ p.areas.splice(i,1); p.areas.splice(i+1,0,a); changed(); };
+  $("#aDel").onclick = ()=>{ p.areas.splice(i,1); selArea = null; changed(); };
 }
-function saveEdits(){
-  if (tab !== "page" || !isBook()) return;
-  const p = pages[cur]; if (!p || p.status!=="done") return;
-  if (out.value !== (p.text||"")){ p.text = out.value; p.edited = true; saveSoon(); renderRail(); }
-}
-out.addEventListener("input", ()=>{ if(isBook() && tab==="page"){ const p = pages[cur]; if(p && p.status==="done"){ p.text = out.value; p.edited = true; saveSoon(); } } });
-function bookText(marks){
-  return pages.map((p,i)=> p.status==="done" ? (marks ? `===== Page ${i+1} =====\n` : "") + (p.text||"").trim() : (marks ? `===== Page ${i+1} =====\n[not read yet]` : "")).filter(Boolean).join("\n\n");
-}
+function changed(){ drawAreas(); saveSoon(); }
+function clearAreas(){ const p = pages[cur]; if(!p || !p.areas.length) return; p.areas = []; selArea = null; changed(); }
+document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspace") && selArea && mode==="areas" && document.activeElement===document.body){ const p = pages[cur]; p.areas = p.areas.filter(a=>a.id!==selArea); selArea=null; changed(); } });
+(function(){
+  const st = $("#stage"); let act = null;
+  const pt = e => { const r = st.getBoundingClientRect(); return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)), Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]; };
+  st.addEventListener("pointerdown", e=>{
+    const p = pages[cur]; if(!p) return;
+    const [x,y] = pt(e);
+    if (tool){
+      const rb = document.createElement("div"); rb.className = "rubber"; rb.style.setProperty("--c", TYPE[tool][1]); st.append(rb);
+      act = {kind:"new", x0:x, y0:y, rb};
+    } else {
+      const el = e.target.closest(".area"); if(!el){ selArea = null; drawAreas(); return; }
+      const a = p.areas.find(z=>z.id==el.dataset.id); selArea = a.id;
+      act = {kind: e.target.classList.contains("rz") ? "resize" : "move", a, x0:x, y0:y, orig:{...a}};
+      drawAreas();
+    }
+    st.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  st.addEventListener("pointermove", e=>{
+    if(!act) return; const [x,y] = pt(e);
+    if (act.kind==="new"){ const l=Math.min(x,act.x0), t=Math.min(y,act.y0); Object.assign(act.rb.style,{left:l*100+"%",top:t*100+"%",width:Math.abs(x-act.x0)*100+"%",height:Math.abs(y-act.y0)*100+"%"}); return; }
+    const a = act.a, o = act.orig, dx = x-act.x0, dy = y-act.y0;
+    if (act.kind==="move"){ a.x = Math.min(1-o.w, Math.max(0, o.x+dx)); a.y = Math.min(1-o.h, Math.max(0, o.y+dy)); }
+    else { a.w = Math.max(.01, Math.min(1-o.x, o.w+dx)); a.h = Math.max(.01, Math.min(1-o.y, o.h+dy)); }
+    const el = st.querySelector(`.area[data-id="${a.id}"]`); if(el) Object.assign(el.style,{left:a.x*100+"%",top:a.y*100+"%",width:a.w*100+"%",height:a.h*100+"%"});
+  });
+  st.addEventListener("pointerup", e=>{
+    if(!act) return; const p = pages[cur], [x,y] = pt(e);
+    if (act.kind==="new"){
+      act.rb.remove();
+      const a = {id: areaSeq++, type: tool, x: Math.min(x,act.x0), y: Math.min(y,act.y0), w: Math.abs(x-act.x0), h: Math.abs(y-act.y0), auto:false};
+      if (a.w > .01 && a.h > .008){
+        // keep reading order top-to-bottom: insert before the first area that starts lower and overlaps sideways
+        let pos = p.areas.findIndex(b=> b.y > a.y && Math.min(b.x+b.w, a.x+a.w) - Math.max(b.x, a.x) > 0);
+        if (pos<0) pos = p.areas.length; p.areas.splice(pos, 0, a); selArea = a.id;
+      }
+    } else if (act.a) act.a.auto = false;
+    act = null; changed();
+  });
+})();
 
-/* ---------- OCR engine (worker pool) ---------- */
+/* ===================== OCR engine (worker pool) ===================== */
 function setProg(p, msg){ $("#bar").style.width = Math.round(p*100)+"%"; if(msg) $("#pstat").textContent = msg; }
-const LNAME = {tam:"Tamil",eng:"English",san:"Sanskrit",hin:"Hindi",mal:"Malayalam",tel:"Telugu",kan:"Kannada"};
 let pool = [], poolLangs = "";
 async function getPool(n){
-  const langs = $("#lang").value;
+  const langs = langStr();
   if (poolLangs !== langs){ const old = pool; pool = []; poolLangs = langs; old.forEach(p=>p.then(w=>w.terminate()).catch(()=>{})); }
   while (pool.length < n){
     const first = pool.length === 0;
-    if (first) setProg(0, `Loading ${langs.split("+").map(l=>LNAME[l]||l).join(" + ")} model…`);
-    const wp = Tesseract.createWorker(langs.split("+"), 1, {
+    if (first) setProg(0, `Loading ${langSel.map(c=>LNAME[c]).join(" + ")}…`);
+    const wp = Tesseract.createWorker(langSel, 1, {
       logger: m => { if(!first) return;
         if (m.status === "recognizing text" && busyOne) setProg(m.progress, `Reading text… ${Math.round(m.progress*100)}%`);
-        else if (/load|initializ/.test(m.status) && !batch.running) setProg(m.progress||0, m.status.replace(/^./, c=>c.toUpperCase()) + "…"); }
+        else if (/load|initializ/.test(m.status) && !batch.running && !busyOne) setProg(m.progress||0, m.status.replace(/^./, c=>c.toUpperCase()) + "…"); }
     });
-    wp.then(()=>{ if(first && !busyOne && !batch.running) setProg(0, `Model ready — crop and press Convert (Ctrl+Enter).`); })
+    wp.then(()=>{ if(first && !busyOne && !batch.running) setProg(0, `Ready — crop or mark areas, then press Convert (Ctrl+Enter).`); })
       .catch(e=>{ pool = pool.filter(x=>x!==wp); setProg(0, "Couldn't load the language model: " + (e.message||e)); });
     pool.push(wp);
   }
   return Promise.all(pool.slice(0, n));
 }
-$("#lang").addEventListener("change", ()=>{ if(pages.length) getPool(1).catch(()=>{}); });
-
-function preprocess(src, mode){
-  const k = src.width < 1400 ? Math.min(3, 1800/src.width) : 1;   // Tamil vowel signs need pixels
+function preprocess(src, m){
+  const k = src.width < 1400 ? Math.min(3, 1800/src.width) : 1;
   const c = document.createElement("canvas"); c.width = Math.round(src.width*k); c.height = Math.round(src.height*k);
   const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(src, 0, 0, c.width, c.height);
-  if (mode === "none") return c;
+  c.k = k;
+  if (m === "none") return c;
   const im = x.getImageData(0,0,c.width,c.height), d = im.data, hist = new Uint32Array(256);
   for (let i=0;i<d.length;i+=4){ const g = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000 | 0; d[i]=d[i+1]=d[i+2]=g; hist[g]++; }
-  if (mode === "bw"){
-    const total = d.length/4; let sum=0; for(let t=0;t<256;t++) sum += t*hist[t];
-    let sB=0,wB=0,max=0,thr=128;
-    for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t];
-      const mB=sB/wB, mF=(sum-sB)/wF, between=wB*wF*(mB-mF)*(mB-mF); if(between>max){max=between;thr=t;} }
-    for (let i=0;i<d.length;i+=4){ const v = d[i] > thr ? 255 : 0; d[i]=d[i+1]=d[i+2]=v; }
-  }
-  x.putImageData(im,0,0);
-  return c;
+  if (m === "bw"){ const thr = otsu(hist, d.length/4); for (let i=0;i<d.length;i+=4){ const v = d[i] > thr ? 255 : 0; d[i]=d[i+1]=d[i+2]=v; } }
+  x.putImageData(im,0,0); return c;
 }
-async function recognize(worker, canvas){
-  await worker.setParameters({ tessedit_pageseg_mode: $("#psm").value, preserve_interword_spaces: "1", user_defined_dpi: "300" });
-  const t0 = performance.now();
-  const { data } = await worker.recognize(preprocess(canvas, $("#prep").value), {}, { text:true, blocks:true });
-  let text = cleanTamil(data.text || "").trim();
-  if (!$("#keepLines").checked) text = reflow(text);
-  const words = (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines).flatMap(l=>l.words);
-  const weakW = words.filter(w=>w.confidence<70 && w.text.trim()).map(w=>({t:cleanTamil(w.text), c:Math.round(w.confidence)})).sort((a,b)=>a.c-b.c).slice(0,40);
-  return { text, conf: data.confidence, weak: weakW, secs: ((performance.now()-t0)/1000).toFixed(1) };
+function otsu(hist, total){ let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t]; let sB=0,wB=0,max=0,thr=128;
+  for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t]; const mB=sB/wB, mF=(sum-sB)/wF, b=wB*wF*(mB-mF)*(mB-mF); if(b>max){max=b;thr=t;} } return thr; }
+/* run Tesseract; returns words with boxes in the source canvas' pixels */
+async function ocr(worker, canvas, psm){
+  await worker.setParameters({ tessedit_pageseg_mode: String(psm || $("#psm").value), preserve_interword_spaces: "1", user_defined_dpi: "300" });
+  const pc = preprocess(canvas, $("#prep").value), k = pc.k;
+  const { data } = await worker.recognize(pc, {}, { text:true, blocks:true });
+  const paras = [];
+  (data.blocks||[]).forEach(b=>b.paragraphs.forEach(pa=>{
+    const lines = pa.lines.map(l=>({ box: sc(l.bbox,k), words: l.words.map(w=>({text: cleanTamil(w.text), conf: w.confidence, box: sc(w.bbox,k)})) }));
+    paras.push({ box: sc(pa.bbox,k), lines, text: cleanTamil(pa.lines.map(l=>l.text.replace(/\n$/,"")).join("\n")) });
+  }));
+  return { text: cleanTamil(data.text||"").trim(), conf: data.confidence, paras, words: paras.flatMap(p=>p.lines.flatMap(l=>l.words)) };
 }
+const sc = (b,k) => ({x:b.x0/k, y:b.y0/k, w:(b.x1-b.x0)/k, h:(b.y1-b.y0)/k});
+const weakOf = words => words.filter(w=>w.conf<70 && w.text.trim()).map(w=>({t:w.text, c:Math.round(w.conf)})).sort((a,b)=>a.c-b.c).slice(0,40);
+const finishText = t => $("#keepLines").checked ? t : reflow(t);
 
-/* one page (the one on screen, with its live crop box) */
+/* ===================== layout: lines, tables, pictures ===================== */
+function binarize(c, maxW = 1400){
+  const s = Math.min(1, maxW / c.width), w = Math.max(1, Math.round(c.width*s)), h = Math.max(1, Math.round(c.height*s));
+  const t = document.createElement("canvas"); t.width = w; t.height = h; t.getContext("2d").drawImage(c, 0, 0, w, h);
+  const d = t.getContext("2d").getImageData(0,0,w,h).data, gray = new Uint8Array(w*h), hist = new Uint32Array(256);
+  for (let i=0,j=0;i<d.length;i+=4,j++){ const g = (d[i]*299+d[i+1]*587+d[i+2]*114)/1000|0; gray[j]=g; hist[g]++; }
+  const thr = Math.min(otsu(hist, w*h), 200), ink = new Uint8Array(w*h);
+  for (let j=0;j<w*h;j++) ink[j] = gray[j] < thr ? 1 : 0;
+  return {w, h, s, ink, gray};
+}
+function lineSegs(B){
+  const {w,h,ink,s} = B, H = [], V = [], minH = Math.max(120*s, w*0.12), minV = Math.max(70*s, h*0.025);  // ruling lines are long; letter strokes (≈ 30px at 300 dpi) are not
+  for (let y=0;y<h;y++){ let x=0; while(x<w){ if(ink[y*w+x]){ let e=x; while(e<w && (ink[y*w+e] || (e+1<w && ink[y*w+e+1]))) e++; if(e-x>=minH) H.push({x0:x,x1:e,y0:y,y1:y}); x=e+1; } else x++; } }
+  for (let x=0;x<w;x++){ let y=0; while(y<h){ if(ink[y*w+x]){ let e=y; while(e<h && (ink[e*w+x] || (e+1<h && ink[(e+1)*w+x]))) e++; if(e-y>=minV) V.push({x0:x,x1:x,y0:y,y1:e}); y=e+1; } else y++; } }
+  const merge = (arr, horiz) => { const out = [];
+    arr.sort((a,b)=> horiz ? a.y0-b.y0 || a.x0-b.x0 : a.x0-b.x0 || a.y0-b.y0);
+    for (const s of arr){ const m = out.find(o => horiz ? (s.y0-o.y1<=2 && Math.min(o.x1,s.x1)-Math.max(o.x0,s.x0) > 0.6*Math.min(o.x1-o.x0,s.x1-s.x0)) : (s.x0-o.x1<=2 && Math.min(o.y1,s.y1)-Math.max(o.y0,s.y0) > 0.6*Math.min(o.y1-o.y0,s.y1-s.y0)));
+      if (m){ m.x0=Math.min(m.x0,s.x0); m.x1=Math.max(m.x1,s.x1); m.y0=Math.min(m.y0,s.y0); m.y1=Math.max(m.y1,s.y1); } else out.push({...s}); }
+    return out.filter(o => horiz ? o.y1-o.y0 < 8 : o.x1-o.x0 < 8); };
+  return { H: merge(H, true), V: merge(V, false) };
+}
+function findTables(B, L){
+  const {w,h} = B, tables = [], hs = [...L.H].sort((a,b)=>a.y0-b.y0), used = new Set();
+  for (let i=0;i<hs.length;i++){
+    if (used.has(i)) continue;
+    const g = [hs[i]]; used.add(i);
+    for (let j=i+1;j<hs.length;j++){
+      if (used.has(j)) continue; const a = g[g.length-1], b = hs[j];
+      if (b.y0 - a.y1 > h*0.3) break;
+      if (Math.abs(b.x0-g[0].x0) < w*0.06 && Math.abs(b.x1-g[0].x1) < w*0.08){ g.push(b); used.add(j); }
+    }
+    if (g.length < 2) continue;
+    const box = {x0: Math.min(...g.map(s=>s.x0)), x1: Math.max(...g.map(s=>s.x1)), y0: g[0].y0, y1: g[g.length-1].y1};
+    if (box.y1 - box.y0 < h*0.035) continue;
+    const vs = L.V.filter(v => v.x0 >= box.x0-6 && v.x0 <= box.x1+6 && v.y0 <= box.y0 + (box.y1-box.y0)*0.3 && v.y1 >= box.y1 - (box.y1-box.y0)*0.3 && v.y1-v.y0 > (box.y1-box.y0)*0.5);
+    const inner = vs.filter(v => v.x0 > box.x0+8 && v.x0 < box.x1-8);
+    tables.push({ box, ruled: inner.length >= 1,
+      hs: g.map(s=>(s.y0+s.y1)/2), vs: inner.length ? dedupe([box.x0, ...inner.map(v=>(v.x0+v.x1)/2), box.x1], 6) : null });
+  }
+  return tables;
+}
+const dedupe = (a, tol) => a.sort((x,y)=>x-y).filter((v,i,arr)=>!i || v-arr[i-1] > tol);
+function findPictures(B, words, exclude){
+  const {w,h,ink,gray,s} = B, cs = Math.max(6, Math.round(w/110)), gw = Math.ceil(w/cs), gh = Math.ceil(h/cs);
+  const mask = new Uint8Array(w*h);
+  const blank = (x0,y0,x1,y1) => { for(let y=Math.max(0,y0|0); y<Math.min(h,y1); y++) mask.fill(1, y*w+Math.max(0,x0|0), y*w+Math.min(w,Math.ceil(x1))); };
+  words.forEach(t=>{ if (t.conf>=45 && /[^\W\d_]/u.test(t.text)) blank(t.box.x*s-2, t.box.y*s-2, (t.box.x+t.box.w)*s+2, (t.box.y+t.box.h)*s+2); });
+  exclude.forEach(b=>blank(b.x0, b.y0, b.x1, b.y1));
+  const cell = new Uint8Array(gw*gh);
+  for (let gy=0; gy<gh; gy++) for (let gx=0; gx<gw; gx++){
+    let n=0, inkN=0, mid=0;
+    for (let y=gy*cs; y<Math.min(h,(gy+1)*cs); y++) for (let x=gx*cs; x<Math.min(w,(gx+1)*cs); x++){ const j=y*w+x; if(mask[j]) continue; n++; inkN+=ink[j]; if(gray[j]>50 && gray[j]<205) mid++; }
+    if (n > cs*cs*0.5 && (inkN/n > 0.18 || mid/n > 0.3)) cell[gy*gw+gx] = 1;
+  }
+  const seen = new Uint8Array(gw*gh), boxes = [];
+  for (let i=0;i<gw*gh;i++){ if(!cell[i]||seen[i]) continue;
+    let x0=1e9,y0=1e9,x1=-1,y1=-1,cnt=0; const st=[i]; seen[i]=1;
+    while(st.length){ const k=st.pop(), gx=k%gw, gy=(k/gw)|0; cnt++; x0=Math.min(x0,gx); x1=Math.max(x1,gx); y0=Math.min(y0,gy); y1=Math.max(y1,gy);
+      for (let dy=-2;dy<=2;dy++) for (let dx=-2;dx<=2;dx++){ const nx=gx+dx, ny=gy+dy; if(nx<0||ny<0||nx>=gw||ny>=gh) continue; const n=ny*gw+nx; if(cell[n]&&!seen[n]){ seen[n]=1; st.push(n); } } }
+    const b = {x0:x0*cs, y0:y0*cs, x1:Math.min(w,(x1+1)*cs), y1:Math.min(h,(y1+1)*cs)};
+    const bw = b.x1-b.x0, bh = b.y1-b.y0;
+    if (bw*bh < 0.012*w*h || bw < 0.08*w || bh < 0.05*h || cnt < 0.25*((x1-x0+1)*(y1-y0+1))) continue;
+    const inside = words.filter(t=>{ const cx=(t.box.x+t.box.w/2)*s, cy=(t.box.y+t.box.h/2)*s; return cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1; });
+    const good = inside.filter(t=>t.conf>=60 && /[^\W\d_]/u.test(t.text));
+    if (good.length > 8 && good.length > inside.length*0.5) continue;
+    boxes.push(b);
+  }
+  return boxes;
+}
+/* cells from words: ruled columns (vs) or vertical white gaps; rows from lines (hs) or clustering */
+function tableFromWords(words, box, hs, vs){
+  words = words.filter(t=>!/^[|\[\]_—–\-=~:;.,'`"!]+$/.test(t.text));
+  if (!words.length) return null;
+  const mh = median(words.map(t=>t.box.h)), cy = t=>t.box.y+t.box.h/2, cx = t=>t.box.x+t.box.w/2;
+  let rows = [];
+  if (hs && hs.length > 2){ for (let i=0;i<hs.length-1;i++){ const r = words.filter(t=>cy(t)>=hs[i] && cy(t)<hs[i+1]); if(r.length) rows.push(r); } }
+  else { let curR = [], bottom = -1;
+    for (const t of [...words].sort((a,b)=>cy(a)-cy(b))){ if (curR.length && cy(t) > bottom){ rows.push(curR); curR = []; } bottom = curR.length ? Math.max(bottom, t.box.y+t.box.h) : t.box.y+t.box.h; curR.push(t); }
+    if (curR.length) rows.push(curR); }
+  if (!vs){
+    const W = Math.ceil(box.x1-box.x0)+2, occ = new Uint8Array(W);
+    rows.forEach(r=>{ const sorted = [...r].sort((a,b)=>a.box.x-b.box.x); let ph = null;
+      sorted.forEach(t=>{ if (ph && t.box.x - ph.x1 < mh*0.9) ph.x1 = Math.max(ph.x1, t.box.x+t.box.w); else { ph && occ.fill(1, Math.max(0,ph.x0-box.x0|0), Math.min(W, ph.x1-box.x0|0)); ph = {x0:t.box.x, x1:t.box.x+t.box.w}; } });
+      ph && occ.fill(1, Math.max(0,ph.x0-box.x0|0), Math.min(W, ph.x1-box.x0|0)); });
+    const seps = []; let i=0;
+    while (i<W){ if(!occ[i]){ let j=i; while(j<W && !occ[j]) j++; if (i>0 && j<W && j-i >= mh*1.2) seps.push(box.x0 + (i+j)/2); i=j; } else i++; }
+    vs = [box.x0, ...seps, box.x1];
+  }
+  const nc = vs.length-1; if (nc < 2) return null;
+  const grid = rows.map(r=>{ const cells = Array.from({length:nc}, ()=>[]);
+    r.sort((a,b)=> (a.box.y/mh|0)-(b.box.y/mh|0) || a.box.x-b.box.x).forEach(t=>{ let j = vs.findIndex((v,k)=>k<nc && cx(t)>=v && cx(t)<vs[k+1]); if(j<0) j = cx(t)<vs[0]?0:nc-1; cells[j].push(t.text); });
+    return cells.map(c=>c.join(" ").trim()); }).filter(r=>r.some(Boolean));
+  return grid.length >= 2 ? grid : null;
+}
+const median = a => { const s=[...a].sort((x,y)=>x-y); return s.length ? s[s.length>>1] : 0; };
+function eraseLines(c, L, s){
+  const o = document.createElement("canvas"); o.width = c.width; o.height = c.height;
+  const g = o.getContext("2d"); g.drawImage(c,0,0); g.fillStyle = "#fff";
+  [...L.H, ...L.V].forEach(l=> g.fillRect(l.x0/s-3, l.y0/s-3, (l.x1-l.x0)/s+6, (l.y1-l.y0)/s+6));
+  return o;
+}
+async function readTable(worker, c, presetVs){
+  const B = binarize(c), L = lineSegs(B), clean = eraseLines(c, L, B.s);
+  const r = await ocr(worker, clean, 6);
+  const T = findTables(B, L).sort((a,b)=>(b.box.x1-b.box.x0)*(b.box.y1-b.box.y0)-(a.box.x1-a.box.x0)*(a.box.y1-a.box.y0))[0];
+  const box = {x0:0, y0:0, x1:c.width, y1:c.height};
+  let rows = null;
+  if (T && T.ruled) rows = tableFromWords(r.words, {x0:T.box.x0/B.s, x1:T.box.x1/B.s}, T.hs.map(v=>v/B.s), T.vs.map(v=>v/B.s));
+  if (!rows) rows = tableFromWords(r.words, box, null, presetVs || null);
+  return { rows: rows || [[cleanTable(r.text)]], conf: r.conf, words: r.words };
+}
+const cleanTable = t => finishText(t);
+function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createElement("canvas"); o.width = Math.round(c.width*k); o.height = Math.round(c.height*k); o.getContext("2d").drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg", 0.85); }
+
+/* auto layout of one (cropped) canvas -> areas + blocks, all in that canvas' pixels */
+async function autoLayout(worker, c){
+  const r = await ocr(worker, c, 3);
+  const B = binarize(c), L = lineSegs(B), T = findTables(B, L), s = B.s;
+  const tables = [];
+  for (const t of T){
+    const bx = {x:t.box.x0/s, y:t.box.y0/s, w:(t.box.x1-t.box.x0)/s, h:(t.box.y1-t.box.y0)/s};
+    const inside = r.words.filter(wd=>inBox(wd.box, bx));
+    if (!t.ruled && inside.length < 4) continue;
+    const res = await readTable(worker, sub(c, {x:bx.x/c.width, y:bx.y/c.height, w:bx.w/c.width, h:bx.h/c.height}), null);
+    if (!t.ruled && (res.rows.length < 3 || res.rows[0].length < 2)) continue;
+    tables.push({type:"table", box:bx, rows:res.rows, conf:res.conf});
+  }
+  const pics = findPictures(B, r.words, T.map(t=>t.box)).map(b=>({type:"image", box:{x:b.x0/s, y:b.y0/s, w:(b.x1-b.x0)/s, h:(b.y1-b.y0)/s}}));
+  // a caption printed right under (or over) a picture is text, not part of the picture
+  for (const pc of pics){
+    const b = pc.box;
+    r.paras.forEach(pa=>{
+      const cf = pa.lines.flatMap(l=>l.words.map(w=>w.conf)); if (!cf.length || median(cf) < 55 || pa.lines.length > 3 || !inBox(pa.box, b)) return;
+      if (pa.box.y > b.y + b.h*0.7){ b.h = Math.max(10, pa.box.y - b.y - 4); }
+      else if (pa.box.y + pa.box.h < b.y + b.h*0.3){ const bottom = b.y + b.h; b.y = pa.box.y + pa.box.h + 4; b.h = bottom - b.y; }
+    });
+  }
+  const taken = [...tables, ...pics].map(o=>o.box);
+  const hAll = r.paras.flatMap(p=>p.lines.filter(l=>l.words.length>=3).map(l=>median(l.words.map(w=>w.box.h))));
+  const bodyH = median(hAll.length ? hAll : r.paras.flatMap(p=>p.lines.map(l=>l.box.h))) || 1;
+  const text = r.paras.filter(p=>!taken.some(b=>inBox(p.box, b)) && p.text.trim()).map(p=>{
+    const lh = median(p.lines.map(l=>median(l.words.map(w=>w.box.h)))), nW = p.lines.reduce((a,l)=>a+l.words.length,0);
+    const edge = (p.box.y + p.box.h < c.height*0.07 || p.box.y > c.height*0.93) && nW <= 12;
+    const type = edge ? "ignore" : (lh/bodyH >= 1.28 && p.lines.length <= 3 && nW <= 18) ? "heading" : "text";
+    const confs = p.lines.flatMap(l=>l.words.map(w=>w.conf));
+    return {type, box:p.box, text: type==="heading" ? p.text.replace(/\s*\n\s*/g," ") : finishText(p.text), conf: confs.length ? confs.reduce((a,b)=>a+b,0)/confs.length : 0};
+  });
+  const order = [...text];
+  for (const o of [...tables, ...pics].sort((a,b)=>a.box.y-b.box.y)){
+    let pos = order.findIndex(t=> t.box.y >= o.box.y && Math.min(t.box.x+t.box.w, o.box.x+o.box.w) - Math.max(t.box.x, o.box.x) > 0);
+    if (pos < 0) pos = order.length; order.splice(pos, 0, o);
+  }
+  order.filter(o=>o.type==="image").forEach(o=>{ o.img = picture(sub(c, {x:o.box.x/c.width, y:o.box.y/c.height, w:o.box.w/c.width, h:o.box.h/c.height})); });
+  return { blocks: order, conf: r.conf, words: r.words.filter(wd=>!pics.some(b=>inBox(wd.box, b.box))) };
+}
+const inBox = (b, o) => { const cx = b.x+b.w/2, cy = b.y+b.h/2; return cx>=o.x && cx<=o.x+o.w && cy>=o.y && cy<=o.y+o.h; };
+
+/* ===================== reading a page ===================== */
+async function readPage(worker, p, liveCrop){
+  const t0 = performance.now(), full = await fullCanvas(p);
+  let blocks = [], conf = null, words = [];
+  const manual = p.areas.filter(a=>!a.auto);
+  if (manual.length || (p.areas.length && mode==="areas" && !liveCrop)){
+    // read the marked areas in their order
+    for (const a of p.areas){
+      if (a.type === "ignore") continue;
+      const c = sub(full, a);
+      if (a.type === "image"){ blocks.push({type:"image", img: picture(c)}); continue; }
+      if (a.type === "table"){ const t = await readTable(worker, c); blocks.push({type:"table", rows:t.rows}); words.push(...t.words); continue; }
+      const r = await ocr(worker, c, a.type==="heading" ? 7 : 6);
+      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text)}); words.push(...r.words);
+    }
+    conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : 0;
+  } else {
+    const f = liveCrop || p.crop || globalCrop || {x:0,y:0,w:1,h:1}, c = sub(full, f);
+    if ($("#autoLayout").checked){
+      const r = await autoLayout(worker, c);
+      blocks = r.blocks.filter(b=>b.type!=="ignore").map(({type,text,rows,img})=>({type,text,rows,img})); conf = r.conf; words = r.words;
+      // show what was found as editable areas (fractions of the full page)
+      p.areas = r.blocks.map(b=>({id: areaSeq++, type:b.type, auto:true,
+        x: f.x + b.box.x/c.width*f.w, y: f.y + b.box.y/c.height*f.h, w: b.box.w/c.width*f.w, h: b.box.h/c.height*f.h}));
+    } else {
+      const r = await ocr(worker, c); blocks = [{type:"text", text: finishText(r.text)}]; conf = r.conf; words = r.words;
+    }
+  }
+  return { blocks, text: blocksToText(blocks, true), conf, weak: weakOf(words), secs: ((performance.now()-t0)/1000).toFixed(1) };
+}
+function blocksToText(blocks, pics){ return blocks.map(b=> b.type==="table" ? b.rows.map(r=>r.join("\t")).join("\n") : b.type==="image" ? (pics?"[Picture]":"") : (b.text||"")).filter(Boolean).join("\n\n"); }
+
 async function convertCurrent(){
-  if (!cropper || busyOne) return;
+  if (busyOne || !pages.length) return;
   const p = pages[cur];
   busyOne = true; $("#goBtn").disabled = true; $("#goBtn").textContent = "Converting…";
   try{
-    rememberCrop();
+    const live = mode==="crop" && cropper ? (cropFractions() || {x:0,y:0,w:1,h:1}) : null;
+    if (live) rememberCrop();
     const [w] = await getPool(1);
-    p.status = "reading"; renderRail();
-    const canvas = cropper.getCroppedCanvas({ imageSmoothingQuality:"high", fillColor:"#fff" });
-    const r = await recognize(w, canvas);
+    p.status = "reading"; renderRail(); setProg(.05, "Reading…");
+    const r = await readPage(w, p, live);
     if (!isBook() && $("#append").checked && out.value.trim()) r.text = out.value.replace(/\s+$/,"") + "\n\n" + r.text;
     Object.assign(p, r, {status:"done", edited:false, langs: poolLangs});
-    if (tab==="page") out.value = p.text;
-    showPageText(); renderRail(); saveSoon();
-    setProg(1, r.text ? "Done. Check the highlighted words, then copy." : "No text found — try a tighter crop, another language, or ‘Old / yellowed paper’.");
+    if (mode==="areas") drawAreas();
+    showView(); renderRail(); saveSoon();
+    const nt = r.blocks.filter(b=>b.type==="table").length, ni = r.blocks.filter(b=>b.type==="image").length;
+    setProg(1, r.text ? `Done${nt||ni?` — found ${[nt?nt+" table"+(nt>1?"s":""):"", ni?ni+" picture"+(ni>1?"s":""):""].filter(Boolean).join(" and ")} (see Preview)`:""}. Check the highlighted words, then copy.` : "No text found — try a tighter crop, other languages, or ‘Old / yellowed paper’.");
     notifyParent(p.text, {page: cur+1, pages: pages.length, confidence: p.conf});
   }catch(e){ console.error(e); p.status = "error"; renderRail(); setProg(0, "OCR failed: " + (e.message||e)); }
   busyOne = false; $("#goBtn").disabled = false; $("#goBtn").textContent = isBook() ? "Convert this page" : "Convert to text";
   sendHeight();
 }
+async function detectHere(){
+  if (busyOne) return; const p = pages[cur];
+  if (p.areas.some(a=>!a.auto) && !confirm("Replace the areas you drew with automatically detected ones?")) return;
+  p.areas = []; const was = $("#autoLayout").checked; $("#autoLayout").checked = true;
+  await convertCurrent(); $("#autoLayout").checked = was;
+}
 
-/* whole book, page by page, with 1–3 parallel workers */
+/* whole book */
 function parseRange(s, n){
   if (!s.trim()) return [...Array(n).keys()];
   const set = new Set();
@@ -678,89 +999,171 @@ function parseRange(s, n){
 function toggleBatch(){ batch.running ? stopBatch(true) : startBatch(); }
 function stopBatch(user){ if(!batch.running) return; batch.stop = true; if(user) setProg(batch.done/Math.max(1,batch.total), "Stopping after the pages in progress…"); }
 async function startBatch(){
-  rememberCrop(); saveEdits();
+  if (cropper) rememberCrop(); saveEdits();
   let todo = parseRange($("#range").value, pages.length);
   if (!$("#redo").checked) todo = todo.filter(i=>pages[i].status!=="done");
   else if (todo.some(i=>pages[i].edited) && !confirm("Some of these pages have your edits. Re-reading replaces them. Continue?")) return;
   if (!todo.length) return toast("Those pages are already read. Tick “Also re-read pages already done” to read them again.");
   const nW = Math.max(1, Math.min(3, Math.floor((navigator.hardwareConcurrency||4)/2), todo.length));
   Object.assign(batch, {running:true, stop:false, done:0, total:todo.length, t0:performance.now()});
-  todo.forEach(i=>{ pages[i].status = "queued"; }); renderRail(); showPageText();
+  todo.forEach(i=>{ pages[i].status = "queued"; }); renderRail(); showView();
   $("#allBtn").textContent = "■ Stop"; $("#allBtn").classList.add("on");
   setProg(0, `Starting ${nW} reader${nW>1?"s":""}…`);
   let workers;
-  try{ workers = await getPool(nW); }catch(e){ batch.running=false; $("#allBtn").textContent="▶ Start"; $("#allBtn").classList.remove("on"); return; }
+  try{ workers = await getPool(nW); }catch{ batch.running=false; $("#allBtn").textContent="▶ Start"; $("#allBtn").classList.remove("on"); return; }
   const queue = [...todo];
   const lane = async w => {
     while (queue.length && !batch.stop){
       const i = queue.shift(), p = pages[i];
-      p.status = "reading"; renderRail(); if(i===cur) showPageText();
+      p.status = "reading"; renderRail(); if(i===cur) showView();
       try{
-        const r = await recognize(w, await pageCanvas(p));
-        Object.assign(p, r, {status:"done", edited:false, langs: poolLangs});
-        if (p.viewUrl && i!==cur){ URL.revokeObjectURL(p.viewUrl); p.viewUrl = null; }   // keep memory low on big books
+        Object.assign(p, await readPage(w, p, null), {status:"done", edited:false, langs: poolLangs});
+        if (i!==cur){ if (p.viewUrl){ URL.revokeObjectURL(p.viewUrl); p.viewUrl = null; } }
+        else if (mode==="areas") drawAreas();
       }catch(e){ console.error(e); p.status = "error"; }
       batch.done++;
       const el = (performance.now()-batch.t0)/1000, left = Math.round(el/batch.done*(batch.total-batch.done));
       setProg(batch.done/batch.total, `Page ${i+1} done · ${batch.done} of ${batch.total}` + (batch.total-batch.done ? ` · about ${left>90?Math.round(left/60)+" min":left+" s"} left` : ""));
-      renderRail(); if(i===cur || tab==="book") showPageText(); saveSoon();
+      renderRail(); if(i===cur || tab==="book") showView(); saveSoon();
     }
   };
   await Promise.all(workers.map(lane));
   pages.forEach(p=>{ if(p.status==="queued") p.status="new"; });
   const errs = todo.filter(i=>pages[i].status==="error").length;
   setProg(batch.done/batch.total, batch.stop ? `Stopped — ${batch.done} of ${batch.total} pages read. Press Start to continue.` :
-    `All done — ${batch.total} pages read${errs?`, ${errs} failed`:""}. Review weak pages (amber in the strip), then download.`);
+    `All done — ${batch.total} pages read${errs?`, ${errs} failed`:""}. Review amber pages in the strip, then download.`);
   batch.running = false; $("#allBtn").textContent = "▶ Start"; $("#allBtn").classList.remove("on");
-  renderRail(); showPageText(); saveSoon();
+  renderRail(); showView(); saveSoon();
   notifyParent(bookText(true), {pages: pages.length, book: true});
 }
 
-/* ---------- weak words, Tamil clean-up ---------- */
+/* ===================== text / preview / whole book ===================== */
+function setTab(t){
+  saveEdits(); tab = t;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
+  showView();
+}
+function showView(){
+  const p = pages[cur];
+  out.classList.toggle("hidden", tab==="preview"); $("#preview").classList.toggle("hidden", tab!=="preview");
+  out.readOnly = tab==="book";
+  if (tab === "book"){
+    out.value = bookText($("#pageMarks").checked);
+    const done = pages.filter(p=>p.status==="done");
+    stats.innerHTML = `<span>${done.length}/${pages.length} pages read</span><span>${out.value.split(/\s+/).filter(Boolean).length} words</span>` + (done.length?`<span>avg confidence ${Math.round(done.reduce((a,p)=>a+(p.conf||0),0)/done.length)}%</span>`:"");
+    weak.classList.add("hidden"); return;
+  }
+  if (tab === "preview"){
+    $("#preview").innerHTML = p && p.status==="done" ? blocksHtml(pageBlocks(p), true) : `<p style="color:var(--muted)">Convert this page to see its headings, tables and pictures here.</p>`;
+  }
+  if (!p) return;
+  if (isBook() || p.status==="done") { if (tab==="page" && (isBook() || !$("#append").checked)) out.value = p.text || ""; }
+  out.placeholder = p.status==="reading" ? "Reading this page…" : p.status==="queued" ? "Waiting in the queue…" : isBook() ? "Not read yet — press “Convert this page” or “Start”." : "Converted text appears here — you can edit it.";
+  showWeak(p.weak||[]);
+  const nt = (p.blocks||[]).filter(b=>b.type==="table").length, ni = (p.blocks||[]).filter(b=>b.type==="image").length;
+  stats.innerHTML = p.status==="done" ? `<span>${(p.text||"").split(/\s+/).filter(Boolean).length} words</span>${nt?`<span>${nt} table${nt>1?"s":""}</span>`:""}${ni?`<span>${ni} picture${ni>1?"s":""}</span>`:""}<span style="color:${confCol(p.conf)}">confidence ${Math.round(p.conf||0)}%</span>${p.langs?`<span>${p.langs}</span>`:""}${p.secs?`<span>${p.secs}s</span>`:""}${p.edited?"<span>✎ edited</span>":""}` : "";
+}
+/* if the text was edited by hand, that text wins over the detected blocks (tables/pictures are kept) */
+function pageBlocks(p){
+  if (!p.edited || !p.blocks) return p.blocks || [{type:"text", text:p.text||""}];
+  const keep = p.blocks.filter(b=>b.type==="table"||b.type==="image");
+  const textParts = (p.text||"").split(/\n\s*\n/).filter(t=>t.trim() && t.trim()!=="[Picture]" && !keep.some(k=>k.type==="table" && k.rows.map(r=>r.join("\t")).join("\n")===t.trim()));
+  return [...textParts.map(t=>({type:"text", text:t})), ...keep];
+}
+function saveEdits(){
+  if (tab !== "page") return;
+  const p = pages[cur]; if (!p || p.status!=="done") return;
+  if (out.value !== (p.text||"")){ p.text = out.value; p.edited = true; saveSoon(); renderRail(); }
+}
+out.addEventListener("input", ()=>{ if(tab==="page"){ const p = pages[cur]; if(p && p.status==="done"){ p.text = out.value; p.edited = true; saveSoon(); } } });
+function bookText(marks){
+  return pages.map((p,i)=> p.status==="done" ? (marks && isBook() ? `===== Page ${i+1} =====\n` : "") + (p.text||"").trim() : (marks && isBook() ? `===== Page ${i+1} =====\n[not read yet]` : "")).filter(Boolean).join("\n\n");
+}
+function blocksHtml(blocks, pics){
+  return blocks.map(b=>{
+    if (b.type==="heading") return `<h2>${esc(b.text)}</h2>`;
+    if (b.type==="table") return `<table>${b.rows.map(r=>"<tr>"+r.map(c=>`<td>${esc(c).replace(/\n/g,"<br>")}</td>`).join("")+"</tr>").join("")}</table>`;
+    if (b.type==="image") return pics ? `<figure><img src="${b.img}" alt=""></figure>` : "";
+    return (b.text||"").split(/\n\s*\n/).map(t=>`<p>${esc(t).replace(/\n/g,"<br>")}</p>`).join("");
+  }).join("\n");
+}
+
+/* ===================== weak words, Tamil clean-up ===================== */
 const confCol = c => c>=85 ? "var(--ok)" : c>=70 ? "var(--warn)" : "var(--bad)";
 function showWeak(lo){
-  weak.classList.toggle("hidden", !lo.length);
+  weak.classList.toggle("hidden", !lo.length || tab!=="page");
   weak.innerHTML = lo.length ? `<div style="color:var(--muted);margin-bottom:5px">Check these words (low confidence) — click to find:</div>` + lo.map(w=>`<span class="w" data-t="${esc(w.t)}">${esc(w.t)}<small>${w.c}</small></span>`).join("") : "";
 }
 weak.addEventListener("click", e=>{ const w = e.target.closest(".w"); if(!w) return; const i = out.value.indexOf(w.dataset.t); if(i>=0){ out.focus(); out.setSelectionRange(i, i+w.dataset.t.length); } });
 function cleanTamil(t){
-  return t
+  return (t||"")
     .replace(/[​⁠﻿◌]/g, "")
     .replace(/்[‌‍]/g, "்")
     .replace(/(^|[^க-ஹ்])([ெேை])([க-ஹ])/gm, "$1$3$2")
     .replace(/([க-ஹ]) +([ா-்ௗ])/g, "$1$2")
-    .normalize("NFC")
-    .replace(/[ \t]{2,}/g, " ");
+    .normalize("NFC").replace(/[ \t]{2,}/g, " ");
 }
 function reflow(t){ return t.split(/\n\s*\n/).map(p => p.replace(/(\w)-\n(\w)/g, "$1$2").replace(/\s*\n\s*/g, " ").trim()).join("\n\n"); }
 
-/* ---------- output ---------- */
-function currentOutput(){ saveEdits(); return isBook() ? bookText($("#pageMarks").checked) : out.value; }
-function copyText(){ const t = tab==="book" || !isBook() ? currentOutput() : out.value; if(t) copy(t); }
+/* ===================== downloads ===================== */
+function copyText(){ saveEdits(); const t = tab==="book" ? bookText($("#pageMarks").checked) : out.value; if(t) copy(t); }
 function toggleMenu(){ $("#dlMenu").classList.toggle("hidden"); }
 document.addEventListener("click", e=>{ if(!e.target.closest(".menu")) $("#dlMenu").classList.add("hidden"); });
 function fname(ext){ return `${(docName||"ocr").replace(/[\\/:*?"<>|]+/g,"_")}.${ext}`; }
-function save(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); }
-function dl(kind){
+function save(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 3000); }
+function donePages(){ saveEdits(); return isBook() ? pages.map((p,i)=>({p,i})).filter(x=>x.p.status==="done") : [{p: pages[0].status==="done" ? pages[0] : {...pages[0], text: out.value, blocks:null, edited:true}, i:0}]; }
+async function dl(kind){
   $("#dlMenu").classList.add("hidden");
-  const marks = $("#pageMarks").checked, text = currentOutput();
-  if (!text.trim()) return toast("Nothing to download yet");
-  if (kind==="txt") return save(new Blob(["﻿"+text], {type:"text/plain;charset=utf-8"}), fname("txt"));
+  const marks = $("#pageMarks").checked && isBook(), pics = $("#withPics").checked, list = donePages();
+  if (!list.length || !list.some(x=>(x.p.text||"").trim() || x.p.blocks?.length)) return toast("Nothing to download yet — convert a page first");
+  if (kind==="txt") return save(new Blob(["﻿"+bookText(marks)], {type:"text/plain;charset=utf-8"}), fname("txt"));
   if (kind==="md"){
-    const md = isBook() ? `# ${docName}\n\n` + pages.map((p,i)=>p.status==="done" ? (marks?`## Page ${i+1}\n\n`:"") + (p.text||"").trim() : "").filter(Boolean).join("\n\n") : text;
+    const md = `# ${docName}\n\n` + list.map(({p,i})=>(marks?`## Page ${i+1}\n\n`:"") + pageBlocks(p).map(b=> b.type==="heading" ? `### ${b.text}` : b.type==="table" ? [b.rows[0], b.rows[0].map(()=>"---"), ...b.rows.slice(1)].map(r=>"| "+r.map(c=>c.replace(/\|/g,"\\|").replace(/\n/g," ")).join(" | ")+" |").join("\n") : b.type==="image" ? (pics?`![picture](${b.img})`:"") : b.text).filter(Boolean).join("\n\n")).join("\n\n");
     return save(new Blob([md], {type:"text/markdown;charset=utf-8"}), fname("md"));
   }
   if (kind==="json"){
-    const j = {title: docName, language: poolLangs, pages: isBook() ? pages.map((p,i)=>({page:i+1, read:p.status==="done", confidence:p.conf!=null?Math.round(p.conf):null, edited:!!p.edited, text:p.text||""})) : [{page:1, text}]};
+    const j = {title: docName, languages: poolLangs, pages: list.map(({p,i})=>({page:i+1, confidence:p.conf!=null?Math.round(p.conf):null, edited:!!p.edited, text:p.text||"", blocks: pageBlocks(p).map(b=>b.type==="image"&&!pics?{type:"image"}:b)}))};
     return save(new Blob([JSON.stringify(j,null,1)], {type:"application/json"}), fname("json"));
   }
-  const paras = isBook() ? pages.map((p,i)=>p.status!=="done" ? "" : (marks?`<h3 style="color:#888;font-size:10pt;page-break-before:${i?"always":"auto"}">Page ${i+1}</h3>`:"") + toParas(p.text)).join("") : toParas(text);
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(docName)}</title><style>body{font-family:"Nirmala UI","Latha","Noto Sans Tamil",sans-serif;font-size:12pt;line-height:1.6}</style></head><body lang="ta">${paras}</body></html>`;
-  save(new Blob(["﻿"+html], {type:"application/msword"}), fname("doc"));
+  if (kind==="html"){
+    const body = list.map(({p,i})=>(marks?`<div class="pmark">Page ${i+1}</div>`:"") + blocksHtml(pageBlocks(p), pics)).join("\n");
+    const html = `<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docName)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tamil&family=Noto+Sans+Tamil:wght@600&family=Noto+Sans+Tamil+Supplement&display=swap" rel="stylesheet">
+<style>body{font-family:"Noto Serif Tamil","Noto Sans Tamil Supplement",Georgia,serif;max-width:46em;margin:2em auto;padding:0 1em;line-height:1.8;color:#1f1b16}h1,h2{font-family:"Noto Sans Tamil",sans-serif;line-height:1.35}table{border-collapse:collapse;margin:1em 0}td{border:1px solid #bbb;padding:.35em .6em;vertical-align:top}tr:first-child td{background:#f3ece2;font-weight:600}figure{margin:1.2em 0;text-align:center}img{max-width:100%}.pmark{border-top:1px dashed #ccc;margin:2.5em 0 1em;font:12px sans-serif;color:#999;padding-top:4px}</style></head>
+<body><h1>${esc(docName)}</h1>${body}</body></html>`;
+    return save(new Blob([html], {type:"text/html;charset=utf-8"}), fname("html"));
+  }
+  if (kind==="docx"){
+    setProg(.5, "Building Word file…");
+    try{ if (!window.docx) await loadScript(DOCXJS); }catch{ return toast("Couldn't load the Word builder — try Web page or Text"); }
+    const D = window.docx, FONT = {ascii:"Calibri", hAnsi:"Calibri", cs:"Nirmala UI", eastAsia:"Nirmala UI"};
+    const run = (t, o={}) => new D.TextRun({text:t, font:FONT, ...o});
+    const children = [new D.Paragraph({heading: D.HeadingLevel.TITLE, children:[run(docName)]})];
+    for (const [n, {p,i}] of list.entries()){
+      if (marks) children.push(new D.Paragraph({pageBreakBefore: n>0, children:[run(`Page ${i+1}`, {color:"888888", size:18})]}));
+      else if (n>0 && isBook()) children.push(new D.Paragraph({children:[new D.PageBreak()]}));
+      for (const b of pageBlocks(p)){
+        if (b.type==="heading") children.push(new D.Paragraph({heading: D.HeadingLevel.HEADING_2, children:[run(b.text)]}));
+        else if (b.type==="table"){
+          const nc = Math.max(...b.rows.map(r=>r.length));
+          children.push(new D.Table({width:{size:100, type:D.WidthType.PERCENTAGE}, rows: b.rows.map((r,ri)=>new D.TableRow({children: Array.from({length:nc},(_,ci)=>new D.TableCell({children:[new D.Paragraph({children:[run(r[ci]||"", {bold: ri===0, size:20})]})]}))}))}));
+          children.push(new D.Paragraph({children:[]}));
+        } else if (b.type==="image"){
+          if (!pics) continue;
+          const bin = Uint8Array.from(atob(b.img.split(",")[1]), ch=>ch.charCodeAt(0));
+          const im = await loadImage(b.img), wpx = Math.min(600, im.naturalWidth);
+          children.push(new D.Paragraph({alignment: D.AlignmentType.CENTER, children:[new D.ImageRun({type:"jpg", data:bin, transformation:{width:wpx, height:Math.round(im.naturalHeight*wpx/im.naturalWidth)}})]}));
+        } else (b.text||"").split(/\n\s*\n/).forEach(t=>{ const ls = t.split("\n"); children.push(new D.Paragraph({spacing:{after:160}, children: ls.flatMap((l,k)=>k? [new D.TextRun({break:1}), run(l)] : [run(l)])})); });
+      }
+    }
+    const doc = new D.Document({creator:"எழுத்து OCR", title:docName, styles:{default:{document:{run:{font:FONT, size:24}}}}, sections:[{children}]});
+    const blob = await D.Packer.toBlob(doc);
+    setProg(1, "Word file ready.");
+    return save(blob, fname("docx"));
+  }
 }
-function toParas(t){ return (t||"").split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,"<br>")}</p>`).join(""); }
 
-/* ---------- symbols ---------- */
+/* ===================== symbols ===================== */
 function togglePal(){ const p=$("#pal"); p.classList.toggle("hidden"); $("#palBtn").classList.toggle("on", !p.classList.contains("hidden")); renderSyms(); }
 function renderSyms(){
   const q = $("#symQ").value.toLowerCase();
@@ -770,18 +1173,19 @@ function renderSyms(){
   }).join("");
 }
 $("#symQ").addEventListener("input", renderSyms);
-$("#symList").addEventListener("mousedown", e=>{ const s=e.target.closest(".sym"); if(!s || out.readOnly) return; e.preventDefault(); out.setRangeText(s.dataset.c, out.selectionStart, out.selectionEnd, "end"); out.focus(); out.dispatchEvent(new Event("input")); });
+$("#symList").addEventListener("mousedown", e=>{ const s=e.target.closest(".sym"); if(!s || out.readOnly || tab!=="page") return; e.preventDefault(); out.setRangeText(s.dataset.c, out.selectionStart, out.selectionEnd, "end"); out.focus(); out.dispatchEvent(new Event("input")); });
 
-/* ---------- keyboard ---------- */
+/* ===================== keyboard ===================== */
 document.addEventListener("keydown", e=>{
   if ($("#workView").classList.contains("hidden")) return;
   if ((e.ctrlKey||e.metaKey) && e.key==="Enter"){ e.preventDefault(); convertCurrent(); }
   if (e.altKey && e.key==="ArrowRight"){ e.preventDefault(); go(cur+1); }
   if (e.altKey && e.key==="ArrowLeft"){ e.preventDefault(); go(cur-1); }
+  if (e.key==="Escape" && tool){ tool = null; refreshTools(); }
 });
-window.addEventListener("beforeunload", ()=>{ rememberCrop(); saveEdits(); });
+window.addEventListener("beforeunload", ()=>{ if(cropper) rememberCrop(); saveEdits(); });
 
-/* ---------- embedding ---------- */
+/* ===================== embedding ===================== */
 function notifyParent(text, info){ if (window.parent !== window) window.parent.postMessage({ type:"ezhuthu-ocr", text, ...info, langs: poolLangs }, "*"); }
 function sendHeight(){ if(window.parent!==window) window.parent.postMessage({type:"ezhuthu-height", height: document.documentElement.scrollHeight}, "*"); }
 if (EMBED) new ResizeObserver(sendHeight).observe(document.body);
@@ -790,7 +1194,7 @@ $("#codeInline").textContent = `<script src="${BASE}embed.js" data-lang="tam+eng
 $("#codeButton").textContent = `<script src="${BASE}embed.js" data-mode="button"\n  data-label="தமிழ் OCR" data-lang="tam+eng"><\/script>`;
 $("#codeIframe").textContent = `<iframe src="${BASE}?embed=1&lang=tam+eng" style="width:100%;height:820px;border:0"\n  allow="clipboard-write; camera" title="Tamil OCR"></iframe>`;
 $("#codeLink").textContent = `<a href="${BASE}" target="_blank">Tamil OCR — image & book to text</a>`;
-showResume();
+setMode("crop", true); showResume();
 if (location.hash === "#embed") embedDlg.showModal();
 </script>
 </body>
