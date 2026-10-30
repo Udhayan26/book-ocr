@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>எழுத்து OCR · Tamil & English image to text</title>
+<meta name="description" content="Free Tamil, English and Indic OCR in your browser. Paste, drop or upload an image or PDF, crop, and convert to editable Unicode text. Nothing is uploaded.">
+<meta property="og:title" content="எழுத்து OCR — Tamil image to text">
+<meta property="og:description" content="Paste, drop or upload, crop, convert. Free, unlimited, runs in your browser.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23b4471f'/><text x='32' y='45' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'>அ</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@500;700&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<style>
+:root{
+  --paper:#f6f2ea; --panel:#fffdf8; --ink:#1f1b16; --muted:#6f665a; --line:#e4dccd; --line-2:#d3c8b4;
+  --accent:#b4471f; --accent-ink:#fff; --accent-soft:#f6e3d8;
+  --ok:#2f7a4c; --warn:#b07a00; --bad:#b42a2a; --bad-soft:#f7dada;
+  --shadow:0 1px 2px rgba(40,30,10,.06),0 6px 24px rgba(40,30,10,.07);
+  --ta:"Noto Sans Tamil","Noto Sans Tamil Supplement","IBM Plex Sans",sans-serif;
+  --ui:"IBM Plex Sans","Noto Sans Tamil",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
+  --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b; --ok:#6cc08c; --warn:#e3b44a; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
+}}
+:root[data-theme=dark]{
+  --paper:#16130f; --panel:#1f1b16; --ink:#efe8dc; --muted:#a69b8b; --line:#332d25; --line-2:#463e33;
+  --accent:#e2754c; --accent-ink:#1a120d; --accent-soft:#3a251b; --ok:#6cc08c; --warn:#e3b44a; --bad:#eb7a7a; --bad-soft:#3d1d1d;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--ui);-webkit-font-smoothing:antialiased}
+body.embed{background:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.hidden{display:none!important}
+.spacer{flex:1}
+
+header{max-width:1180px;margin:0 auto;padding:22px 20px 6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;text-decoration:none;color:inherit}
+.brand b{font:700 30px/1 "Noto Serif Tamil",serif;color:var(--accent)}
+.brand span{font-weight:600;font-size:17px}
+header nav{display:flex;gap:16px;font-size:14px}
+header nav a{color:var(--muted);text-decoration:none}
+header nav a:hover{color:var(--ink)}
+.lede{max-width:1180px;margin:0 auto;padding:0 20px 18px;color:var(--muted)}
+body.embed header,body.embed .lede,body.embed footer{display:none}
+
+main{max-width:1180px;margin:0 auto;padding:0 20px 40px}
+body.embed main{padding:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+body.embed .card{box-shadow:none}
+
+/* drop zone */
+.drop{display:grid;place-items:center;text-align:center;padding:56px 20px;border:2px dashed var(--line-2);border-radius:16px;background:var(--panel);cursor:pointer;transition:.15s;outline:none}
+.drop:hover,.drop.over,.drop:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.drop .glyph{font:700 44px/1 "Noto Serif Tamil",serif;color:var(--accent);letter-spacing:.06em}
+.drop h1{font-size:21px;margin:14px 0 4px;font-weight:600}
+.drop h1 u{text-decoration:none;color:var(--accent);border-bottom:2px solid currentColor}
+.drop p{margin:0;color:var(--muted);font-size:14px}
+.drop .row{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;padding:1px 5px;background:var(--paper)}
+
+.btn{border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--line)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.big{padding:12px 20px;font-size:16px;width:100%;justify-content:center}
+
+/* workspace */
+.work{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:920px){.work{grid-template-columns:1fr}}
+.imgcard{overflow:hidden}
+.tb{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tb .lbl{font-size:13px;color:var(--muted)}
+.cropwrap{height:min(68vh,640px);background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px}
+.cropwrap img{display:block;max-width:100%}
+.hintbar{padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap}
+
+.side{display:grid;gap:14px}
+.opts{padding:16px}
+label.f{display:block;margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+select,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:9px;padding:9px 10px;background:var(--paper)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.checks{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 14px;font-size:14px}
+.checks label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.prog{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:12px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.pstat{font-size:13px;color:var(--muted);margin-top:6px;min-height:20px}
+
+.result{display:flex;flex-direction:column;min-height:300px}
+.result textarea{border:0;resize:vertical;min-height:300px;padding:16px 18px;background:transparent;font:18px/1.9 var(--ta);outline:none;width:100%}
+.stats{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--line);font:12.5px var(--mono);color:var(--muted)}
+.weak{padding:8px 14px;border-top:1px solid var(--line);font-size:13px}
+.weak .w{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;margin:0 4px 4px 0;cursor:pointer;font:15px var(--ta);background:var(--paper)}
+.weak .w small{font:11px var(--mono);color:var(--bad)}
+.palette{padding:10px 14px;border-top:1px solid var(--line);max-height:230px;overflow:auto}
+.palette h5{margin:8px 0 6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sym{display:inline-grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:8px;margin:0 4px 4px 0;cursor:pointer;font:20px "Noto Sans Tamil Supplement","Noto Sans Tamil",serif;background:var(--paper)}
+.sym:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+@media (max-width:760px){.how{grid-template-columns:1fr}}
+.how div{padding:16px 18px}
+.how b{display:block;margin-bottom:4px}
+.how p{margin:0;color:var(--muted);font-size:14px}
+footer{max-width:1180px;margin:0 auto;padding:10px 20px 40px;color:var(--muted);font-size:13px;display:flex;gap:14px;flex-wrap:wrap}
+pre.code{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;font:12.5px/1.55 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(640px,94vw);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(20,15,10,.45)}
+.dh{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.dh h3{margin:0;font-size:16px}
+.db{padding:16px 18px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:9px;font-size:14px;z-index:50;box-shadow:var(--shadow)}
+.cropper-view-box{outline:2px solid var(--accent);outline-color:color-mix(in srgb,var(--accent) 85%,transparent)}
+.cropper-line,.cropper-point{background-color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./"><b>எழுத்து</b><span>OCR</span></a>
+  <span class="spacer"></span>
+  <nav>
+    <a href="#" onclick="embedDlg.showModal();return false">Embed</a>
+    <a href="https://github.com/Udhayan26/book-ocr" target="_blank" rel="noopener">Book OCR (whole books)</a>
+    <a href="#" onclick="toggleTheme();return false" title="Light / dark">◐</a>
+  </nav>
+</header>
+<p class="lede">Tamil, English & Indic image-to-text. Free and unlimited — it runs inside your browser, so your images are never uploaded anywhere.</p>
+
+<main>
+  <!-- step 1 -->
+  <section id="dropView">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload an image">
+      <div>
+        <div class="glyph">அ A</div>
+        <h1>Paste, drop, or <u>upload</u> your image to convert</h1>
+        <p>JPG, PNG, WebP, TIFF or PDF · <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a screenshot</p>
+        <div class="row">
+          <button class="btn primary" type="button" onclick="event.stopPropagation();fileIn.click()">Choose file</button>
+          <button class="btn" type="button" onclick="event.stopPropagation();camIn.click()">📷 Camera</button>
+          <button class="btn ghost" type="button" onclick="event.stopPropagation();loadSample()">Try a sample</button>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="fileIn" accept="image/*,.pdf,.tif,.tiff" hidden>
+    <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+    <div class="how">
+      <div class="card"><b>1 · Add an image</b><p>Paste a screenshot, drop a scan or photo, or pick a PDF page.</p></div>
+      <div class="card"><b>2 · Crop what you need</b><p>Drag the box around one column, a verse, or a paragraph. Rotate if it's sideways.</p></div>
+      <div class="card"><b>3 · Convert & copy</b><p>Get Unicode Tamil text. Weak words are listed for checking; Tamil symbols are one click away.</p></div>
+    </div>
+  </section>
+
+  <!-- step 2 -->
+  <section id="workView" class="work hidden">
+    <div class="card imgcard">
+      <div class="tb">
+        <button class="btn sm" onclick="reset()" title="Start over with another image">← New image</button>
+        <span id="pdfNav" class="hidden" style="display:inline-flex;gap:6px;align-items:center">
+          <button class="btn sm" onclick="pdfStep(-1)">‹</button><span class="lbl" id="pdfLbl"></span><button class="btn sm" onclick="pdfStep(1)">›</button>
+        </span>
+        <span class="spacer"></span>
+        <button class="btn sm ghost" onclick="rotate(-90)" title="Rotate left">⟲</button>
+        <button class="btn sm ghost" onclick="rotate(90)" title="Rotate right">⟳</button>
+        <button class="btn sm ghost" onclick="cropper.zoom(.15)" title="Zoom in">＋</button>
+        <button class="btn sm ghost" onclick="cropper.zoom(-.15)" title="Zoom out">－</button>
+        <button class="btn sm" onclick="selectAll()" title="Use the whole image">Whole image</button>
+      </div>
+      <div class="cropwrap"><img id="img" alt=""></div>
+      <div class="hintbar"><span>Drag to draw a crop box · drag inside to move it · scroll to zoom</span><span class="spacer"></span><span id="dims"></span></div>
+    </div>
+
+    <div class="side">
+      <div class="card opts">
+        <label class="f" for="lang">Language</label>
+        <select id="lang">
+          <option value="tam+eng">Tamil + English</option>
+          <option value="tam">Tamil only</option>
+          <option value="eng">English only</option>
+          <option value="san+eng">Sanskrit (Devanagari) + English</option>
+          <option value="hin+eng">Hindi + English</option>
+          <option value="mal+eng">Malayalam + English</option>
+          <option value="tel+eng">Telugu + English</option>
+          <option value="kan+eng">Kannada + English</option>
+          <option value="tam+san">Tamil + Sanskrit</option>
+        </select>
+        <div class="grid2">
+          <div><label class="f" for="psm">Layout</label>
+            <select id="psm">
+              <option value="3">Auto</option>
+              <option value="6">One block of text</option>
+              <option value="4">Single column</option>
+              <option value="7">Single line</option>
+              <option value="11">Scattered text</option>
+            </select></div>
+          <div><label class="f" for="prep">Image clean-up</label>
+            <select id="prep">
+              <option value="auto">Auto</option>
+              <option value="bw">Old / yellowed paper</option>
+              <option value="none">None</option>
+            </select></div>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="keepLines"> Keep line breaks</label>
+          <label><input type="checkbox" id="append"> Add to existing text</label>
+        </div>
+        <button class="btn primary big" id="goBtn" onclick="convert()">Convert to text</button>
+        <div class="prog"><i id="bar"></i></div>
+        <div class="pstat" id="pstat">The language model downloads once (Tamil ≈ 4 MB) and is cached.</div>
+      </div>
+
+      <div class="card result">
+        <div class="tb">
+          <b style="font-size:14px">Text</b><span class="spacer"></span>
+          <button class="btn sm" onclick="copyText()">Copy</button>
+          <button class="btn sm" onclick="dlTxt()">.txt</button>
+          <button class="btn sm" onclick="dlDoc()">Word</button>
+          <button class="btn sm ghost" id="palBtn" onclick="togglePal()" title="Tamil & Tamil Supplement symbols">ௐ</button>
+          <button class="btn sm ghost" onclick="out.value='';stats.textContent='';weak.innerHTML='';out.focus()" title="Clear">✕</button>
+        </div>
+        <textarea id="out" spellcheck="false" lang="ta" placeholder="Converted text appears here — you can edit it."></textarea>
+        <div class="palette hidden" id="pal"><input type="text" id="symQ" placeholder="Filter: fraction, rupee, day, digit…" style="margin-bottom:6px"><div id="symList"></div></div>
+        <div class="weak hidden" id="weak"></div>
+        <div class="stats" id="stats"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>எழுத்து OCR · Tesseract.js (Apache-2.0) · runs locally in your browser</span>
+  <span class="spacer"></span>
+  <a href="https://github.com/Udhayan26/book-ocr" target="_blank" rel="noopener">Source on GitHub</a>
+  <a href="#" onclick="embedDlg.showModal();return false">Embed on your site</a>
+</footer>
+
+<dialog id="embedDlg">
+  <div class="dh"><h3>Embed this tool</h3><span class="spacer"></span><button class="btn ghost sm" onclick="embedDlg.close()">✕</button></div>
+  <div class="db">
+    <p style="margin-top:0">Paste this where the OCR box should appear on any page of your site. The frame resizes itself to fit.</p>
+    <pre class="code" id="embedCode"></pre>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn sm primary" onclick="copy(embedCode.textContent)">Copy code</button></div>
+    <p class="hint" style="font-size:13px;color:var(--muted)">Options: add <code>&amp;lang=tam</code> (or <code>eng</code>, <code>san+eng</code>…) to the frame URL to preset the language. Your page also receives each result as a <code>message</code> event: <code>{type:"ezhuthu-ocr", text}</code>.</p>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const SYMBOLS = [["Tamil digits & signs",[["ஃ","U+0B83","Tamil Sign Visarga"],["ௐ","U+0BD0","Tamil Om"],["௦","U+0BE6","Tamil Digit Zero"],["௧","U+0BE7","Tamil Digit One"],["௨","U+0BE8","Tamil Digit Two"],["௩","U+0BE9","Tamil Digit Three"],["௪","U+0BEA","Tamil Digit Four"],["௫","U+0BEB","Tamil Digit Five"],["௬","U+0BEC","Tamil Digit Six"],["௭","U+0BED","Tamil Digit Seven"],["௮","U+0BEE","Tamil Digit Eight"],["௯","U+0BEF","Tamil Digit Nine"],["௰","U+0BF0","Tamil Number Ten"],["௱","U+0BF1","Tamil Number One Hundred"],["௲","U+0BF2","Tamil Number One Thousand"],["௳","U+0BF3","Tamil Day Sign"],["௴","U+0BF4","Tamil Month Sign"],["௵","U+0BF5","Tamil Year Sign"],["௶","U+0BF6","Tamil Debit Sign"],["௷","U+0BF7","Tamil Credit Sign"],["௸","U+0BF8","Tamil As Above Sign"],["௹","U+0BF9","Tamil Rupee Sign"],["௺","U+0BFA","Tamil Number Sign"]]],["Tamil Supplement (fractions, measures, clerical)",[["𑿀","U+11FC0","Tamil Fraction One Three-Hundred-And-Twentieth"],["𑿁","U+11FC1","Tamil Fraction One One-Hundred-And-Sixtieth"],["𑿂","U+11FC2","Tamil Fraction One Eightieth"],["𑿃","U+11FC3","Tamil Fraction One Sixty-Fourth"],["𑿄","U+11FC4","Tamil Fraction One Fortieth"],["𑿅","U+11FC5","Tamil Fraction One Thirty-Second"],["𑿆","U+11FC6","Tamil Fraction Three Eightieths"],["𑿇","U+11FC7","Tamil Fraction Three Sixty-Fourths"],["𑿈","U+11FC8","Tamil Fraction One Twentieth"],["𑿉","U+11FC9","Tamil Fraction One Sixteenth-1"],["𑿊","U+11FCA","Tamil Fraction One Sixteenth-2"],["𑿋","U+11FCB","Tamil Fraction One Tenth"],["𑿌","U+11FCC","Tamil Fraction One Eighth"],["𑿍","U+11FCD","Tamil Fraction Three Twentieths"],["𑿎","U+11FCE","Tamil Fraction Three Sixteenths"],["𑿏","U+11FCF","Tamil Fraction One Fifth"],["𑿐","U+11FD0","Tamil Fraction One Quarter"],["𑿑","U+11FD1","Tamil Fraction One Half-1"],["𑿒","U+11FD2","Tamil Fraction One Half-2"],["𑿓","U+11FD3","Tamil Fraction Three Quarters"],["𑿔","U+11FD4","Tamil Fraction Downscaling Factor Kiizh"],["𑿕","U+11FD5","Tamil Sign Nel"],["𑿖","U+11FD6","Tamil Sign Cevitu"],["𑿗","U+11FD7","Tamil Sign Aazhaakku"],["𑿘","U+11FD8","Tamil Sign Uzhakku"],["𑿙","U+11FD9","Tamil Sign Muuvuzhakku"],["𑿚","U+11FDA","Tamil Sign Kuruni"],["𑿛","U+11FDB","Tamil Sign Pathakku"],["𑿜","U+11FDC","Tamil Sign Mukkuruni"],["𑿝","U+11FDD","Tamil Sign Kaacu"],["𑿞","U+11FDE","Tamil Sign Panam"],["𑿟","U+11FDF","Tamil Sign Pon"],["𑿠","U+11FE0","Tamil Sign Varaakan"],["𑿡","U+11FE1","Tamil Sign Paaram"],["𑿢","U+11FE2","Tamil Sign Kuzhi"],["𑿣","U+11FE3","Tamil Sign Veli"],["𑿤","U+11FE4","Tamil Wet Cultivation Sign"],["𑿥","U+11FE5","Tamil Dry Cultivation Sign"],["𑿦","U+11FE6","Tamil Land Sign"],["𑿧","U+11FE7","Tamil Salt Pan Sign"],["𑿨","U+11FE8","Tamil Traditional Credit Sign"],["𑿩","U+11FE9","Tamil Traditional Number Sign"],["𑿪","U+11FEA","Tamil Current Sign"],["𑿫","U+11FEB","Tamil And Odd Sign"],["𑿬","U+11FEC","Tamil Spent Sign"],["𑿭","U+11FED","Tamil Total Sign"],["𑿮","U+11FEE","Tamil In Possession Sign"],["𑿯","U+11FEF","Tamil Starting From Sign"],["𑿰","U+11FF0","Tamil Sign Muthaliya"],["𑿱","U+11FF1","Tamil Sign Vakaiyaraa"],["𑿿","U+11FFF","Tamil Punctuation End Of Text"]]],["Punctuation",[["‘","U+2018","Left Single Quotation Mark"],["’","U+2019","Right Single Quotation Mark"],["“","U+201C","Left Double Quotation Mark"],["”","U+201D","Right Double Quotation Mark"],["–","U+2013","En Dash"],["—","U+2014","Em Dash"],["…","U+2026","Horizontal Ellipsis"],["।","U+0964","Devanagari Danda"],["॥","U+0965","Devanagari Double Danda"],["·","U+00B7","Middle Dot"]]]];
+const params = new URLSearchParams(location.search);
+const EMBED = params.has("embed");
+const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
+let cropper = null, workerLangs = "", pdfDoc = null, pdfPage = 1, busy = false;
+const out = $("#out"), stats = $("#stats"), weak = $("#weak"), fileIn = $("#fileIn"), camIn = $("#camIn");
+
+if (EMBED) document.body.classList.add("embed");
+if (store.get("ezTheme")) document.documentElement.dataset.theme = store.get("ezTheme");
+function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches; r.dataset.theme = dark?"light":"dark"; store.set("ezTheme", r.dataset.theme); }
+["lang","psm","prep"].forEach(id=>{ const v = (id==="lang" && params.get("lang")) || store.get("ez_"+id); if(v && [...$("#"+id).options].some(o=>o.value===v)) $("#"+id).value = v; $("#"+id).onchange = e=>store.set("ez_"+id, e.target.value); });
+["keepLines","append"].forEach(id=>{ $("#"+id).checked = store.get("ez_"+id)==="1"; $("#"+id).onchange = e=>store.set("ez_"+id, e.target.checked?"1":"0"); });
+function toast(m){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.append(t); setTimeout(()=>t.remove(),2200); }
+function copy(t){ navigator.clipboard.writeText(t).then(()=>toast("Copied"), ()=>toast("Copy failed — select and press Ctrl+C")); }
+
+/* ---------------- input: paste / drop / upload / camera ---------------- */
+const drop = $("#drop");
+drop.onclick = ()=>fileIn.click();
+drop.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } };
+fileIn.onchange = ()=>{ if(fileIn.files[0]) loadFile(fileIn.files[0]); fileIn.value=""; };
+camIn.onchange = ()=>{ if(camIn.files[0]) loadFile(camIn.files[0]); camIn.value=""; };
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev, e=>{ e.preventDefault(); if(ev==="drop"||!e.relatedTarget) drop.classList.remove("over"); }));
+document.addEventListener("drop", e=>{ const f = e.dataTransfer?.files?.[0]; if(f) loadFile(f); });
+document.addEventListener("paste", e=>{
+  if (e.target === out || e.target.tagName === "INPUT") return;      // normal paste into the text box
+  const item = [...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));
+  if (item){ e.preventDefault(); loadFile(item.getAsFile()); }
+});
+
+async function loadFile(f){
+  if (f.type === "application/pdf" || /\.pdf$/i.test(f.name||"")) return loadPdf(f);
+  if (/tiff?$/i.test(f.type) || /\.tiff?$/i.test(f.name||"")) {
+    // most browsers can't show TIFF; let Tesseract read it and show the result as PNG
+    try{ const url = await tiffToPng(f); return showImage(url); }catch{ return toast("This TIFF can't be opened here — save it as PNG/JPG"); }
+  }
+  if (!f.type.startsWith("image/")) return toast("Please choose an image or PDF");
+  pdfDoc = null; $("#pdfNav").classList.add("hidden");
+  showImage(URL.createObjectURL(f));
+}
+async function tiffToPng(f){
+  const w = await getWorker(); // Tesseract's Leptonica decodes TIFF
+  const { data } = await w.recognize(f, {}, { imageColor: true, text: false });
+  return data.imageColor;
+}
+async function loadPdf(f){
+  try{
+    if (!window.pdfjsLib){ await loadScript(PDFJS); pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; }
+    pdfDoc = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+    pdfPage = 1; $("#pdfNav").classList.remove("hidden"); renderPdf();
+  }catch(e){ toast("Couldn't open that PDF"); console.error(e); }
+}
+async function renderPdf(){
+  $("#pdfLbl").textContent = `Page ${pdfPage} / ${pdfDoc.numPages}`;
+  const pg = await pdfDoc.getPage(pdfPage);
+  const vp = pg.getViewport({scale: 300/72});           // 300 DPI
+  const c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+  await pg.render({canvasContext: c.getContext("2d"), viewport: vp}).promise;
+  showImage(c.toDataURL("image/png"));
+}
+function pdfStep(d){ const n = pdfPage + d; if(pdfDoc && n>=1 && n<=pdfDoc.numPages){ pdfPage = n; renderPdf(); } }
+function loadScript(src){ return new Promise((ok,err)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=err; document.head.append(s); }); }
+function loadSample(){ pdfDoc = null; $("#pdfNav").classList.add("hidden"); showImage("sample.png"); }
+
+function showImage(url){
+  $("#dropView").classList.add("hidden"); $("#workView").classList.remove("hidden");
+  const img = $("#img");
+  if (cropper) cropper.destroy();
+  img.onload = ()=>{
+    $("#dims").textContent = `${img.naturalWidth} × ${img.naturalHeight}px`;
+    cropper = new Cropper(img, { viewMode: 1, autoCropArea: 1, background: false, responsive: true, dragMode: "crop", zoomOnWheel: true, toggleDragModeOnDblclick: false });
+    sendHeight();
+    getWorker().catch(()=>{});   // warm up the model while the user crops
+  };
+  img.src = url;
+}
+function rotate(deg){
+  // turn, then shrink the page to fit the frame and select all of it again
+  cropper.clear();            // with a crop box present the canvas can't shrink below it
+  cropper.rotate(deg);
+  const c = cropper.getContainerData(), cv = cropper.getCanvasData();
+  const k = Math.min(c.width / cv.width, c.height / cv.height, 1);
+  cropper.setCanvasData({ width: cv.width * k, height: cv.height * k,
+                          left: (c.width - cv.width * k) / 2, top: (c.height - cv.height * k) / 2 });
+  cropper.crop();
+  selectAll();
+}
+function selectAll(){ if(!cropper) return; const d = cropper.getCanvasData(); cropper.setCropBoxData({left:d.left, top:d.top, width:d.width, height:d.height}); }
+function reset(){ if(cropper){ cropper.destroy(); cropper=null; } pdfDoc=null; $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); sendHeight(); }
+
+/* ---------------- OCR ---------------- */
+function setProg(p, msg){ $("#bar").style.width = Math.round(p*100)+"%"; if(msg) $("#pstat").textContent = msg; }
+const LNAME = {tam:"Tamil",eng:"English",san:"Sanskrit",hin:"Hindi",mal:"Malayalam",tel:"Telugu",kan:"Kannada"};
+let workerP = null;
+function getWorker(){
+  const langs = $("#lang").value;
+  if (workerP && workerLangs === langs) return workerP;   // one shared load, even if called twice
+  const prev = workerP; workerLangs = langs;
+  setProg(0, `Loading ${langs.split("+").map(l=>LNAME[l]||l).join(" + ")} model…`);
+  workerP = (async ()=>{
+    if (prev){ try{ await (await prev).terminate(); }catch{} }
+    const w = await Tesseract.createWorker(langs.split("+"), 1, {   // 1 = LSTM engine, best_int models
+      logger: m => {
+        if (m.status === "recognizing text") setProg(m.progress, `Reading text… ${Math.round(m.progress*100)}%`);
+        else if (/load|initializ/.test(m.status)) setProg(m.progress||0, m.status.replace(/^./, c=>c.toUpperCase()) + "…");
+      }
+    });
+    if (!busy) setProg(0, "Model ready — crop and press Convert (Ctrl+Enter).");
+    return w;
+  })();
+  workerP.catch(e=>{ workerP = null; setProg(0, "Couldn't load the language model: " + (e.message||e)); });
+  return workerP;
+}
+$("#lang").addEventListener("change", ()=>{ if(cropper) getWorker().catch(()=>{}); });
+
+function cropCanvas(){
+  const c = cropper.getCroppedCanvas({ imageSmoothingQuality: "high", fillColor: "#fff" });
+  return preprocess(c, $("#prep").value);
+}
+function preprocess(src, mode){
+  // upscale small crops (Tamil vowel signs need pixels), grayscale, optional binarize
+  const k = src.width < 1400 ? Math.min(3, 1800/src.width) : 1;
+  const c = document.createElement("canvas"); c.width = Math.round(src.width*k); c.height = Math.round(src.height*k);
+  const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  if (mode === "none") return c;
+  const im = x.getImageData(0,0,c.width,c.height), d = im.data, hist = new Uint32Array(256);
+  for (let i=0;i<d.length;i+=4){ const g = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000 | 0; d[i]=d[i+1]=d[i+2]=g; hist[g]++; }
+  if (mode === "bw"){                               // Otsu threshold for old / yellowed / stained paper
+    const total = d.length/4; let sum=0; for(let t=0;t<256;t++) sum += t*hist[t];
+    let sB=0,wB=0,max=0,thr=128;
+    for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t];
+      const mB=sB/wB, mF=(sum-sB)/wF, between=wB*wF*(mB-mF)*(mB-mF); if(between>max){max=between;thr=t;} }
+    for (let i=0;i<d.length;i+=4){ const v = d[i] > thr ? 255 : 0; d[i]=d[i+1]=d[i+2]=v; }
+  }
+  x.putImageData(im,0,0);
+  return c;
+}
+
+async function convert(){
+  if (!cropper || busy) return;
+  busy = true; $("#goBtn").disabled = true; $("#goBtn").textContent = "Converting…";
+  const t0 = performance.now();
+  try{
+    const w = await getWorker();
+    await w.setParameters({ tessedit_pageseg_mode: $("#psm").value, preserve_interword_spaces: "1", user_defined_dpi: "300" });
+    const { data } = await w.recognize(cropCanvas(), {}, { text: true, blocks: true });
+    let text = cleanTamil(data.text || "").trim();
+    if (!$("#keepLines").checked) text = reflow(text);
+    out.value = $("#append").checked && out.value.trim() ? out.value.replace(/\s+$/,"") + "\n\n" + text : text;
+    const words = (data.blocks||[]).flatMap(b=>b.paragraphs).flatMap(p=>p.lines).flatMap(l=>l.words);
+    showWeak(words);
+    const secs = ((performance.now()-t0)/1000).toFixed(1);
+    stats.innerHTML = `<span>${text.split(/\s+/).filter(Boolean).length} words</span><span style="color:${confCol(data.confidence)}">confidence ${Math.round(data.confidence)}%</span><span>${workerLangs}</span><span>${secs}s</span>`;
+    setProg(1, text ? "Done. Check the highlighted words, then copy." : "No text found — try a tighter crop, another language, or ‘Old / yellowed paper’.");
+    if (window.parent !== window) window.parent.postMessage({ type: "ezhuthu-ocr", text, confidence: data.confidence, langs: workerLangs }, "*");
+  }catch(e){ console.error(e); setProg(0, "OCR failed: " + (e.message||e)); toast("OCR failed — see the message above the text box"); }
+  busy = false; $("#goBtn").disabled = false; $("#goBtn").textContent = "Convert to text";
+  sendHeight();
+}
+const confCol = c => c>=85 ? "var(--ok)" : c>=70 ? "var(--warn)" : "var(--bad)";
+function showWeak(words){
+  const lo = words.filter(w=>w.confidence<70 && w.text.trim()).map(w=>({t:cleanTamil(w.text), c:w.confidence})).sort((a,b)=>a.c-b.c).slice(0,40);
+  weak.classList.toggle("hidden", !lo.length);
+  weak.innerHTML = lo.length ? `<div style="color:var(--muted);margin-bottom:5px">Check these words (low confidence) — click to find:</div>` + lo.map(w=>`<span class="w" data-t="${w.t.replace(/"/g,"&quot;")}">${w.t.replace(/</g,"&lt;")}<small>${Math.round(w.c)}</small></span>`).join("") : "";
+}
+weak.addEventListener("click", e=>{ const w = e.target.closest(".w"); if(!w) return; const i = out.value.indexOf(w.dataset.t); if(i>=0){ out.focus(); out.setSelectionRange(i, i+w.dataset.t.length); } });
+
+/* Tamil clean-up — same rules as the Book OCR server */
+function cleanTamil(t){
+  return t
+    .replace(/[​⁠﻿◌]/g, "")                          // zero-width junk, dotted circle
+    .replace(/்[‌‍]/g, "்")                          // ZWNJ Tesseract adds after pulli
+    .replace(/(^|[^க-ஹ்])([ெேை])([க-ஹ])/gm, "$1$3$2") // ெக -> கெ (visual -> logical order)
+    .replace(/([க-ஹ]) +([ா-்ௗ])/g, "$1$2")      // stray space before a vowel sign
+    .normalize("NFC")                                                    // ெ+ா -> ொ, ே+ா -> ோ, ெ+ௗ -> ௌ
+    .replace(/[ \t]{2,}/g, " ");
+}
+function reflow(t){
+  return t.split(/\n\s*\n/).map(p => p.replace(/(\w)-\n(\w)/g, "$1$2").replace(/\s*\n\s*/g, " ").trim()).join("\n\n");
+}
+
+/* ---------------- output ---------------- */
+function copyText(){ if(out.value) copy(out.value); }
+function fname(ext){ return `ocr-${new Date().toISOString().slice(0,16).replace(/[T:]/g,"-")}.${ext}`; }
+function save(blob, name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); }
+function dlTxt(){ save(new Blob(["﻿"+out.value], {type:"text/plain;charset=utf-8"}), fname("txt")); }
+function dlDoc(){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  const body = out.value.split(/\n\s*\n/).map(p=>`<p>${esc(p).replace(/\n/g,"<br>")}</p>`).join("");
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:"Nirmala UI","Latha","Noto Sans Tamil",sans-serif;font-size:12pt;line-height:1.6}</style></head><body lang="ta">${body}</body></html>`;
+  save(new Blob(["﻿"+html], {type:"application/msword"}), fname("doc"));
+}
+
+/* symbols palette */
+function togglePal(){ const p=$("#pal"); p.classList.toggle("hidden"); $("#palBtn").classList.toggle("on", !p.classList.contains("hidden")); renderSyms(); }
+function renderSyms(){
+  const q = $("#symQ").value.toLowerCase();
+  $("#symList").innerHTML = SYMBOLS.map(([g,items])=>{
+    const f = items.filter(([c,code,name])=>!q || name.toLowerCase().includes(q) || code.toLowerCase().includes(q) || c===q);
+    return f.length ? `<h5>${g}</h5>` + f.map(([c,code,name])=>`<span class="sym" title="${name} (${code})" data-c="${c}">${c}</span>`).join("") : "";
+  }).join("");
+}
+$("#symQ").addEventListener("input", renderSyms);
+$("#symList").addEventListener("mousedown", e=>{ const s=e.target.closest(".sym"); if(!s) return; e.preventDefault(); out.setRangeText(s.dataset.c, out.selectionStart, out.selectionEnd, "end"); out.focus(); });
+
+/* keyboard */
+document.addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey) && e.key==="Enter" && cropper){ e.preventDefault(); convert(); } });
+
+/* embedding: tell the parent page our height so the iframe can fit */
+function sendHeight(){ if(window.parent!==window) window.parent.postMessage({type:"ezhuthu-height", height: document.documentElement.scrollHeight}, "*"); }
+if (EMBED){ new ResizeObserver(sendHeight).observe(document.body); }
+const SELF = location.origin + location.pathname;
+$("#embedCode").textContent =
+`<iframe id="ezhuthu-ocr" src="${SELF}?embed=1&lang=tam+eng"
+  style="width:100%;height:760px;border:0" allow="clipboard-write; camera"
+  title="Tamil OCR"></iframe>
+<script>
+addEventListener("message", e => {
+  if (e.data?.type === "ezhuthu-height")
+    document.getElementById("ezhuthu-ocr").style.height = e.data.height + "px";
+});
+<\/script>`;
+</script>
+</body>
+</html>

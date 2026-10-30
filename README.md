@@ -35,7 +35,33 @@ Self-hosted, FineReader-style OCR for whole books: Tamil, English and mixed page
 
 Options: include pictures, include headers/footers/page numbers, keep original line breaks (for poetry/verse — otherwise paragraphs are re-flowed and hyphenated words re-joined), page breaks.
 
-## Run it
+## Quick web OCR (`docs/`) — paste, crop, convert
+
+A single-page tool that runs entirely in the visitor's browser (Tesseract.js, same "best" Tamil models), so it can be hosted for free on GitHub Pages and has no server or limits:
+
+- **Paste** a screenshot (Ctrl+V), **drop** a file, **upload**, or use the phone **camera**; PDFs open page by page.
+- **Crop** the area you want, rotate sideways pages, zoom.
+- Tamil + English (default), Tamil, English, Sanskrit, Hindi, Malayalam, Telugu, Kannada; layout and clean-up options.
+- Tamil clean-up, low-confidence word list, Tamil/Tamil Supplement symbol palette; copy, .txt or Word download.
+- **Embed** on any site with an iframe (`?embed=1`, optional `&lang=tam`). The frame reports its height and sends each result to the parent page as `{type: "ezhuthu-ocr", text}`.
+
+Live at **https://ocr.udhayam.in** once GitHub Pages and DNS are set up (see below). To run it locally: `cd docs && python -m http.server` and open http://localhost:8000.
+
+### Embed snippet
+
+```html
+<iframe id="ezhuthu-ocr" src="https://ocr.udhayam.in/?embed=1&lang=tam+eng"
+  style="width:100%;height:760px;border:0" allow="clipboard-write; camera" title="Tamil OCR"></iframe>
+<script>
+addEventListener("message", e => {
+  if (e.data?.type === "ezhuthu-height")
+    document.getElementById("ezhuthu-ocr").style.height = e.data.height + "px";
+  // if (e.data?.type === "ezhuthu-ocr") console.log(e.data.text);
+});
+</script>
+```
+
+## Run the full Book OCR app
 
 ### Docker (easiest, any OS)
 ```bash
@@ -106,5 +132,6 @@ backend/ocr_engine.py   rotate/deskew/clean, language auto-detect, Tesseract
 backend/exporters.py    Word, Excel, HTML, EPUB, Markdown, text
 backend/tamil_text.py   Tamil clean-up, replacement rules, symbol catalogue
 frontend/index.html     the dashboard (single file, no build step)
+docs/                   quick browser-only OCR page for GitHub Pages (ocr.udhayam.in)
 samples/                test PDFs (Tamil+English text; layout with tables, picture, sideways page)
 ```
