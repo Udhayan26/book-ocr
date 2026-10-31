@@ -19,7 +19,7 @@
 <meta property="og:description" content="Paste, drop or upload, crop, convert — single pages or whole books, with tables and pictures. Free, unlimited, runs in your browser.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23b4471f'/><text x='32' y='45' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif'>அ</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@500;700&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;700&family=Noto+Serif+Tamil:wght@400;500;700&family=Noto+Sans+Tamil+Supplement&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="vendor/cropper/cropper.min.css">
 <style>
 :root{
@@ -301,6 +301,30 @@ dialog[open]{animation:dlgIn .16s ease-out}
 .menu .list{max-height:min(72vh,560px);overflow:auto}
 .menu .list .mh{display:none}
 .menu .list .msep{border-top:1px solid var(--line);margin:4px 0}
+.fmtbox{padding:8px 10px 8px}
+.menu .list{min-width:300px}
+.fmtbox .ft{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.menu .list .fmtbox .seg{display:flex;width:100%}
+.menu .list .fmtbox .seg button{flex:1;width:auto;text-align:center;padding:6px 4px;border-radius:0;font-size:12.5px;white-space:nowrap}
+.menu .list .fmtbox .seg button.on{background:var(--ink);color:var(--paper)}
+.fmtbox .fh{font-size:11.5px;color:var(--muted);margin:6px 0 4px;line-height:1.4}
+.fmtbox .fonts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.menu .list .fmtbox .fonts label{display:grid;gap:3px;padding:0;font-size:11.5px;color:var(--muted)}
+.fmtbox select{padding:5px 6px;font-size:13px}
+.pvbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.pvbar .prevhint{margin:0;flex:1 1 200px}
+.preview .xpwrap{background:var(--line);border-radius:10px;padding:10px;margin:0 -8px}
+.xp{position:relative;container-type:inline-size;background:#fff;color:#111;margin:0 auto 22px;box-shadow:0 1px 3px rgba(0,0,0,.18),0 8px 30px rgba(0,0,0,.08);overflow:hidden}
+.xp>*{position:absolute;margin:0}
+.xp .xl{white-space:nowrap;transform-origin:0 50%}
+.xp .xl.j{text-align:justify;text-align-last:justify}
+.xp .xb{white-space:pre-wrap}
+.xp .xt{border-collapse:collapse;table-layout:fixed}
+.xp .xt td{border:1px solid #555;padding:0 .3em;overflow:hidden;vertical-align:middle;line-height:1.25}
+.xp .xi{object-fit:fill}
+.preview .xp{font-family:var(--xpfont);line-height:normal}
+.preview .xp table{margin:0;font-size:inherit} .preview .xp tr:first-child td{background:none;font-weight:inherit} .preview .xp td{border-color:#555;padding:0 .3em;vertical-align:middle}
+.preview .xp img{border:0;max-width:none}
 .scrim{display:none;position:fixed;inset:0;background:rgba(20,15,10,.38);z-index:55}
 .tb .grp{display:inline-flex;gap:2px;align-items:center}
 .tb .btn.ic{padding:5px 8px}
@@ -536,15 +560,23 @@ dialog[open]{animation:dlgIn .16s ease-out}
           <div class="menu">
             <button class="btn sm" onclick="toggleMenu()">Download ▾</button>
             <div class="list hidden" id="dlMenu" role="menu"><div class="mh">Download as<button class="btn ghost sm" type="button" onclick="toggleMenu()" aria-label="Close">✕</button></div>
-              <button onclick="dl('docx')">Word (.docx)<small>Headings, tables and pictures kept</small></button>
+              <div class="fmtbox">
+                <div class="ft">Page format for Word &amp; web page</div>
+                <div class="seg" id="fmtSeg" role="radiogroup"><button type="button" data-m="exact">Same as page</button><button type="button" data-m="flow">Formatted</button><button type="button" data-m="plain">Plain</button></div>
+                <div class="fh" id="fmtHint"></div>
+                <div class="fonts" id="fmtFonts"><label>Tamil font<select id="fTa"></select></label><label>English font<select id="fEn"></select></label></div>
+              </div>
+              <div class="msep"></div>
+              <button onclick="dl('docx')">Word (.docx)<small>In the page format chosen above</small></button>
               <button onclick="dl('pdf')">Searchable PDF<small>Looks like the scan; text can be searched and copied (text layer from OCR, not your edits)</small></button>
-              <button onclick="dl('html')">Web page (.html)<small>One file, pictures included</small></button>
+              <button onclick="dl('html')">Web page (.html)<small>In the page format chosen above · one file</small></button>
               <button onclick="dl('csv')">Tables for Excel (.csv)<small>Every table found, ready to open in Excel</small></button>
               <button onclick="dl('txt')">Text (.txt)<small>Plain UTF-8; tables tab-separated</small></button>
               <button onclick="dl('md')">Markdown (.md)</button>
               <button onclick="dl('json')">JSON<small>Blocks, text and confidence per page</small></button>
               <div class="msep"></div><label id="markLbl"><input type="checkbox" id="pageMarks" checked> Page numbers between pages</label>
               <label><input type="checkbox" id="withPics" checked> Include pictures</label>
+
             </div>
           </div>
           <button class="btn sm ghost" id="palBtn" onclick="togglePal()" title="Tamil & Tamil Supplement symbols">ௐ</button>
@@ -844,7 +876,7 @@ let saveT = null;
 let saveFn = null;
 function flushSave(){ if (saveT){ clearTimeout(saveT); saveT = null; saveFn && saveFn(); } }
 function saveSoon(){ if(!docKey) return; clearTimeout(saveT); saveT = setTimeout(saveFn = ()=>{ saveT = null; return idb.put(docKey, {name:docName, total:pages.length, updated:Date.now(), globalCrop, docLangs, docScripts, okWords:[...okWords],
-  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, skew:p.skew??null, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null, weak:p.weak||[]}))}); }, 700); }
+  pages: pages.map(p=>({text:p.text||"", conf:p.conf??null, status:p.status==="done"?"done":"new", edited:!!p.edited, rot:p.rot||0, skew:p.skew??null, crop:p.crop||null, areas:p.areas||[], blocks:p.blocks||null, extras:p.extras||null, geo:p.geo||null, weak:p.weak||[]}))}); }, 700); }
 async function restore(){
   const rec = docKey && await idb.get(docKey);
   if (!rec || rec.total !== pages.length) return;
@@ -1382,7 +1414,7 @@ async function ocr(worker, canvas, psm){
   const { data } = await worker.recognize(pc, {}, { text:true, blocks:true });
   const paras = [];
   (data.blocks||[]).forEach(b=>b.paragraphs.forEach(pa=>{
-    const lines = pa.lines.map(l=>({ box: sc(l.bbox,k), words: l.words.map(w=>({text: cleanTamil(w.text), conf: w.confidence, box: sc(w.bbox,k)})) }));
+    const lines = pa.lines.map(l=>({ box: sc(l.bbox,k), text: cleanTamil((l.text||"").replace(/\n$/,"")).trim(), words: l.words.map(w=>({text: cleanTamil(w.text), conf: w.confidence, box: sc(w.bbox,k)})) }));
     paras.push({ box: sc(pa.bbox,k), lines, text: cleanTamil(pa.lines.map(l=>l.text.replace(/\n$/,"")).join("\n")) });
   }));
   return { text: cleanTamil(data.text||"").trim(), conf: data.confidence, paras, words: paras.flatMap(p=>p.lines.flatMap(l=>l.words)) };
@@ -1522,6 +1554,30 @@ async function readTable(worker, c, grid){
   return { rows: t ? t.rows : [[cleanTable(r.text)]], grid: t ? {cols: inner(t.vs, W), rows: inner(t.hs, H)} : (grid || {cols:[], rows:[]}), conf: r.conf, words: r.words };
 }
 const cleanTable = t => finishText(t);
+/* how heavy and what colour the print in a box is (c pixels): sw = stroke width (px), col = ink colour unless black/grey */
+function inkStats(c, b){
+  const bx = Math.max(0, Math.floor(b.x)), by = Math.max(0, Math.floor(b.y)), bw = Math.min(c.width-bx, Math.ceil(b.w)), bh = Math.min(c.height-by, Math.ceil(b.h));
+  if (bw < 4 || bh < 4) return {};
+  const s = Math.min(1, Math.sqrt(2.5e6/(bw*bh))), w = Math.max(1, Math.round(bw*s)), h = Math.max(1, Math.round(bh*s));
+  const t = document.createElement("canvas"); t.width = w; t.height = h; const g = t.getContext("2d", {willReadFrequently:true}); g.drawImage(c, bx, by, bw, bh, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data, gray = new Uint8Array(w*h), hist = new Uint32Array(256);
+  for (let i=0, j=0; j<w*h; i+=4, j++){ const v = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000|0; gray[j] = v; hist[v]++; }
+  const thr = Math.min(otsu(hist, w*h), 200);
+  // sub-pixel stroke width: ink coverage (from grey levels) ÷ half the edge length (total variation of the coverage)
+  let acc = 0, paper = 255, ink = 0; for (let v=255; v>=0; v--){ acc += hist[v]; if (acc >= w*h*0.3){ paper = v; break; } }
+  acc = 0; let nInk = 0; for (let v=0; v<thr; v++) nInk += hist[v]; for (let v=0; v<256; v++){ acc += hist[v]; if (acc >= nInk*0.2){ ink = v; break; } }
+  const span = Math.max(30, paper - ink), cov = new Float32Array(w*h);
+  for (let j=0; j<w*h; j++){ const v = (paper - gray[j])/span; cov[j] = v <= 0 ? 0 : v >= 1 ? 1 : v; }
+  let A = 0, P = 0, r = 0, gg = 0, bb = 0, n = 0;
+  for (let y=0; y<h; y++) for (let x=0; x<w; x++){ const j = y*w+x; A += cov[j];
+    if (x < w-1 && y < h-1){ const dx = cov[j+1]-cov[j], dy = cov[j+w]-cov[j]; P += Math.sqrt(dx*dx + dy*dy); }
+    if (gray[j] < thr && x>0 && y>0 && x<w-1 && y<h-1 && gray[j-1]<thr && gray[j+1]<thr && gray[j-w]<thr && gray[j+w]<thr){ r += d[j*4]; gg += d[j*4+1]; bb += d[j*4+2]; n++; } }
+  if (A < 4 || P < 4) return {};
+  const out = { sw: 2*A/P/s };
+  if (n > 30){ r/=n; gg/=n; bb/=n; const mx = Math.max(r,gg,bb), mn = Math.min(r,gg,bb);
+    if (mx - mn > 45) out.col = [r,gg,bb].map(v=>Math.round(v).toString(16).padStart(2,"0")).join(""); }
+  return out;
+}
 function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createElement("canvas"); o.width = Math.round(c.width*k); o.height = Math.round(c.height*k); o.getContext("2d").drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg", 0.85); }
 
 /* auto layout of one (cropped) canvas -> areas + blocks, all in that canvas' pixels */
@@ -1535,7 +1591,8 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
     if (!t.ruled && inside.length < 4) continue;
     const res = await readTable(worker, sub(c, {x:bx.x/c.width, y:bx.y/c.height, w:bx.w/c.width, h:bx.h/c.height}), null);
     if (!t.ruled && (res.rows.length < 3 || res.rows[0].length < 2)) continue;
-    tables.push({type:"table", box:bx, rows:res.rows, grid:res.grid, conf:res.conf});
+    const wh = res.words.map(x=>x.box.h).sort((p,q)=>p-q);
+    tables.push({type:"table", box:bx, rows:res.rows, grid:res.grid, conf:res.conf, lh: wh.length ? wh[Math.floor(wh.length*0.75)] : null});
   }
   const pics = findPictures(B, r.words, T.map(t=>t.box)).map(b=>({type:"image", box:{x:b.x0/s, y:b.y0/s, w:(b.x1-b.x0)/s, h:(b.y1-b.y0)/s}}));
   // a caption printed right under (or over) a picture is text, not part of the picture
@@ -1555,7 +1612,9 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
     const edge = ((edgeTop && p.box.y + p.box.h < c.height*0.07) || (edgeBottom && p.box.y > c.height*0.93)) && nW <= 12;   // running header / page number
     const type = edge ? "ignore" : (lh/bodyH >= 1.28 && p.lines.length <= 3 && nW <= 18) ? "heading" : "text";
     const confs = p.lines.flatMap(l=>l.words.map(w=>w.conf));
-    return {type, box:p.box, text: type==="heading" ? p.text.replace(/\s*\n\s*/g," ") : finishText(p.text), conf: confs.length ? confs.reduce((a,b)=>a+b,0)/confs.length : 0};
+    const ls = p.lines.filter(l=>l.text), lhs = ls.map(l=>l.box.h), st = inkStats(c, p.box);
+    return {type, box:p.box, text: type==="heading" ? p.text.replace(/\s*\n\s*/g," ") : finishText(p.text), conf: confs.length ? confs.reduce((a,b)=>a+b,0)/confs.length : 0,
+      lines: ls.map(l=>({t:l.text, box:l.box})), lh: median(lhs) || p.box.h, sw: st.sw ? st.sw/(median(lhs) || p.box.h) : null, col: st.col};
   });
   // re-join a paragraph Tesseract split mid-sentence (common in narrow, justified columns)
   for (let i = text.length-1; i > 0; i--){
@@ -1565,7 +1624,7 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
     if (gap > -5 && gap < bodyH*1.1 && Math.abs(b.box.x - a.box.x) < c.width*0.06){
       a.text = $("#keepLines").checked ? a.text + "\n" + b.text : a.text.replace(/-$/, "") + (/-$/.test(a.text) ? "" : " ") + b.text;
       a.box = {x:Math.min(a.box.x,b.box.x), y:a.box.y, w:Math.max(a.box.x+a.box.w, b.box.x+b.box.w)-Math.min(a.box.x,b.box.x), h:b.box.y+b.box.h-a.box.y};
-      a.conf = (a.conf + b.conf)/2; text.splice(i, 1);
+      a.conf = (a.conf + b.conf)/2; a.lines = [...(a.lines||[]), ...(b.lines||[])]; a.lh = median(a.lines.map(l=>l.box.h)) || a.lh; text.splice(i, 1);
     }
   }
   const order = [...text];
@@ -1638,19 +1697,42 @@ function columnRegions(c, want, rightToLeft){
 }
 
 /* ===================== reading a page ===================== */
+/* formatting kept with each block (all boxes are fractions of the full page): box, lines [{t,x,y,w,h}], lh = line height,
+   sw = stroke width / line height (boldness), col = ink colour, grid = table lines, src = text as read (to know if it was edited) */
+const r5 = v => Math.round(v*1e5)/1e5;
+const rbox = b => ({x:r5(b.x), y:r5(b.y), w:r5(b.w), h:r5(b.h)});
+function fmtOf(b, toPage){
+  const f = { box: rbox(toPage(b.box)) };
+  if (b.lines?.length) f.lines = b.lines.map(l=>({t:l.t, ...rbox(toPage(l.box))}));
+  if (b.lh) f.lh = r5(toPage({x:0, y:0, w:0, h:b.lh}).h);
+  if (b.sw) f.sw = Math.round(b.sw*1e4)/1e4;
+  if (b.col) f.col = b.col;
+  if (b.grid) f.grid = b.grid;
+  if (b.text != null) f.src = b.text;
+  return f;
+}
+const parasLines = r => r.paras.flatMap(pa=>pa.lines).filter(l=>l.text).map(l=>({t:l.text, box:l.box}));
+function measureBlock(c, r, type, text){
+  const lines = parasLines(r), lh = median(lines.map(l=>l.box.h)), st = inkStats(c, {x:0, y:0, w:c.width, h:c.height});
+  const bx = lines.length ? (()=>{ const x0 = Math.min(...lines.map(l=>l.box.x)), y0 = Math.min(...lines.map(l=>l.box.y)); return {x:x0, y:y0, w:Math.max(...lines.map(l=>l.box.x+l.box.w))-x0, h:Math.max(...lines.map(l=>l.box.y+l.box.h))-y0}; })() : {x:0, y:0, w:c.width, h:c.height};
+  return {type, text, box:bx, lines, lh, sw: st.sw && lh ? st.sw/lh : null, col: st.col};
+}
 async function readPage(worker, p, liveCrop){
   const t0 = performance.now(), full = await fullCanvas(p);
-  let blocks = [], conf = null, words = [];
+  let blocks = [], conf = null, words = [], extras = [];
+  const geo = { W: full.width, H: full.height, ppt: p.src.kind === "pdf" ? 300/72 : null };      // pixels per point (known for PDF pages)
   const manual = p.areas.filter(a=>!a.auto);
   if (manual.length || (p.areas.length && mode==="areas" && !liveCrop)){
     // read the marked areas in their order
     for (const a of p.areas){
       if (a.type === "ignore") continue;
-      const c = sub(full, a);
-      if (a.type === "image"){ blocks.push({type:"image", img: picture(c), aid:a.id}); continue; }
-      if (a.type === "table"){ const t = await readTable(worker, c, a.grid); a.grid = t.grid; blocks.push({type:"table", rows:t.rows, aid:a.id}); words.push(...frac(t.words, a, c.width, c.height)); continue; }
+      const c = sub(full, a), toA = bx => ({x: a.x + bx.x/c.width*a.w, y: a.y + bx.y/c.height*a.h, w: bx.w/c.width*a.w, h: bx.h/c.height*a.h}), whole = {x:0, y:0, w:c.width, h:c.height};
+      if (a.type === "image"){ blocks.push({type:"image", img: picture(c), aid:a.id, f: fmtOf({box:whole}, toA)}); continue; }
+      if (a.type === "table"){ const t = await readTable(worker, c, a.grid); a.grid = t.grid; const wh = t.words.map(x=>x.box.h).sort((p,q)=>p-q);
+        blocks.push({type:"table", rows:t.rows, aid:a.id, f: fmtOf({box:whole, grid:t.grid, lh: wh.length ? wh[Math.floor(wh.length*0.75)] : null}, toA)}); words.push(...frac(t.words, a, c.width, c.height)); continue; }
       const r = await ocr(worker, c, a.type==="heading" ? 7 : 6);
-      blocks.push({type:a.type, text: a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text), aid:a.id}); words.push(...frac(r.words, a, c.width, c.height));
+      const text = a.type==="heading" ? r.text.replace(/\s*\n\s*/g," ") : finishText(r.text);
+      blocks.push({type:a.type, text, aid:a.id, f: fmtOf(measureBlock(c, r, a.type, text), toA)}); words.push(...frac(r.words, a, c.width, c.height));
     }
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : 0;
   } else {
@@ -1667,13 +1749,14 @@ async function readPage(worker, p, liveCrop){
         for (const b of r.blocks){
           const id = areaSeq++;
           areas.push({id, type:b.type, auto:true, ...toPage(b.box), ...(b.grid ? {grid:b.grid} : {})});
-          if (b.type !== "ignore") blocks.push({type:b.type, text:b.text, rows:b.rows, img:b.img, aid:id});
+          if (b.type !== "ignore") blocks.push({type:b.type, text:b.text, rows:b.rows, img:b.img, aid:id, f: fmtOf(b, toPage)});
+          else if (b.text) extras.push({type:"text", text:b.text, f: fmtOf(b, toPage)});      // running header / page number: kept for the exact page layout
         }
         words.push(...frac(r.words, fr, rc.width, rc.height)); if (r.conf != null) confs.push(r.conf);
       } else {
         const r = await ocr(worker, rc, cm ? 4 : undefined);
         const id = areaSeq++;
-        if (r.text.trim()) blocks.push({type:"text", text: finishText(r.text), aid: cm ? id : undefined});
+        if (r.text.trim()){ const text = finishText(r.text); blocks.push({type:"text", text, aid: cm ? id : undefined, f: fmtOf(measureBlock(rc, r, "text", text), toPage)}); }
         if (cm) areas.push({id, type:"text", auto:true, ...toPage({x:0, y:0, w:rc.width, h:rc.height})});
         words.push(...frac(r.words, fr, rc.width, rc.height)); confs.push(r.conf);
       }
@@ -1681,7 +1764,7 @@ async function readPage(worker, p, liveCrop){
     conf = words.length ? words.reduce((s,w)=>s+w.conf,0)/words.length : (confs[0] ?? 0);
     if (auto || cm) p.areas = areas;    // show what was found as editable areas
   }
-  return { blocks, text: blocksToText(blocks, true), conf, weak: weakOf(words), secs: ((performance.now()-t0)/1000).toFixed(1) };
+  return { blocks, extras, geo, text: blocksToText(blocks, true), conf, weak: weakOf(words), secs: ((performance.now()-t0)/1000).toFixed(1) };
 }
 /* text form of a page: tables as tab-separated lines, pictures as [Picture] — and back again (so text edits keep the structure) */
 const cellTxt = c => String(c??"").replace(/[\t\r\n]+/g, " ").trim();
@@ -1689,16 +1772,21 @@ function blocksToText(blocks, pics){ return blocks.map(b=> b.type==="table" ? b.
 function textToBlocks(text, old){
   old = old || [];
   const oldT = old.filter(b=>b.type==="table"), oldI = old.filter(b=>b.type==="image"), heads = new Set(old.filter(b=>b.type==="heading").map(b=>(b.text||"").trim()));
-  let ti = 0, ii = 0; const out = [];
+  let ti = 0, ii = 0, oi = 0; const out = [], oldX = old.filter(b=>b.type==="text"||b.type==="heading");
+  const grams = t => { const g = new Set(); const u = (t||"").replace(/\s+/g," "); for (let i=0;i<u.length-1;i++) g.add(u.slice(i,i+2)); return g; };
+  const sim = (a, b) => { const A = grams(a), B = grams(b); if (!A.size || !B.size) return 0; let n = 0; for (const x of A) if (B.has(x)) n++; return 2*n/(A.size+B.size); };
   for (const part of (text||"").split(/\n[ \t]*\n/)){
     const t = part.replace(/^\n+|\n+$/g, ""); if (!t.trim()) continue;
     if (t.trim() === "[Picture]"){ if (oldI[ii]) out.push(oldI[ii++]); continue; }      // deleting the marker deletes the picture
     const lines = t.split("\n");
     if (lines.every(l=>l.includes("\t")) && (lines.length >= 2 || oldT[ti])){
       const rows = lines.map(l=>l.split("\t").map(x=>x.trim())), nc = Math.max(...rows.map(r=>r.length));
-      out.push({type:"table", rows: rows.map(r=>r.concat(Array(nc-r.length).fill(""))), aid: oldT[ti++]?.aid}); continue;
+      const ot = oldT[ti++]; out.push({type:"table", rows: rows.map(r=>r.concat(Array(nc-r.length).fill(""))), aid: ot?.aid, f: ot?.f}); continue;
     }
-    out.push({type: heads.has(t.trim()) ? "heading" : "text", text: t, aid: undefined});
+    const nb = {type: heads.has(t.trim()) ? "heading" : "text", text: t, aid: undefined};
+    let best = -1, bs = 0.3; for (let k=oi; k<Math.min(oldX.length, oi+4); k++){ const v = sim(oldX[k].text, t); if (v > bs){ bs = v; best = k; } }
+    if (best >= 0){ nb.f = oldX[best].f; oi = best + 1; }
+    out.push(nb);
   }
   return out;
 }
@@ -1784,6 +1872,8 @@ async function startBatch(){
 }
 
 /* ===================== text / preview / whole book ===================== */
+let pview = "edit";
+document.addEventListener("click", e=>{ const b = e.target.closest("#pvSeg button"); if (!b) return; pview = b.dataset.v; showView(); });
 function setTab(t){
   saveEdits(); tab = t;
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
@@ -1800,7 +1890,16 @@ function showView(){
     weak.classList.add("hidden"); return;
   }
   if (tab === "preview"){
-    $("#preview").innerHTML = p && p.status==="done" ? `<p class="prevhint">Click any text or table cell to edit it — changes go into Word, web page, CSV and text downloads.</p>` + blocksHtml(pageBlocks(p), true, true) : `<p style="color:var(--muted)">Convert this page to see its headings, tables and pictures here.</p>`;
+    if (!(p && p.status==="done")) $("#preview").innerHTML = `<p style="color:var(--muted)">Convert this page to see its headings, tables and pictures here.</p>`;
+    else {
+      const bar = `<div class="pvbar"><div class="seg" id="pvSeg"><button type="button" data-v="edit" class="${pview==="edit"?"on":""}">Edit</button><button type="button" data-v="page" class="${pview==="page"?"on":""}">Page layout</button></div>`
+        + `<p class="prevhint">${pview==="edit" ? "Click any text or table cell to edit it — changes go into every download." : "How “Same as page” Word and web page downloads will look (fonts and sizes measured from the scan)."}</p></div>`;
+      if (pview === "page"){
+        const P = layoutDoc([{p, i:cur}]), pg = P[0], fs = fmtSet();
+        $("#preview").innerHTML = bar + (pg.ok ? `<div class="xpwrap" style="--xpfont:${famCss(fs).replace(/"/g,"'")}">${xpPage(pg, true)}</div>` : `<p style="color:var(--muted)">This page was read with an older version — convert it again to see its layout.</p>`);
+        const root = $("#preview"); loadFmtFonts(fs).then(()=>fitLines(root)); fitLines(root);
+      } else $("#preview").innerHTML = bar + blocksHtml(pageBlocks(p), true, true);
+    }
   }
   if (!p) return;
   if (isBook() || p.status==="done") { if (tab==="page" && (isBook() || !$("#append").checked)) out.value = p.text || ""; }
@@ -1973,6 +2072,18 @@ function reflow(t){ return t.split(/\n\s*\n/).map(p => p.replace(/(\w)-\n(\w)/g,
 function copyText(){ saveEdits(); const t = tab==="book" ? bookText($("#pageMarks").checked) : out.value; if(t) copy(t); }
 function toggleMenu(){ const m = $("#dlMenu"); m.classList.toggle("hidden"); m.classList.remove("up");
   if (!m.classList.contains("hidden") && innerWidth > 760){ const r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 8 && r.top - r.height - 40 > 0) m.classList.add("up"); } if (!m.classList.contains("hidden")) m.querySelector("button[onclick^='dl']")?.focus({preventScroll:true}); }
+const FMT_HINT = { exact: "Each page looks like the scan: same paper size, positions, font sizes, bold and colours. Best for printing and sharing.",
+  flow: "Keeps fonts, sizes, bold, colours, alignment, indents and columns — text flows, so it is easy to edit.", plain: "Just the text, headings, tables and pictures in your default style." };
+function initFmtUi(){
+  const fs = fmtSet();
+  $("#fTa").innerHTML = FONTS.ta.map(f=>`<option${f===fs.ta?" selected":""}>${f}</option>`).join("");
+  $("#fEn").innerHTML = FONTS.en.map(f=>`<option${f===fs.en?" selected":""}>${f}</option>`).join("");
+  const show = () => { const m = fmtSet().mode; document.querySelectorAll("#fmtSeg button").forEach(b=>{ b.classList.toggle("on", b.dataset.m===m); b.setAttribute("aria-checked", b.dataset.m===m); }); $("#fmtHint").textContent = FMT_HINT[m]; };
+  $("#fmtSeg").addEventListener("click", e=>{ const m = e.target.dataset.m; if (!m) return; store.set("ez_fmt", m); show(); if (tab==="preview") showView(); });
+  $("#fTa").onchange = () => { store.set("ez_fta", $("#fTa").value); if (tab==="preview") showView(); };
+  $("#fEn").onchange = () => { store.set("ez_fen", $("#fEn").value); if (tab==="preview") showView(); };
+  show();
+}
 document.addEventListener("keydown", e=>{ if (e.key==="Escape" && !$("#dlMenu").classList.contains("hidden")){ $("#dlMenu").classList.add("hidden"); } });
 document.addEventListener("click", e=>{ if(!e.target.closest(".menu")) $("#dlMenu").classList.add("hidden"); });
 function fname(ext){ return `${(docName||"ocr").replace(/[\\/:*?"<>|]+/g,"_")}.${ext}`; }
@@ -2021,6 +2132,13 @@ async function dl(kind){
     const j = {title: docName, languages: poolLangs, pages: list.map(({p,i})=>({page:i+1, confidence:p.conf!=null?Math.round(p.conf):null, edited:!!p.edited, text:p.text||"", blocks: pageBlocks(p).map(b=>b.type==="image"&&!pics?{type:"image"}:b)}))};
     return save(new Blob([JSON.stringify(j,null,1)], {type:"application/json"}), fname("json"));
   }
+  if (kind==="html" && fmtSet().mode !== "plain"){
+    const fs = fmtSet(); setProg(.3, "Measuring the page layout…"); await loadFmtFonts(fs);
+    const P = layoutDoc(list);
+    if (!P.some(pg=>pg.ok)) toast("These pages were read with an older version — convert them again to keep the page format");
+    save(new Blob([fmtHtmlDoc(P, fs, pics, fs.mode)], {type:"text/html;charset=utf-8"}), fname("html"));
+    return setProg(1, "Web page ready.");
+  }
   if (kind==="html"){
     const body = list.map(({p,i})=>(marks?`<div class="pmark">Page ${i+1}</div>`:"") + blocksHtml(pageBlocks(p), pics)).join("\n");
     const html = `<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docName)}</title>
@@ -2032,32 +2150,328 @@ async function dl(kind){
   if (kind==="docx"){
     setProg(.5, "Building Word file…");
     try{ if (!window.docx) await loadScript(DOCXJS); }catch{ return toast("Couldn't load the Word builder — try Web page or Text"); }
-    const D = window.docx, FONT = {ascii:"Calibri", hAnsi:"Calibri", cs:"Nirmala UI", eastAsia:"Nirmala UI"};
+    const D = window.docx, fs = fmtSet(), FONT = {ascii: fs.en, hAnsi: fs.en, cs: fs.ta, eastAsia: fs.ta};
     const run = (t, o={}) => new D.TextRun({text:t, font:FONT, ...o});
-    const children = [new D.Paragraph({heading: D.HeadingLevel.TITLE, children:[run(docName)]})];
-    for (const [n, {p,i}] of list.entries()){
-      if (marks) children.push(new D.Paragraph({pageBreakBefore: n>0, children:[run(`Page ${i+1}`, {color:"888888", size:18})]}));
-      else if (n>0 && isBook()) children.push(new D.Paragraph({children:[new D.PageBreak()]}));
+    const plainChildren = async p => {
+      const ch = [];
       for (const b of pageBlocks(p)){
-        if (b.type==="heading") children.push(new D.Paragraph({heading: D.HeadingLevel.HEADING_2, children:[run(b.text)]}));
+        if (b.type==="heading") ch.push(new D.Paragraph({heading: D.HeadingLevel.HEADING_2, children:[run(b.text)]}));
         else if (b.type==="table"){
           const nc = Math.max(...b.rows.map(r=>r.length));
-          children.push(new D.Table({width:{size:100, type:D.WidthType.PERCENTAGE}, rows: b.rows.map((r,ri)=>new D.TableRow({children: Array.from({length:nc},(_,ci)=>new D.TableCell({children:[new D.Paragraph({children:[run(r[ci]||"", {bold: ri===0, size:20})]})]}))}))}));
-          children.push(new D.Paragraph({children:[]}));
+          ch.push(new D.Table({width:{size:100, type:D.WidthType.PERCENTAGE}, rows: b.rows.map((r,ri)=>new D.TableRow({children: Array.from({length:nc},(_,ci)=>new D.TableCell({children:[new D.Paragraph({children:[run(r[ci]||"", {bold: ri===0, size:20})]})]}))}))}));
+          ch.push(new D.Paragraph({children:[]}));
         } else if (b.type==="image"){
           if (!pics) continue;
-          const bin = Uint8Array.from(atob(b.img.split(",")[1]), ch=>ch.charCodeAt(0));
           const im = await loadImage(b.img), wpx = Math.min(600, im.naturalWidth);
-          children.push(new D.Paragraph({alignment: D.AlignmentType.CENTER, children:[new D.ImageRun({type:"jpg", data:bin, transformation:{width:wpx, height:Math.round(im.naturalHeight*wpx/im.naturalWidth)}})]}));
-        } else (b.text||"").split(/\n\s*\n/).forEach(t=>{ const ls = t.split("\n"); children.push(new D.Paragraph({spacing:{after:160}, children: ls.flatMap((l,k)=>k? [new D.TextRun({break:1}), run(l)] : [run(l)])})); });
+          ch.push(new D.Paragraph({alignment: D.AlignmentType.CENTER, children:[new D.ImageRun({type:"jpg", data: dataBytes(b.img), transformation:{width:wpx, height:Math.round(im.naturalHeight*wpx/im.naturalWidth)}})]}));
+        } else (b.text||"").split(/\n\s*\n/).forEach(t=>{ const ls = t.split("\n"); ch.push(new D.Paragraph({spacing:{after:160}, children: ls.flatMap((l,k)=>k? [new D.TextRun({break:1}), run(l)] : [run(l)])})); });
       }
+      return ch.length ? ch : [new D.Paragraph({children:[]})];
+    };
+    let doc;
+    if (fs.mode !== "plain"){
+      setProg(.3, "Measuring the page layout…"); await loadFmtFonts(fs);
+      const P = layoutDoc(list);
+      if (!P.some(pg=>pg.ok)) toast("These pages were read with an older version — convert them again to keep the page format");
+      doc = await fmtWordDoc(P, fs, pics, fs.mode, plainChildren);
+    } else {
+      const children = [new D.Paragraph({heading: D.HeadingLevel.TITLE, children:[run(docName)]})];
+      for (const [n, {p,i}] of list.entries()){
+        if (marks) children.push(new D.Paragraph({pageBreakBefore: n>0, children:[run(`Page ${i+1}`, {color:"888888", size:18})]}));
+        else if (n>0 && isBook()) children.push(new D.Paragraph({children:[new D.PageBreak()]}));
+        children.push(...await plainChildren(p));
+      }
+      doc = new D.Document({creator:"எழுத்து OCR", title:docName, styles:{default:{document:{run:{font:FONT, size:24}}}}, sections:[{children}]});
     }
-    const doc = new D.Document({creator:"எழுத்து OCR", title:docName, styles:{default:{document:{run:{font:FONT, size:24}}}}, sections:[{children}]});
     const blob = await D.Packer.toBlob(doc);
     setProg(1, "Word file ready.");
     return save(blob, fname("docx"));
   }
 }
+
+/* ===================== keeping the page's format (Word & web page) =====================
+   Like FineReader's "exact copy" / "editable copy": page size, positions, font sizes, bold, colour,
+   alignment, indents, line spacing and columns are rebuilt from what was measured while reading. */
+const FONTS = {
+  ta: ["Noto Serif Tamil", "Noto Sans Tamil", "Latha", "Nirmala UI", "Vijaya", "Mukta Malar", "Catamaran", "Hind Madurai"],
+  en: ["Times New Roman", "Georgia", "Cambria", "Arial", "Calibri", "Verdana"] };
+const GFONT = {"Noto Serif Tamil":"Noto+Serif+Tamil:wght@400;700", "Noto Sans Tamil":"Noto+Sans+Tamil:wght@400;700", "Mukta Malar":"Mukta+Malar:wght@400;700", "Catamaran":"Catamaran:wght@400;700", "Hind Madurai":"Hind+Madurai:wght@400;700"};
+const TWIN = {"Times New Roman":"Tinos", "Arial":"Arimo", "Georgia":"Gelasio", "Cambria":"Caladea", "Calibri":"Carlito"};   // free fonts with the same letter widths
+const PAPER = [["A4",595,842],["A5",420,595],["B5",499,709],["Letter",612,792],["Legal",612,1008],["Demy",396,612],["Royal",442,663],["Crown",363,544]];
+const EMR = { lat: 0.9, ind: 1.1 };          // height of a printed line ÷ font size (English / Tamil & Indic)
+const fmtSet = () => ({ mode: store.get("ez_fmt") || "exact", ta: store.get("ez_fta") || "Noto Serif Tamil", en: store.get("ez_fen") || "Times New Roman" });
+const generic = f => /Arial|Calibri|Verdana/.test(f) ? "sans-serif" : "serif";
+const famCss = fs => [fs.en, TWIN[fs.en], fs.ta, "Noto Serif Tamil", "Noto Sans Tamil Supplement"].filter(Boolean).map(f=>`'${f}'`).join(", ") + ", " + generic(fs.en);
+function fontCssUrl(fs){
+  const fam = [GFONT[fs.ta] || GFONT["Noto Serif Tamil"], TWIN[fs.en] && `${TWIN[fs.en].replace(/ /g,"+")}:ital,wght@0,400;0,700;1,400`, "Noto+Sans+Tamil+Supplement"].filter(Boolean);
+  return "https://fonts.googleapis.com/css2?" + fam.map(f=>"family="+f).join("&") + "&display=swap";
+}
+async function loadFmtFonts(fs){
+  const url = fontCssUrl(fs);
+  if (![...document.querySelectorAll("link[data-fmt]")].some(l=>l.dataset.fmt===url)){
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = url; l.dataset.fmt = url; document.head.append(l);
+    await new Promise(ok=>{ l.onload = ok; l.onerror = ok; setTimeout(ok, 4000); });
+  }
+  const want = [fs.ta, TWIN[fs.en] || fs.en].flatMap(f=>[400,700].map(w=>`${w} 20px '${f}'`));
+  try{ await Promise.race([Promise.all(want.map(f=>document.fonts.load(f, "அகA"))), new Promise(ok=>setTimeout(ok, 4000))]); }catch{}
+}
+const MCTX = document.createElement("canvas").getContext("2d");
+function textWidthPt(t, size, bold, fs){ MCTX.font = `${bold?700:400} 100px ${famCss(fs)}`; return MCTX.measureText(t).width/100*size; }
+
+const lettersOf = t => (t||"").match(/[\p{L}\p{M}]/gu) || [];
+const scrClass = t => { const L = lettersOf(t); if (!L.length) return "lat"; return L.filter(ch=>/[A-Za-zÀ-ɏ]/.test(ch)).length / L.length > 0.6 ? "lat" : "ind"; };
+const wmed = pairs => { const a = pairs.filter(x=>x[0] > 0).sort((p,q)=>p[0]-q[0]), tot = a.reduce((s,x)=>s+x[1],0); let acc = 0; for (const [v,w] of a){ acc += w; if (acc >= tot/2) return v; } return 0; };
+const blockText = b => b.type==="table" ? b.rows.flat().join(" ") : (b.text||"");
+const nLines = b => b.f?.lines?.length || 1;
+const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0);
+
+/* measure everything once for the pages being exported */
+function layoutDoc(list){
+  const P = list.map(({p,i})=>{
+    const items = [...pageBlocks(p).map(b=>({b})), ...(p.extras||[]).map(b=>({b, extra:true}))].filter(x=>x.b.f?.box);
+    return {p, i, g: p.geo, items, ok: !!p.geo && items.some(x=>!x.extra)};
+  });
+  for (const pg of P){ if (!pg.ok) continue;
+    const {W, H} = pg.g; let ppt = pg.g.ppt;
+    if (!ppt){                                   // a photo or scan: guess the paper from the size of the ordinary text (≈ 12 pt)
+      const bodyPx = wmed(pg.items.filter(x=>!x.extra && x.b.type==="text" && x.b.f.lh).map(x=>[x.b.f.lh*H/EMR[scrClass(x.b.text)], nLines(x.b)]));
+      let Wpt = bodyPx ? W/(bodyPx/12) : 595, best = 0, bd = Math.log(1.35);
+      for (const [, a, c] of PAPER) for (const [pw, ph] of [[a,c],[c,a]]){ if (Math.abs(ph/pw/(H/W) - 1) > 0.035) continue; const d = Math.abs(Math.log(pw/Wpt)); if (d < bd){ bd = d; best = pw; } }
+      ppt = W/(best || Math.min(900, Math.max(280, Wpt)));
+    }
+    pg.ppt = ppt; pg.Wpt = W/ppt; pg.Hpt = H/ppt;
+  }
+  // font sizes: ordinary text sizes that are close together become one size
+  const sized = [];
+  for (const pg of P) if (pg.ok) for (const it of pg.items){ it.pg = pg; const f = it.b.f; if (!f.lh) continue;
+    it.sc = scrClass(blockText(it.b)); it.raw = f.lh*pg.g.H/pg.ppt/EMR[it.sc]; sized.push(it); }
+  const body = wmed(sized.filter(it=>!it.extra && it.b.type==="text").map(it=>[it.raw, nLines(it.b)])) || 12, bodyR = Math.round(body*2)/2;
+  for (const it of sized){ const s = Math.abs(it.raw/body - 1) < 0.1 ? bodyR : Math.round(it.raw*2)/2; it.size = Math.max(5, Math.min(96, s)); }
+  // bold: thicker strokes than the ordinary text of the same script
+  const base = {};
+  for (const sc of ["lat","ind"]) base[sc] = wmed(sized.filter(it=>it.sc===sc && it.b.type==="text" && !it.extra && it.b.f.sw && lettersOf(it.b.text).length >= 12).map(it=>[it.b.f.sw*EMR[sc], nLines(it.b)]));
+  for (const it of sized){ const sw = it.b.f.sw, n = lettersOf(blockText(it.b)).length;
+    it.bold = it.b.type==="table" ? false : (!sw || n < 3 || !base[it.sc]) ? it.b.type==="heading" : sw*EMR[it.sc]/base[it.sc] >= 1.22; }
+  // columns, alignment, indents, line spacing
+  for (const pg of P){ if (!pg.ok) continue;
+    const its = pg.items.filter(x=>!x.extra), bx = x=>x.b.f.box;
+    const c = {L: Math.min(...its.map(x=>bx(x).x)), R: Math.max(...its.map(x=>bx(x).x+bx(x).w)), T: Math.min(...its.map(x=>bx(x).y)), B: Math.max(...its.map(x=>bx(x).y+bx(x).h))};
+    pg.content = c;
+    // columns: narrow blocks with another narrow block beside them, within the same band (bands are split by full-width blocks)
+    const CW = c.R - c.L, narrow = x => bx(x).w < CW*0.62, wide = its.filter(x=>!narrow(x)).map(x=>bx(x).y);
+    const band = x => wide.filter(y=>y < bx(x).y).length;
+    for (const x of its){ const a = bx(x);
+      x.col = narrow(x) && its.some(y=>y!==x && narrow(y) && band(y)===band(x) && ov(a.x, a.x+a.w, bx(y).x, bx(y).x+bx(y).w) <= 0); }
+    for (const x of pg.items){ const a = bx(x);
+      if (x.col){ const m = its.filter(y=>y.col && ov(a.x, a.x+a.w, bx(y).x, bx(y).x+bx(y).w) > 0); x.cont = {L: Math.min(...m.map(y=>bx(y).x)), R: Math.max(...m.map(y=>bx(y).x+bx(y).w))}; }
+      else x.cont = {L: c.L, R: c.R};
+      alignOf(x, pg);
+    }
+  }
+  P.body = bodyR;
+  return P;
+}
+function alignOf(x, pg){
+  const f = x.b.f, a = f.box, c = x.cont, W = Math.max(1e-3, c.R - c.L), ls = (f.lines||[]).filter(l=>l.w > 0);
+  const tol = Math.max(0.004, (x.size||12)*pg.ppt/pg.g.W*0.6), sp = v => Math.max(...v) - Math.min(...v);
+  x.align = "left"; x.indent = 0; x.left = 0; x.right = 0; x.dy = null;
+  if (x.b.type==="table" || x.b.type==="image" || !ls.length){
+    const cx = a.x + a.w/2;
+    x.align = Math.abs(cx - (c.L+c.R)/2) < W*0.03 && a.x - c.L > W*0.04 ? "center" : (c.R - (a.x+a.w) < W*0.02 && a.x - c.L > W*0.2 ? "right" : "left");
+    if (x.align==="left" && a.x - c.L > tol*1.5) x.left = a.x - c.L;
+    return;
+  }
+  if (ls.length >= 2){
+    const Ls = ls.map(l=>l.x), Rs = ls.map(l=>l.x+l.w), Cs = ls.map(l=>l.x+l.w/2), rest = Ls.slice(1), nonLast = Rs.slice(0, -1);
+    const leftOK = sp(rest) < tol, rightOK = sp(nonLast) < tol && (ls.length >= 3 || c.R - Rs[0] < tol*3), centered = sp(Cs) < tol*1.5 && sp(Ls) > tol*2;
+    x.align = leftOK && rightOK ? "justify" : centered ? "center" : leftOK ? "left" : sp(Rs) < tol ? "right" : "left";
+    if (x.align==="justify" || x.align==="left"){
+      const m = median(rest), ind = Ls[0] - m; if (Math.abs(ind) > tol) x.indent = ind;
+      if (m - c.L > tol*1.5) x.left = m - c.L;
+      if (x.align==="justify"){ const r = c.R - median(nonLast); if (r > tol*1.5) x.right = r; }
+    }
+    const dys = ls.slice(1).map((l,k)=>l.y - ls[k].y).filter(d=>d > 0);
+    if (dys.length) x.dy = median(dys)*pg.Hpt;
+  } else {
+    const l = ls[0], cx = l.x + l.w/2;
+    if (Math.abs(cx - (c.L+c.R)/2) < Math.max(tol, W*0.02) && l.x - c.L > W*0.05) x.align = "center";
+    else if (c.R - (l.x+l.w) < tol*1.5 && l.x - c.L > W*0.15) x.align = "right";
+    else if (l.x - c.L > tol*1.5) x.left = l.x - c.L;
+  }
+}
+const unedited = b => b.f?.lines?.length && (b.f.src == null || (b.text||"") === b.f.src);
+/* lines grouped into paragraphs: a line that stops well short of the block's right edge ends a paragraph */
+function lineParas(it){
+  const f = it.b.f, a = f.box, tol = Math.max(0.004, (it.size||12)*it.pg.ppt/it.pg.g.W*0.8), out = []; let cur = [];
+  f.lines.forEach((l, k)=>{ cur.push(l); if (k === f.lines.length-1 || l.x + l.w < a.x + a.w - tol*2) { out.push(cur); cur = []; } });
+  return out;
+}
+const fracsOf = (inner, n) => { const e = inner && inner.length === n-1 ? [0, ...[...inner].sort((p,q)=>p-q), 1] : Array.from({length:n+1}, (_,k)=>k/n); return e.slice(1).map((v,k)=>v - e[k]); };
+
+/* ---------- web page ---------- */
+const XP_CSS = `.xp{position:relative;container-type:inline-size;background:#fff;color:#111;margin:0 auto 22px;box-shadow:0 1px 3px rgba(0,0,0,.18),0 8px 30px rgba(0,0,0,.08);overflow:hidden}
+.xp>*{position:absolute;margin:0}
+.xp .xl{white-space:nowrap;transform-origin:0 50%}
+.xp .xl.j{text-align:justify;text-align-last:justify}
+.xp .xb{white-space:pre-wrap}
+.xp .xt{border-collapse:collapse;table-layout:fixed}
+.xp .xt td{border:1px solid #555;padding:0 .3em;overflow:hidden;vertical-align:middle;line-height:1.25}
+.xp .xi{object-fit:fill}`;
+const FIT_JS = `function fitLines(r){r.querySelectorAll(".xl").forEach(function(e){e.style.transform="";var s=e.scrollWidth,w=e.clientWidth;if(s>w+1)e.style.transform="scaleX("+(w/s)+")";});}`;
+function fitLines(r){ r.querySelectorAll(".xl").forEach(e=>{ e.style.transform = ""; const s = e.scrollWidth, w = e.clientWidth; if (s > w+1) e.style.transform = `scaleX(${w/s})`; }); }
+function xpPage(pg, pics){
+  const W = pg.Wpt, H = pg.Hpt, pc = v => (v*100).toFixed(3)+"%", cq = pt => (pt/W*100).toFixed(4)+"cqw";
+  let h = "";
+  for (const it of pg.items){ const b = it.b, f = b.f, a = f.box;
+    if (b.type==="image"){ if (pics && b.img) h += `<img class="xi" src="${b.img}" alt="" style="left:${pc(a.x)};top:${pc(a.y)};width:${pc(a.w)};height:${pc(a.h)}">`; continue; }
+    const st = `font-size:${cq(it.size||11)};${it.bold?"font-weight:700;":""}${f.col?`color:#${f.col};`:""}`;
+    if (b.type==="table"){
+      const nc = Math.max(...b.rows.map(r=>r.length)), cw = fracsOf(f.grid?.cols, nc), rh = fracsOf(f.grid?.rows, b.rows.length);
+      h += `<table class="xt" style="left:${pc(a.x)};top:${pc(a.y)};width:${pc(a.w)};${st}"><colgroup>${cw.map(w=>`<col style="width:${(w*100).toFixed(2)}%">`).join("")}</colgroup>`
+        + b.rows.map((r,ri)=>`<tr style="height:${cq(rh[ri]*a.h*H)}">${Array.from({length:nc},(_,ci)=>`<td>${esc(r[ci]||"")}</td>`).join("")}</tr>`).join("") + `</table>`;
+      continue;
+    }
+    if (unedited(b)){
+      for (const para of lineParas(it)) para.forEach((l, k)=>{ const j = it.align==="justify" && k < para.length-1;
+        h += `<div class="xl${j?" j":""}" style="left:${pc(l.x)};top:${pc(l.y)};width:${pc(l.w)};height:${pc(l.h)};line-height:${cq(l.h*H)};${st}">${esc(l.t)}</div>`; });
+    } else {
+      h += `<div class="xb" style="left:${pc(a.x)};top:${pc(a.y)};width:${pc(a.w)};${st}text-align:${it.align};line-height:${it.dy ? (it.dy/(it.size||11)).toFixed(3) : 1.35}">${esc(b.text||"")}</div>`;
+    }
+  }
+  return `<section class="xp" style="aspect-ratio:${W.toFixed(2)}/${H.toFixed(2)};width:min(100%,${Math.round(W*4/3)}px)">${h}</section>`;
+}
+/* flowing page: text reflows (phones), but sizes, bold, colour, alignment, indents, spacing and columns are kept */
+function flowGroups(pg){
+  const its = pg.items.filter(x=>!x.extra), groups = [];
+  for (const it of its){ const key = it.col ? "c" : "f", g = groups[groups.length-1]; if (g && g.key === key) g.items.push(it); else groups.push({key, items:[it]}); }
+  for (const g of groups){ if (g.key !== "c"){ g.n = 1; continue; }
+    const xs = []; for (const it of g.items){ const L = it.cont.L; let k = xs.findIndex(v=>Math.abs(v - L) < 0.04); if (k < 0){ xs.push(L); } }
+    xs.sort((p,q)=>p-q); g.n = Math.min(4, Math.max(1, xs.length));
+    g.items.forEach(it=>{ it.colIx = xs.findIndex(v=>Math.abs(v - it.cont.L) < 0.04); });
+  }
+  return groups;
+}
+function gapBefore(it, prev, pg){ if (!prev) return 0; const g = (it.b.f.box.y - (prev.b.f.box.y + prev.b.f.box.h))*pg.Hpt; return Math.max(0, Math.min(72, g - (it.size||11)*0.25)); }
+function fpPage(pg, pics, body){
+  const W = pg.Wpt, c = pg.content, em = (pt, s) => (pt/s).toFixed(3)+"em";
+  const pad = [c.T*pg.Hpt, (1-c.R)*W, (1-c.B)*pg.Hpt, c.L*W].map(v=>Math.max(14, Math.min(110, v)));
+  let h = "";
+  for (const g of flowGroups(pg)){
+    let inner = "", prev = null, lastCol = 0;
+    for (const it of g.items){ const b = it.b, f = b.f, s = it.size || body, brk = g.n > 1 && it.colIx > lastCol;
+      if (brk){ lastCol = it.colIx; prev = null; }
+      const top = gapBefore(it, prev, pg), base = `${brk?"break-before:column;":""}margin:${em(top, s)} 0 0;`; prev = it;
+      if (b.type==="image"){ if (pics && b.img) inner += `<figure style="${base}text-align:${it.align==="left"?"left":it.align}"><img src="${b.img}" alt="" style="width:${(f.box.w/((it.cont.R-it.cont.L)||1)*100).toFixed(1)}%"></figure>`; continue; }
+      const st = `font-size:${em(s, body)};${it.bold?"font-weight:700;":""}${f.col?`color:#${f.col};`:""}`;
+      if (b.type==="table"){
+        const nc = Math.max(...b.rows.map(r=>r.length)), cw = fracsOf(f.grid?.cols, nc);
+        inner += `<table style="${base}${st}width:${(f.box.w/((it.cont.R-it.cont.L)||1)*100).toFixed(1)}%;${it.align==="center"?"margin-left:auto;margin-right:auto;":""}"><colgroup>${cw.map(w=>`<col style="width:${(w*100).toFixed(2)}%">`).join("")}</colgroup>${b.rows.map(r=>`<tr>${Array.from({length:nc},(_,ci)=>`<td>${esc(r[ci]||"")}</td>`).join("")}</tr>`).join("")}</table>`;
+        continue;
+      }
+      const tag = b.type==="heading" ? (s >= body*1.35 ? "h1" : "h2") : "p";
+      const ind = it.indent ? `text-indent:${em(it.indent*W, s)};` : "", ml = it.left ? `margin-left:${em(it.left*W, s)};` : "", mr = it.right ? `margin-right:${em(it.right*W, s)};` : "";
+      inner += `<${tag} style="${base}${st}text-align:${it.align};${ind}${ml}${mr}line-height:${it.dy ? (it.dy/s).toFixed(3) : 1.35}">${esc(b.text||"").replace(/\n/g,"<br>")}</${tag}>`;
+    }
+    h += g.n > 1 ? `<div class="cols" style="column-count:${g.n}">${inner}</div>` : inner;
+  }
+  return `<section class="fp" style="max-width:${Math.round(W*4/3)}px;padding:${pad.map(v=>(v/W*100).toFixed(2)+"%").join(" ")}">${h}</section>`;
+}
+function plainPageHtml(p, pics){ return `<section class="fp plain">${blocksHtml(pageBlocks(p), pics)}</section>`; }
+function fmtHtmlDoc(P, fs, pics, mode){
+  const pagesHtml = P.map(pg => !pg.ok ? plainPageHtml(pg.p, pics) : mode==="exact" ? xpPage(pg, pics) : fpPage(pg, pics, P.body)).join("\n");
+  return `<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docName)}</title>
+<link href="${fontCssUrl(fs)}" rel="stylesheet">
+<style>body{margin:0;background:#ebe7e0;padding:24px 12px;font-family:${famCss(fs)};color:#111}
+${XP_CSS}
+.fp{background:#fff;margin:0 auto 22px;box-shadow:0 1px 3px rgba(0,0,0,.18);font-size:${P.body}pt;box-sizing:border-box;overflow-wrap:break-word}
+.fp h1,.fp h2,.fp p{margin:0}.fp figure{margin:0}.fp img{max-width:100%}.fp table{border-collapse:collapse;table-layout:fixed}.fp td{border:1px solid #555;padding:.15em .35em;vertical-align:top}
+.fp .cols{column-gap:2em}.fp.plain{max-width:46em;padding:2em 2.5em;line-height:1.75}
+@media (max-width:640px){body{padding:8px 0}.fp{font-size:15px;padding:18px 16px!important}.fp .cols{column-count:1!important}}
+@media print{body{background:none;padding:0}.xp,.fp{box-shadow:none;margin:0;break-after:page}}</style></head>
+<body>${pagesHtml}
+<script>${FIT_JS}(document.fonts?document.fonts.ready:Promise.resolve()).then(function(){fitLines(document)});var t;addEventListener("resize",function(){clearTimeout(t);t=setTimeout(function(){fitLines(document)},150)});<\/script></body></html>`;
+}
+
+/* ---------- Word ---------- */
+const twp = pt => Math.round(pt*20), emu = pt => Math.round(pt*12700), px96 = pt => Math.max(1, Math.round(pt*96/72));
+const dataBytes = u => Uint8Array.from(atob(u.split(",")[1]), ch=>ch.charCodeAt(0));
+function wordTable(D, it, FONT, place){
+  const b = it.b, f = b.f || {}, a = f.box, pg = it.pg, nc = Math.max(...b.rows.map(r=>r.length));
+  const total = a ? a.w*pg.Wpt : 450, cw = fracsOf(f.grid?.cols, nc).map(w=>twp(w*total)), rh = a ? fracsOf(f.grid?.rows, b.rows.length) : null, size = it.size || 10;
+  return new D.Table({ layout: D.TableLayoutType.FIXED, columnWidths: cw, width:{size: cw.reduce((s,v)=>s+v,0), type: D.WidthType.DXA}, ...place,
+    rows: b.rows.map((r, ri)=>new D.TableRow({ height: rh ? {value: twp(rh[ri]*a.h*pg.Hpt), rule: D.HeightRule.ATLEAST} : undefined,
+      children: Array.from({length:nc}, (_, ci)=>new D.TableCell({ width:{size: cw[ci], type: D.WidthType.DXA}, margins:{top:15, bottom:15, left:70, right:70}, verticalAlign: D.VerticalAlign.CENTER,
+        children:[new D.Paragraph({spacing:{before:0, after:0}, children:[new D.TextRun({text: r[ci]||"", font: FONT, size: Math.round(size*2), color: f.col || undefined})]})] })) })) });
+}
+const ALIGN = D => ({left: D.AlignmentType.LEFT, right: D.AlignmentType.RIGHT, center: D.AlignmentType.CENTER, justify: D.AlignmentType.JUSTIFIED});
+function wordExactPage(D, pg, fs, pics, FONT, first){
+  const W = pg.Wpt, H = pg.Hpt, AL = ALIGN(D);
+  const ch = [new D.Paragraph({pageBreakBefore: !first, spacing:{before:0, after:0, line:20, lineRule: D.LineRuleType.EXACT}, children:[]})];   // starts the page (frames alone don't)
+  for (const it of pg.items){ const b = it.b, f = b.f, a = f.box, X = a.x*W, Y = a.y*H;
+    if (b.type==="image"){ if (!pics || !b.img) continue;
+      ch.push(new D.Paragraph({children:[new D.ImageRun({type:"jpg", data: dataBytes(b.img), transformation:{width: px96(a.w*W), height: px96(a.h*H)},
+        floating:{horizontalPosition:{relative: D.HorizontalPositionRelativeFrom.PAGE, offset: emu(X)}, verticalPosition:{relative: D.VerticalPositionRelativeFrom.PAGE, offset: emu(Y)}, wrap:{type: D.TextWrappingType.NONE}, allowOverlap: true}})]}));
+      continue; }
+    if (b.type==="table"){ ch.push(wordTable(D, it, FONT, {float:{horizontalAnchor: D.TableAnchorType.PAGE, verticalAnchor: D.TableAnchorType.PAGE, absoluteHorizontalPosition: twp(X), absoluteVerticalPosition: twp(Y)}})); continue; }
+    const size = it.size || 11, ro = {font: FONT, size: Math.round(size*2), bold: it.bold, color: f.col || "000000"};
+    const dy = Math.max(it.dy || size*1.3, size*1.05);
+    const frame = l0h => ({ type:"absolute", position:{x: twp(X), y: twp(Math.max(0, Y - Math.max(0, (dy - l0h)/2)))}, width: twp(a.w*W*1.015 + 1), height: twp(a.h*H), rule:"atLeast",
+      anchor:{horizontal: D.FrameAnchorType.PAGE, vertical: D.FrameAnchorType.PAGE} });
+    const spacing = {before:0, after:0, line: twp(dy), lineRule: D.LineRuleType.EXACT};
+    if (unedited(b)){
+      const fr = frame(f.lines[0].h*H);      // consecutive paragraphs with the same frame share one frame in Word
+      for (const para of lineParas(it)){
+        const runs = para.flatMap((l, k)=>{ const nat = textWidthPt(l.t, size, it.bold, fs), tgt = l.w*W, o = {...ro, text: l.t};
+          if (nat > tgt*1.005) o.scale = Math.max(50, Math.floor(tgt/nat*100));
+          return k ? [new D.TextRun({break:1}), new D.TextRun(o)] : [new D.TextRun(o)]; });
+        ch.push(new D.Paragraph({frame: fr, alignment: AL[it.align], spacing, outlineLevel: b.type==="heading" ? 0 : undefined, children: runs}));
+      }
+    } else {
+      ch.push(new D.Paragraph({frame: frame(size*EMR[it.sc||"ind"]), alignment: AL[it.align], spacing, outlineLevel: b.type==="heading" ? 0 : undefined,
+        children: (b.text||"").split("\n").flatMap((l,k)=> k ? [new D.TextRun({break:1}), new D.TextRun({...ro, text:l})] : [new D.TextRun({...ro, text:l})])}));
+    }
+  }
+  ch.push(new D.Paragraph({spacing:{before:0, after:0, line:20, lineRule: D.LineRuleType.EXACT}, children:[]}));     // anchor for floating tables and pictures
+  return [{properties:{page:{size:{width: twp(W), height: twp(H)}, margin:{top:0, right:0, bottom:0, left:0, header:0, footer:0}}}, children: ch}];
+}
+function wordFlowPage(D, pg, fs, pics, FONT, body){
+  const W = pg.Wpt, H = pg.Hpt, c = pg.content, AL = ALIGN(D), out = [];
+  const m = [c.T*H, (1-c.R)*W, (1-c.B)*H, c.L*W].map(v=>Math.max(14, Math.min(110, v)));
+  const page = {size:{width: twp(W), height: twp(H)}, margin:{top: twp(m[0]), right: twp(m[1]), bottom: twp(m[2]), left: twp(m[3])}};
+  const textW = W - m[1] - m[3];
+  flowGroups(pg).forEach((g, gi)=>{
+    const ch = []; let prev = null, lastCol = 0;
+    for (const it of g.items){ const b = it.b, f = b.f, s = it.size || body;
+      if (g.n > 1 && it.colIx > lastCol){ lastCol = it.colIx; prev = null; ch.push(new D.Paragraph({children:[new D.ColumnBreak()]})); }
+      const before = twp(gapBefore(it, prev, pg)); prev = it;
+      const colW = g.n > 1 ? (textW - 18*(g.n-1))/g.n : textW;
+      if (b.type==="image"){ if (!pics || !b.img) continue;
+        const w = Math.min(colW, f.box.w*W), hh = w*f.box.h/f.box.w;
+        ch.push(new D.Paragraph({alignment: AL[it.align] || AL.left, spacing:{before, after:0}, children:[new D.ImageRun({type:"jpg", data: dataBytes(b.img), transformation:{width: px96(w), height: px96(hh)}})]})); continue; }
+      if (b.type==="table"){ ch.push(new D.Paragraph({spacing:{before, after:0}, children:[]}));
+        ch.push(wordTable(D, it, FONT, it.align==="center" ? {alignment: D.AlignmentType.CENTER} : it.left ? {indent:{size: twp(it.left*W), type: D.WidthType.DXA}} : {})); continue; }
+      const ro = {font: FONT, size: Math.round(s*2), bold: it.bold, color: f.col || "000000"};
+      ch.push(new D.Paragraph({ alignment: AL[it.align], outlineLevel: b.type==="heading" ? (s >= body*1.35 ? 0 : 1) : undefined,
+        spacing:{before, after:0, ...(it.dy ? {line: twp(Math.max(it.dy, s*1.05)), lineRule: D.LineRuleType.EXACT} : {})},
+        indent:{ ...(it.indent > 0 ? {firstLine: twp(it.indent*W)} : it.indent < 0 ? {hanging: twp(-it.indent*W)} : {}), ...(it.left ? {left: twp(it.left*W)} : {}), ...(it.right ? {right: twp(it.right*W)} : {}) },
+        children: (b.text||"").split("\n").flatMap((l,k)=> k ? [new D.TextRun({break:1}), new D.TextRun({...ro, text:l})] : [new D.TextRun({...ro, text:l})]) }));
+    }
+    if (!ch.length) ch.push(new D.Paragraph({children:[]}));
+    out.push({properties:{type: gi ? D.SectionType.CONTINUOUS : D.SectionType.NEXT_PAGE, page, column:{count: g.n, space: twp(18), equalWidth: true}}, children: ch});
+  });
+  return out;
+}
+async function fmtWordDoc(P, fs, pics, mode, plainChildren){
+  const D = window.docx, FONT = {ascii: fs.en, hAnsi: fs.en, cs: fs.ta, eastAsia: fs.ta};
+  let sections = [];
+  for (const pg of P){
+    if (!pg.ok){ sections.push({properties:{type: D.SectionType.NEXT_PAGE}, children: await plainChildren(pg.p, pg.i)}); continue; }
+    sections = sections.concat(mode==="exact" ? wordExactPage(D, pg, fs, pics, FONT, !sections.length) : wordFlowPage(D, pg, fs, pics, FONT, P.body));
+  }
+  return new D.Document({creator:"எழுத்து OCR", title: docName, styles:{default:{document:{run:{font: FONT, size: Math.round((P.body||12)*2)}, paragraph:{spacing:{before:0, after:0}}}}}, sections});
+}
+
+initFmtUi();
 
 /* Tesseract writes an invisible joiner after every Tamil pulli in the PDF text layer; remove it so search and copy work */
 function cleanTextLayer(doc, page){
