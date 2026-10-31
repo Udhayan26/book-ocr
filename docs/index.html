@@ -303,6 +303,7 @@ body.working .lede,body.working footer{display:none}
 .panes .imgcard,.panes .result{display:flex;flex-direction:column;min-height:0}
 .panes .cropwrap{height:auto;flex:1;min-height:280px}
 .panes .result textarea{flex:1;min-height:0;resize:none}
+.panes .result .outwrap{flex:1}
 .panes .preview{flex:1;max-height:none;min-height:0}
 .panes .rail{position:static;max-height:none;min-height:0}
 .splitter{cursor:col-resize;position:relative;touch-action:none;outline:none}
@@ -339,6 +340,22 @@ body.embed .panes{height:760px}
   .panes.v-page .result,.panes.v-text .imgcard{display:flex}
   body.working header{padding:10px 14px 4px}
 }
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 10px}
+.chips span{font-size:12.5px;padding:3px 10px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+.readov{position:absolute;inset:0;z-index:4;pointer-events:none;background:color-mix(in srgb,var(--paper) 22%,transparent);overflow:hidden}
+.readov .scan{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 26%,transparent) 70%,var(--accent) 98%,transparent);animation:scan 2.2s linear infinite}
+@keyframes scan{to{top:100%}}
+@media (prefers-reduced-motion:reduce){.readov .scan{animation:none;display:none}}
+.readov .rbox{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:10px;padding:8px 14px;display:grid;text-align:center;min-width:200px}
+.readov .rbox b{font-size:14px} .readov .rbox small{font-size:12px;color:var(--muted)}
+.outwrap{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
+.outwrap textarea{flex:1}
+.emptyst{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--muted);font-size:14px;background:var(--panel)}
+.emptyst .eg{font:700 40px/1 "Noto Serif Tamil",serif;color:var(--accent);opacity:.35}
+.emptyst b{color:var(--ink);font-size:16px}
+.emptyst .btn{margin-top:6px}
+.emptyst.reading .btn,.emptyst.reading .kh{display:none}
+@media (max-width:760px){ .emptyst{position:static;min-height:220px} .emptyst .btn,.emptyst .kh{display:none} .outwrap textarea{min-height:0} }
 pre.code{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;font:12.5px/1.55 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(680px,94vw);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(20,15,10,.45)}
@@ -485,6 +502,7 @@ dialog[open]{animation:dlgIn .16s ease-out}
       <div>
         <div class="glyph">அ A</div>
         <h1>Paste, drop, or <u>upload</u> your image to convert</h1>
+        <div class="chips"><span>தமிழ் · English · 15+ Indian languages</span><span>Tables, pictures &amp; columns</span><span>Word · PDF · Excel · Web page</span><span>🔒 Nothing is uploaded</span></div>
         <p>One image, many page photos, or a whole PDF book · JPG, PNG, WebP, TIFF, PDF · <span class="kh"><kbd>Ctrl</kbd>+<kbd>V</kbd> pastes a screenshot</span></p>
         <div class="row">
           <button class="btn primary" type="button" onclick="event.stopPropagation();fileIn.click()">Choose files</button>
@@ -615,6 +633,7 @@ dialog[open]{animation:dlgIn .16s ease-out}
         <img id="img" alt="">
         <div id="areaView" class="hidden"><div class="stage" id="stage"><img id="simg" alt=""></div></div>
         <div class="loading hidden" id="imgLoading">Rendering page…</div>
+        <div class="readov hidden" id="readOv" aria-live="polite"><i class="scan"></i><span class="rbox"><b>Reading this page…</b><small id="readTxt"></small></span></div>
       </div>
       <div class="hintbar" id="hintbar">
         <span id="hintText">Drag to draw a crop box · scroll to zoom</span>
@@ -659,7 +678,8 @@ dialog[open]{animation:dlgIn .16s ease-out}
           </div>
           <button class="btn sm ghost" id="palBtn" onclick="togglePal()" title="Tamil & Tamil Supplement symbols">ௐ</button>
         </div>
-        <textarea id="out" spellcheck="false" lang="ta" placeholder="Converted text appears here — you can edit it."></textarea>
+        <div class="outwrap"><textarea id="out" spellcheck="false" lang="ta" placeholder="Converted text appears here — you can edit it."></textarea>
+          <div class="emptyst hidden" id="emptySt"><div class="eg">அ</div><b id="esT">This page hasn't been read yet</b><span id="esS">Crop the text area if you like, then convert.</span><button class="btn primary" id="esBtn" onclick="convertCurrent()">Convert this page</button><small class="kh"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></small></div></div>
         <div class="preview hidden" id="preview"></div>
         <div class="palette hidden" id="pal"><input type="text" id="symQ" placeholder="Filter: fraction, rupee, day, digit…" style="margin-bottom:6px"><div id="symList"></div></div>
         <div class="weak hidden" id="weak"></div>
@@ -1040,6 +1060,7 @@ function reset(){
 
 /* ===================== page strip ===================== */
 function renderRail(){
+  queueMicrotask(()=>readUi());
   if (!isBook()) return;
   const done = pages.filter(p=>p.status==="done").length;
   $("#railSum").textContent = `${pages.length} pages · ${done} read`;
@@ -1419,7 +1440,16 @@ document.addEventListener("keydown", e=>{ if((e.key==="Delete"||e.key==="Backspa
 })();
 
 /* ===================== OCR engine (worker pool) ===================== */
-function setProg(p, msg){ const w = Math.round(p*100)+"%"; $("#bar").style.width = w; $("#mprog").style.width = (p>0 && p<1) ? w : "0"; if(msg){ $("#pstat").textContent = msg; $("#mstat").textContent = (p>0 && p<1) ? msg : ""; } }
+function readUi(msg){
+  const p = pages[cur], reading = !!p && (p.status === "reading");
+  $("#readOv").classList.toggle("hidden", !reading);
+  if (reading && msg) $("#readTxt").textContent = msg.replace(/^Reading…\s*/, "");
+  const es = $("#emptySt"), show = !!p && tab === "page" && p.status !== "done" && !out.value.trim();
+  es.classList.toggle("hidden", !show); es.classList.toggle("reading", reading || p?.status === "queued");
+  if (show){ $("#esT").textContent = reading ? "Reading this page…" : p.status === "queued" ? "Waiting in the queue…" : p.status === "error" ? "This page could not be read" : "This page hasn't been read yet";
+    $("#esS").textContent = reading ? "The text appears here when it is done." : p.status === "queued" ? "Pages are read in order — you can keep working." : p.status === "error" ? "Try a tighter crop, other languages or another clean-up setting, then convert again." : isBook() ? "Crop or mark areas if you like, then convert — or ▶ Read all." : "Crop the text area if you like, then convert."; }
+}
+function setProg(p, msg){ queueMicrotask(()=>readUi(msg)); const w = Math.round(p*100)+"%"; $("#bar").style.width = w; $("#mprog").style.width = (p>0 && p<1) ? w : "0"; if(msg){ $("#pstat").textContent = msg; $("#mstat").textContent = (p>0 && p<1) ? msg : ""; } }
 function setGo(busy){ for (const b of [$("#goBtn"), $("#mGo")]){ b.disabled = busy; }
   $("#goBtn").textContent = busy ? "Converting…" : isBook() ? "Convert this page" : "Convert to text"; $("#mGo").textContent = busy ? "Converting…" : isBook() ? "Convert page" : "Convert"; }
 let pool = [], poolLangs = "";
@@ -1643,7 +1673,18 @@ function colSeps(phr, x0, x1, mh){
   rows.forEach(r=>r.forEach(([a,b])=>{ for (let x=Math.max(0,Math.floor(a-x0)); x<Math.min(W,Math.ceil(b-x0)); x++) cov[x]++; }));
   let L = 0; while (L < W && !cov[L]) L++; let R = W-1; while (R > 0 && !cov[R]) R--;
   const seps = []; let i = L;
-  while (i <= R){ if (!cov[i]){ let j = i; while (j <= R && !cov[j]) j++; if (j - i >= mh*0.45) seps.push(x0 + (i+j-1)/2); i = j; } else i++; }
+  const gw = [];
+  while (i <= R){ if (!cov[i]){ let j = i; while (j <= R && !cov[j]) j++; if (j - i >= mh*0.45){ seps.push(x0 + (i+j-1)/2); gw.push(j - i); } i = j; } else i++; }
+  if (rows.length >= 3) for (;;){
+    const edges = [x0-1, ...seps, x1+1], nc = edges.length - 1; if (nc <= 2) break;
+    const use = Array(nc).fill(0);
+    used.forEach(r=>{ const hit = new Set(); r.forEach(([a,b])=>{ const m = (a+b)/2; const k = edges.findIndex((v,q)=>q<nc && m>=v && m<edges[q+1]); if (k>=0) hit.add(k); }); hit.forEach(k=>use[k]++); });
+    let weak = -1, wv = 1; use.forEach((u,k)=>{ const f = u/used.length; if (f < 0.34 && f < wv){ wv = f; weak = k; } });
+    if (weak < 0) break;
+    const left = weak > 0 ? weak-1 : -1, right = weak < nc-1 ? weak : -1;     // separator indexes on each side of the weak column
+    const pick = left < 0 ? right : right < 0 ? left : (gw[left] <= gw[right] ? left : right);
+    seps.splice(pick, 1); gw.splice(pick, 1);
+  }
   return seps;
 }
 /* words -> cells. Rows come from hs (row lines) or from text rows (a wrapped cell stays one row); columns from vs (column lines) or from white gaps.
@@ -1684,13 +1725,15 @@ function tableFromWords(words, box, hs, vs){
 }
 /* tables printed without lines: runs of text rows whose cells line up in columns */
 function findTextTables(words, exclude){
-  const ws = words.filter(t=>t.text && t.text.trim() && t.conf > 20 && !exclude.some(b=>inBox(t.box, b)));
+  const ws = words.filter(t=>t.text && t.text.trim() && !exclude.some(b=>inBox(t.box, b)));
   if (ws.length < 6) return [];
   const mh = median(ws.map(t=>t.box.h)), rows = visualRows(ws, mh).map(r=>({...r, ph: phrasesOf(r.ws, mh)})), out = [];
+  const geo = {L: Math.min(...ws.map(t=>t.box.x)), R: Math.max(...ws.map(t=>t.box.x+t.box.w)), mh};
   let run = [];
-  const flush = () => { while (run.length && run[run.length-1].ph.length < 2) run.pop(); if (run.length >= 3){ const t = checkTextTable(run, mh); if (t) out.push(t); } run = []; };
+  const flush = () => { while (run.length && run[run.length-1].ph.length < 2) run.pop(); if (run.length >= 3){ const t = checkTextTable(run, mh, geo, rows); if (t) out.push(t); } run = []; };
   for (const r of rows){
     const prev = run[run.length-1], near = prev && r.y0 - prev.y1 < mh*2.2;
+    if (proseRow(r, geo)){ flush(); continue; }
     if (r.ph.length >= 2){ if (!near) flush(); run.push(r); }
     else if (near && r.ph[0].x0 > Math.min(...run.map(q=>q.ph[0].x0)) + mh*1.5) run.push(r);      // next line of a cell in a later column
     else flush();
@@ -1698,16 +1741,27 @@ function findTextTables(words, exclude){
   flush();
   return out;
 }
-function checkTextTable(run, mh){
+function checkTextTable(run, mh, geo, allRows){
   const x0 = Math.min(...run.map(r=>r.ph[0].x0)), x1 = Math.max(...run.map(r=>r.ph[r.ph.length-1].x1));
   const seps = colSeps(run.map(r=>r.ph.map(p=>[p.x0, p.x1])), x0, x1, mh), nc = seps.length + 1;
   if (nc < 2) return null;
   const edges = [x0, ...seps, x1];
-  const cells = run.map(r=>{ const c = Array(nc).fill(""); r.ph.forEach(p=>{ const m = (p.x0+p.x1)/2; let j = edges.findIndex((v,k)=>k<nc && m>=v && m<edges[k+1]); if (j<0) j = nc-1; c[j] += (c[j]?" ":"") + p.ws.map(w=>w.text).join(" "); }); return c; });
+  const ext = Array.from({length:nc}, ()=>[]);
+  const cells = run.map(r=>{ const c = Array(nc).fill(""), e = Array(nc).fill(null);
+    r.ph.forEach(p=>{ const m = (p.x0+p.x1)/2; let j = edges.findIndex((v,k)=>k<nc && m>=v && m<edges[k+1]); if (j<0) j = nc-1; c[j] += (c[j]?" ":"") + p.ws.map(w=>w.text).join(" "); e[j] = e[j] ? [Math.min(e[j][0], p.x0), Math.max(e[j][1], p.x1)] : [p.x0, p.x1]; });
+    e.forEach((v,k)=>{ if (v) ext[k].push(v); }); return c; });
+  // real columns line up (left, right or centre); gaps between justified words do not
+  const lined = v => v.length < 2 || [0, 1, 2].some(m => { const xs = v.map(([a,b])=> m===0 ? a : m===1 ? b : (a+b)/2), md = median(xs); return xs.filter(x=>Math.abs(x-md) <= mh*0.9).length >= v.length*0.7; });
+  if (!ext.every(lined)) return null;
+  // a gap that continues as a white channel through the lines around the run is the gutter of a multi-column page, not a table
+  if (allRows){ const i0 = allRows.indexOf(run[0]), i1 = allRows.indexOf(run[run.length-1]), near = [...allRows.slice(Math.max(0, i0-6), i0), ...allRows.slice(i1+1, i1+7)];
+    if (near.length >= 4 && seps.some(x => near.filter(q => !q.ph.some(p => p.x0 <= x && p.x1 >= x)).length >= near.length*0.8)) return null; }
   if (cells.filter(c=>c.filter(Boolean).length >= 2).length < Math.max(3, run.length*0.6)) return null;
   const col = k => cells.map(c=>c[k]).filter(Boolean), avg = k => { const v = col(k); return v.reduce((a,x)=>a+x.length,0)/Math.max(1,v.length); }, lens = Array.from({length:nc}, (_,k)=>avg(k));
   if (nc === 2 && Math.min(...lens) > 22) return null;                                                   // two columns of prose
   if (lens.every(l=>l > 30)) return null;
+  const pageW = geo ? geo.R - geo.L : 0, wide = x1 - x0;
+  if (pageW && wide > pageW*0.85 && lens.filter(l=>l > 25).length >= 2) return null;                   // columns of running text (a two-column page)
   if (nc === 2 && col(0).filter(c=>/^([\p{N}]{1,3}[.)]?|[•\-–*●○■▪◦])$/u.test(c)).length >= col(0).length*0.8) return null;   // a numbered or bulleted list
   const all = cells.flat().filter(Boolean);
   if (nc >= 3 && !all.some(c=>/\p{N}/u.test(c)) && all.every(c=>!/\s/.test(c))) return null;           // verse printed in aligned feet (சீர்)
@@ -1768,12 +1822,69 @@ function inkStats(c, b){
 }
 function picture(c){ const k = Math.min(1, 1400/c.width), o = document.createElement("canvas"); o.width = Math.round(c.width*k); o.height = Math.round(c.height*k); o.getContext("2d").drawImage(c,0,0,o.width,o.height); return o.toDataURL("image/jpeg", 0.85); }
 
+/* text rows of the whole page (for telling table rows from ordinary text) */
+function pageRows(words){
+  const ws = words.filter(t=>t.text && t.text.trim());
+  if (!ws.length) return {rows:[], mh:1, L:0, R:1};
+  const mh = median(ws.map(t=>t.box.h)), rows = visualRows(ws, mh).map(q=>({...q, ph: phrasesOf(q.ws, mh)}));
+  const L = Math.min(...ws.map(t=>t.box.x)), R = Math.max(...ws.map(t=>t.box.x+t.box.w));
+  return {rows, mh, L, R};
+}
+/* a line of ordinary text: one phrase running across most of the text width */
+const proseRow = (q, geo, W, L0, lenient) => { const w = W || (geo.R - geo.L), left = (L0 ?? geo.L) + (geo.mh || 30)*2.2;
+  if (q.ph[0].x0 > left) return false;                                      // ordinary text starts at the left margin (a long cell in a later column does not)
+  return q.ph[0].x1 - q.ph[0].x0 >= w*0.62 || (q.ph.length <= 3 && q.ph[0].x1 - q.ph[0].x0 >= w*(lenient ? 0.12 : 0.25) && q.ph.reduce((a,p)=>a + p.x1 - p.x0, 0) >= w*0.78); };
+/* lines that line up across two tables (and the paragraph between them) form one candidate: cut it where a band holds only ordinary text */
+function splitAtProse(t, geo, s, L){
+  const hs = [...t.hs].sort((a,b)=>a-b); if (hs.length < 3) return [t];
+  const W = (t.box.x1 - t.box.x0)/s, band = (a,b) => geo.rows.filter(q=>{ const cy = (q.y0+q.y1)/2; return cy > a/s && cy < b/s && q.ph.some(p=>p.x1 > t.box.x0/s && p.x0 < t.box.x1/s); });
+  const out = []; let start = 0;
+  for (let i=0; i<hs.length-1; i++){
+    const rows = band(hs[i], hs[i+1]);
+    const crossed = L.V.some(v => v.x0 > t.box.x0+8 && v.x0 < t.box.x1-8 && v.y0 <= hs[i]+3 && v.y1 >= hs[i+1]-3);   // column lines run through: still the table
+    if (!crossed && rows.length && rows.some(q=>proseRow(q, geo, W, t.box.x0/s, true)) && rows.every(q=>proseRow(q, geo, W, t.box.x0/s, true) || q.ph.length === 1)){
+      if (i > start) out.push(piece(t, hs.slice(start, i+1), L));
+      start = i + 1;
+    }
+  }
+  if (start === 0) return [t];
+  if (start < hs.length-1) out.push(piece(t, hs.slice(start), L));
+  else if (start === hs.length-1) out.push(piece(t, [hs[hs.length-1]], L));
+  return out.filter(Boolean);
+}
+function piece(t, hs, L){
+  const box = {x0:t.box.x0, x1:t.box.x1, y0:hs[0]-2, y1:hs[hs.length-1]+2}, H = box.y1 - box.y0;
+  const inner = H > 4 ? L.V.filter(v => v.x0 > box.x0+8 && v.x0 < box.x1-8 && v.y0 <= box.y0 + H*0.3 && v.y1 >= box.y1 - H*0.3) : [];
+  return {box, hs, ruled: inner.length >= 1, vs: inner.length ? dedupe([box.x0, ...inner.map(v=>(v.x0+v.x1)/2), box.x1], 6) : null};
+}
+/* rules only at the top (and under the header): the table continues over the rows below that line up in columns */
+function extendDown(t, geo, s){
+  const W = (t.box.x1 - t.box.x0)/s; let bottom = t.box.y1/s, grew = false;
+  for (const q of geo.rows){
+    if (q.y0 < bottom - geo.mh*0.3) continue;
+    if (q.y0 - bottom > geo.mh*1.8) break;
+    const inX = q.ph.every(p=>p.x0 >= t.box.x0/s - geo.mh && p.x1 <= t.box.x1/s + geo.mh);
+    if (!inX || proseRow(q, geo, W, t.box.x0/s)) break;
+    if (q.ph.length < 2 && !(q.ph[0].x0 > t.box.x0/s + geo.mh*1.5)) break;
+    bottom = q.y1; grew = true;
+  }
+  if (grew){ t.box.y1 = Math.round(bottom*s + geo.mh*s*0.3); t.hs = [...t.hs, t.box.y1]; }
+}
 /* auto layout of one (cropped) canvas -> areas + blocks, all in that canvas' pixels */
 async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true){
   const r = await ocr(worker, c, psm);
   const B = binarize(preprocess(c, $("#prep").value, true)), L = lineSegs(B), T = findTables(B, L), s = B.s;   // layout on the cleaned image (shadows removed)
-  const tables = [];
-  for (const t of T){
+  const tables = [], geo = pageRows(r.words);
+  const cands = [];
+  for (const t of T) cands.push(...splitAtProse(t, geo, s, L));
+  cands.sort((a,b)=>(b.box.x1-b.box.x0)*(b.box.y1-b.box.y0)-(a.box.x1-a.box.x0)*(a.box.y1-a.box.y0));
+  const kept = [];
+  for (const t of cands){ const a = t.box, ar = (a.x1-a.x0)*(a.y1-a.y0);          // a smaller candidate inside a bigger one (lines around merged cells) is part of it
+    if (kept.some(k=>{ const o = Math.max(0, Math.min(a.x1,k.box.x1)-Math.max(a.x0,k.box.x0))*Math.max(0, Math.min(a.y1,k.box.y1)-Math.max(a.y0,k.box.y0)); return o > ar*0.5; })) continue;
+    kept.push(t); }
+  kept.sort((a,b)=>a.box.y0-b.box.y0);
+  for (const t of kept){
+    if (!t.ruled) extendDown(t, geo, s);
     const bx = {x:t.box.x0/s, y:t.box.y0/s, w:(t.box.x1-t.box.x0)/s, h:(t.box.y1-t.box.y0)/s};
     const inside = r.words.filter(wd=>inBox(wd.box, bx));
     if (!t.ruled && inside.length < 4) continue;
@@ -1802,12 +1913,40 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
   const taken = [...tables, ...pics].map(o=>o.box);
   const hAll = r.paras.flatMap(p=>p.lines.filter(l=>l.words.length>=3).map(l=>median(l.words.map(w=>w.box.h))));
   const bodyH = median(hAll.length ? hAll : r.paras.flatMap(p=>p.lines.map(l=>l.box.h))) || 1;
-  const text = r.paras.filter(p=>!taken.some(b=>inBox(p.box, b)) && p.text.trim()).map(p=>{
+  const paras = [];
+  for (const p of r.paras){
+    const ls = p.lines.filter(l=>l.text), hs = ls.map(l=>l.box.h);
+    let cut = -1;
+    if (ls.length >= 3){ const restH = median(hs.slice(1)); let k = 0; while (k < ls.length-1 && hs[k] >= restH*1.5) k++; if (k > 0 && k <= 2) cut = k; }   // Tamil line heights vary with vowel signs: only a clear jump
+    if (cut < 0){ paras.push(p); continue; }
+    const mk = lines => { const x0 = Math.min(...lines.map(l=>l.box.x)), y0 = Math.min(...lines.map(l=>l.box.y)); return {lines, box:{x:x0, y:y0, w:Math.max(...lines.map(l=>l.box.x+l.box.w))-x0, h:Math.max(...lines.map(l=>l.box.y+l.box.h))-y0}, text: lines.map(l=>l.text).join("\n")}; };
+    paras.push(mk(ls.slice(0, cut)), mk(ls.slice(cut)));
+  }
+  // stroke weight of each paragraph (Tamil line heights depend on vowel signs, so bold is a better clue for short headings)
+  // a paragraph that runs into a table or picture keeps only its lines outside it
+  const mkPara = lines => { const x0 = Math.min(...lines.map(l=>l.box.x)), y0 = Math.min(...lines.map(l=>l.box.y)); return {lines, box:{x:x0, y:y0, w:Math.max(...lines.map(l=>l.box.x+l.box.w))-x0, h:Math.max(...lines.map(l=>l.box.y+l.box.h))-y0}, text: lines.map(l=>l.text).join("\n")}; };
+  const live = [];
+  for (const p of paras){
+    if (!p.text.trim()) continue;
+    const ls = p.lines.filter(l=>l.text && !taken.some(b=>inBox(l.box, b)));
+    if (ls.length === p.lines.filter(l=>l.text).length){ if (!taken.some(b=>inBox(p.box, b))) live.push(p); continue; }
+    // split where the taken area cut the paragraph, so text above and below it stay separate paragraphs
+    let cur = [];
+    for (const l of p.lines){ if (!l.text) continue; if (taken.some(b=>inBox(l.box, b))){ if (cur.length) live.push(mkPara(cur)); cur = []; } else cur.push(l); }
+    if (cur.length) live.push(mkPara(cur));
+  }
+  live.forEach(p=>{ const st = inkStats(c, p.box), lhh = median(p.lines.map(l=>l.box.h)) || p.box.h; p.st = st; p.swr = st.sw ? st.sw/lhh : null; });
+  const bodySw = median(live.filter(p=>p.lines.length >= 3 && p.swr).map(p=>p.swr)) || median(live.filter(p=>p.swr).map(p=>p.swr));
+  const text = live.map((p, pi)=>{
     const lh = median(p.lines.map(l=>median(l.words.map(w=>w.box.h)))), nW = p.lines.reduce((a,l)=>a+l.words.length,0);
     const edge = ((edgeTop && p.box.y + p.box.h < c.height*0.07) || (edgeBottom && p.box.y > c.height*0.93)) && nW <= 12;   // running header / page number
-    const type = edge ? "ignore" : (lh/bodyH >= 1.28 && p.lines.length <= 3 && nW <= 18) ? "heading" : "text";
+    const prevB = pi ? live[pi-1].box.y + live[pi-1].box.h : -1e9, nextT = pi < live.length-1 ? live[pi+1].box.y : 1e9;
+    const alone = p.box.y - prevB > bodyH*0.6 || nextT - (p.box.y + p.box.h) > bodyH*0.6;
+    const bold = p.swr && bodySw && p.swr/bodySw >= 1.2, endsSentence = /[.!?।:;,]\s*$/.test(p.text.trim());
+    const big = lh/bodyH >= 1.28 && p.lines.length <= 3 && nW <= 18;
+    const type = edge ? "ignore" : (big || (bold && alone && p.lines.length <= 2 && nW <= 12 && !endsSentence)) ? "heading" : "text";
     const confs = p.lines.flatMap(l=>l.words.map(w=>w.conf));
-    const ls = p.lines.filter(l=>l.text), lhs = ls.map(l=>l.box.h), st = inkStats(c, p.box);
+    const ls = p.lines.filter(l=>l.text), lhs = ls.map(l=>l.box.h), st = p.st || inkStats(c, p.box);
     return {type, box:p.box, text: type==="heading" ? p.text.replace(/\s*\n\s*/g," ") : finishText(p.text), conf: confs.length ? confs.reduce((a,b)=>a+b,0)/confs.length : 0,
       lines: ls.map(l=>({t:l.text, box:l.box})), lh: median(lhs) || p.box.h, sw: st.sw ? st.sw/(median(lhs) || p.box.h) : null, col: st.col};
   });
@@ -2075,6 +2214,7 @@ function setTab(t){
   showView();
 }
 function showView(){
+  queueMicrotask(()=>readUi());
   const p = pages[cur];
   out.classList.toggle("hidden", tab==="preview"); $("#preview").classList.toggle("hidden", tab!=="preview");
   out.readOnly = tab==="book";
