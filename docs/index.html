@@ -91,16 +91,16 @@ kbd{font:12px var(--mono);border:1px solid var(--line-2);border-bottom-width:2px
 .seg button:hover:not(.on){background:var(--paper)}
 
 /* workspace */
-.work{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
-.work.book{grid-template-columns:136px minmax(0,1.3fr) minmax(320px,.95fr)}
+.work{display:block}
+
 .menu .list.up{top:auto;bottom:calc(100% + 4px)}
 @media (max-width:1500px) and (min-width:761px){ #areaTools .lbl{display:none} #detectBtn .dl2{display:none} .tb{gap:5px;padding:8px 10px} }
-@media (max-width:1250px){.work.book{grid-template-columns:140px minmax(0,1fr)} .work.book .side{grid-column:1/-1}}
+
 @media (max-width:760px){.work,.work.book{grid-template-columns:minmax(0,1fr)} .work>*{min-width:0} .rail{position:static!important;max-height:none!important}.rail .pages{display:flex!important;overflow-x:auto;gap:8px;padding:8px!important}.rail .pg{flex:none;width:68px}}
 .rail{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;overflow:hidden}
 .rail .rh{padding:10px 10px 8px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted);display:grid;gap:6px}
 .rail .rh b{color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rail .rh .st{display:none}
+.rail .rh .lt{display:none}
 .rail .rh .btn{white-space:normal;text-align:left;line-height:1.25}
 .result>.tb{gap:4px}
 .result>.tb .tabs button{padding:5px 8px}
@@ -269,6 +269,76 @@ details.more>summary .sum{font-weight:400;margin-left:auto;font-size:12px;overfl
   body.drop-open .mbar{display:none}
   dialog{width:96vw}
 }
+/* ---- workspace: command bar on top, page | text side by side ---- */
+body.working main{max-width:none;padding:0 14px 14px}
+body.working header{max-width:none;padding:8px 16px 6px}
+body.working .lede,body.working footer{display:none}
+.cmdbar{position:sticky;top:0;z-index:35;margin-bottom:12px}
+.cbrow{display:flex;align-items:center;gap:8px;padding:8px 10px;flex-wrap:wrap}
+.cbsep{width:1px;height:26px;background:var(--line)}
+.cblang{display:flex;align-items:center;gap:8px;min-width:0}
+.cblbl{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.cblang .ms{width:min(270px,30vw)}
+.cblbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cblang .ms-btn{min-height:36px;padding:4px 10px}
+.cblang .ms-pop{min-width:340px}
+.setmenu .sum{font-weight:400;color:var(--muted);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:bottom;white-space:nowrap}
+.menu .list.setlist{left:0;right:auto;width:min(470px,94vw);padding:0}
+.setin{padding:12px 14px 10px}
+.menu .list.setlist label{padding:0;color:var(--ink);font-size:14px}
+.menu .list.setlist label.f{display:block;color:var(--muted);font-size:12px}
+.setlist .checks{margin:12px 0 8px}
+.cmdbar .bookbar{display:flex;gap:6px;align-items:center;margin:0;padding:0;border:0}
+.cmdbar #range{width:150px;padding:6px 10px}
+.cmdbar #goBtn{padding:7px 16px}
+.viewseg button{padding:6px 9px}
+@media (max-width:1380px) and (min-width:761px){ .viewseg .vl{display:none} .viewseg button{padding:6px 11px;font-size:15px} .setmenu .sum{display:none} }
+.cbstat{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;padding:0 12px 8px;font-size:12.5px;color:var(--muted)}
+.cbstat .pstat{margin:0;min-height:0;font-size:12.5px}
+.cbstat .langhint{margin:0}
+.cbstat .scriptpref{margin:0}
+.cmdbar .prog{position:absolute;left:14px;right:14px;bottom:0;height:3px;margin:0;border-radius:3px}
+.panes{display:grid;grid-template-columns:minmax(0,1.25fr) 12px minmax(0,1fr);align-items:stretch;height:var(--ph,auto)}
+.panes>.rail{margin-right:12px}
+.panes .imgcard,.panes .result{display:flex;flex-direction:column;min-height:0}
+.panes .cropwrap{height:auto;flex:1;min-height:280px}
+.panes .result textarea{flex:1;min-height:0;resize:none}
+.panes .preview{flex:1;max-height:none;min-height:0}
+.panes .rail{position:static;max-height:none;min-height:0}
+.splitter{cursor:col-resize;position:relative;touch-action:none;outline:none}
+.splitter::after{content:"";position:absolute;left:5px;top:50%;width:2px;height:44px;margin-top:-22px;border-radius:2px;background:var(--line-2);transition:background .15s,height .15s}
+.splitter:hover::after,.splitter:focus-visible::after,.splitter.drag::after{background:var(--accent);height:80px;margin-top:-40px}
+.panes.v-page .result,.panes.v-page .splitter,.panes.v-text .imgcard,.panes.v-text .splitter{display:none}
+.panes.norail>.rail{display:none}
+body.embed .panes{height:760px}
+.panes.stack{grid-template-columns:minmax(0,1fr);gap:12px;height:auto}
+.panes.stack .splitter{display:none}
+.panes.stack>.rail{margin-right:0}
+.panes.stack .rail .pages{display:flex;overflow-x:auto;gap:8px;padding:8px}
+.panes.stack .rail .pg{flex:none;width:76px}
+.panes.stack .rail .rh{grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center}
+.panes.stack .rail .rh span{display:none}
+.panes.stack .cropwrap{height:62vh;flex:none}
+.panes.stack .result textarea{min-height:320px;flex:none;resize:vertical}
+.panes.stack .preview{max-height:75vh}
+@media (max-width:760px){
+  .cmdbar{position:static}
+  .cbrow{gap:6px;padding:8px}
+  .cbsep,.viewseg,#railBtn,.splitter,.cmdbar #goBtn{display:none!important}
+  .cblang{flex:1 1 100%;order:-1} .cblang .ms{width:auto;flex:1} .cblbl{display:none}
+  .cmdbar .bookbar{flex:1 1 100%} .cmdbar #range{flex:1;width:auto}
+  .setmenu{flex:1} .setmenu>.btn{width:100%;justify-content:center}
+  .setmenu .sum{max-width:46vw}
+  body:has(#setMenu:not(.hidden)) .scrim{display:block}
+  body:has(#setMenu:not(.hidden)) .mbar{display:none}
+  .panes{display:grid;grid-template-columns:minmax(0,1fr)!important;gap:12px;height:auto!important}
+  .panes>.rail{margin-right:0}
+  .panes .cropwrap{height:54vh;flex:none}
+  .panes .result textarea{min-height:260px;flex:none;resize:vertical}
+  .panes .preview{max-height:70vh}
+  .panes.v-page .result,.panes.v-text .imgcard{display:flex}
+  body.working header{padding:10px 14px 4px}
+}
 pre.code{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px;font:12.5px/1.55 var(--mono);overflow:auto;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:0;width:min(680px,94vw);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(20,15,10,.45)}
@@ -435,6 +505,70 @@ dialog[open]{animation:dlgIn .16s ease-out}
   </section>
 
   <section id="workView" class="work hidden">
+    <div class="card cmdbar" id="cmdbar">
+      <div class="cbrow">
+        <button class="btn sm" onclick="reset()" title="Close and start over">← New</button>
+        <button class="btn sm ghost hidden" id="railBtn" onclick="toggleRail()" title="Show or hide the page list" aria-pressed="true">☰ Pages</button>
+        <span class="cbsep"></span>
+        <div class="cblang"><span class="cblbl" id="langLbl" aria-hidden="false">Language</span>
+        <div class="ms" id="langMs">
+            <button type="button" class="ms-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="langLbl"><span class="tags" id="langTags"></span><span class="caret">▾</span></button>
+            <div class="ms-pop hidden" id="langPop">
+              <input type="text" id="langQ" placeholder="Search language…" autocomplete="off">
+              <div class="ms-list" id="langList" role="listbox" aria-multiselectable="true"></div>
+              <div class="ms-foot"><button type="button" class="btn sm ghost" id="langReset">✦ Back to auto-detect</button><button type="button" class="btn sm ghost hidden" id="langRedo" title="Forget the detected language and detect it again on the next page you convert">↻ Detect again</button><span class="spacer"></span><button type="button" class="btn sm primary" id="langDone">Done</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="menu setmenu">
+          <button class="btn sm" id="setBtn" onclick="toggleSet()" aria-haspopup="true" aria-expanded="false">⚙ Settings <span class="sum" id="moreSum"></span> ▾</button>
+          <div class="list hidden setlist" id="setMenu"><div class="mh">Settings<button class="btn ghost sm" type="button" onclick="toggleSet()" aria-label="Close">✕</button></div>
+            <div class="setin">
+        <div class="grid2" style="margin-top:0">
+          <div><label class="f" for="psm">Layout</label>
+            <select id="psm">
+              <option value="3">Auto</option>
+              <option value="4">Single column</option>
+              <option value="col2">Two columns</option>
+              <option value="col3">Three columns</option>
+              <option value="colauto">Multi-column (find columns)</option>
+              <option value="6">One block of text</option>
+              <option value="7">Single line</option>
+              <option value="11">Scattered text</option>
+            </select></div>
+          <div><label class="f" for="prep">Image clean-up</label>
+            <select id="prep">
+              <option value="auto">Auto</option>
+              <option value="photo">Phone photo (shadows, uneven light)</option>
+              <option value="bw">Old / yellowed paper</option>
+              <option value="none">None</option>
+            </select></div>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="deskew" checked><span>Straighten tilted pages<small>Measures the slant of the text lines and levels the page</small></span></label>
+          <label><input type="checkbox" id="autoRot" checked><span>Turn sideways / upside-down pages<small>Pages that read badly are tried at 90°, 180° and 270°</small></span></label>
+          <label><input type="checkbox" id="autoLayout" checked><span>Find tables & pictures automatically<small>Pages without marked areas are split into text, headings, tables and pictures</small></span></label>
+          <label><input type="checkbox" id="keepLines"><span>Keep line breaks<small>For poetry and verse; otherwise paragraphs are joined</small></span></label>
+          <label id="appendLbl"><input type="checkbox" id="append"><span>Add to existing text</span></label>
+        </div>
+              <label id="redoLbl" class="hidden" style="display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer;margin-top:-4px"><input type="checkbox" id="redo"> Also re-read pages already done (Read all)</label>
+            </div>
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <div class="bookbar hidden" id="bookbar">
+          <input type="text" id="range" placeholder="All pages — or 1-20, 25" aria-label="Pages to read">
+          <button class="btn sm" id="allBtn" onclick="toggleBatch()" title="Read all pages (or the pages you list)">▶ Read all</button>
+        </div>
+        <button class="btn primary" id="goBtn" onclick="convertCurrent()">Convert to text</button>
+        <div class="seg viewseg" id="viewSeg" title="Show the page, the text, or both side by side">
+          <button type="button" data-v="page" title="Page only (wide)" aria-label="Page only">▭<span class="vl"> Page</span></button><button type="button" data-v="both" title="Page and text side by side" aria-label="Page and text">◫<span class="vl"> Both</span></button><button type="button" data-v="text" title="Text only" aria-label="Text only">≡<span class="vl"> Text</span></button>
+        </div>
+      </div>
+      <div class="cbstat"><span class="pstat" id="pstat">Language models download once (≈ 2–5 MB each) and are cached.</span><span class="langhint" id="langHint"></span><span class="scriptpref hidden" id="scriptPref"></span></div>
+      <div class="prog"><i id="bar"></i></div>
+    </div>
+    <div class="panes" id="panes">
     <aside class="card rail hidden" id="rail">
       <div class="rh">
         <b id="docName">Book</b>
@@ -448,7 +582,6 @@ dialog[open]{animation:dlgIn .16s ease-out}
 
     <div class="card imgcard">
       <div class="tb">
-        <button class="btn sm" onclick="reset()" title="Close and start over">← New</button>
         <span id="pnav" class="hidden" style="display:inline-flex;gap:6px;align-items:center">
           <button class="btn sm" onclick="go(cur-1)" title="Previous page (Alt+←)">‹</button>
           <span class="lbl" id="pLbl"></span>
@@ -491,62 +624,7 @@ dialog[open]{animation:dlgIn .16s ease-out}
       </div>
     </div>
 
-    <div class="side">
-      <div class="card opts">
-        <label class="f" id="langLbl">Language</label>
-        <div class="ms" id="langMs">
-          <button type="button" class="ms-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="langLbl"><span class="tags" id="langTags"></span><span class="caret">▾</span></button>
-          <div class="ms-pop hidden" id="langPop">
-            <input type="text" id="langQ" placeholder="Search language…" autocomplete="off">
-            <div class="ms-list" id="langList" role="listbox" aria-multiselectable="true"></div>
-            <div class="ms-foot"><button type="button" class="btn sm ghost" id="langReset">✦ Back to auto-detect</button><button type="button" class="btn sm ghost hidden" id="langRedo" title="Forget the detected language and detect it again on the next page you convert">↻ Detect again</button><span class="spacer"></span><button type="button" class="btn sm primary" id="langDone">Done</button></div>
-          </div>
-        </div>
-        <div class="langhint" id="langHint"></div>
-        <div class="scriptpref hidden" id="scriptPref"></div>
-        <details class="more" id="more"><summary>More settings <span class="sum" id="moreSum"></span></summary>
-        <div class="grid2">
-          <div><label class="f" for="psm">Layout</label>
-            <select id="psm">
-              <option value="3">Auto</option>
-              <option value="4">Single column</option>
-              <option value="col2">Two columns</option>
-              <option value="col3">Three columns</option>
-              <option value="colauto">Multi-column (find columns)</option>
-              <option value="6">One block of text</option>
-              <option value="7">Single line</option>
-              <option value="11">Scattered text</option>
-            </select></div>
-          <div><label class="f" for="prep">Image clean-up</label>
-            <select id="prep">
-              <option value="auto">Auto</option>
-              <option value="photo">Phone photo (shadows, uneven light)</option>
-              <option value="bw">Old / yellowed paper</option>
-              <option value="none">None</option>
-            </select></div>
-        </div>
-        <div class="checks">
-          <label><input type="checkbox" id="deskew" checked><span>Straighten tilted pages<small>Measures the slant of the text lines and levels the page</small></span></label>
-          <label><input type="checkbox" id="autoRot" checked><span>Turn sideways / upside-down pages<small>Pages that read badly are tried at 90°, 180° and 270°</small></span></label>
-          <label><input type="checkbox" id="autoLayout" checked><span>Find tables & pictures automatically<small>Pages without marked areas are split into text, headings, tables and pictures</small></span></label>
-          <label><input type="checkbox" id="keepLines"><span>Keep line breaks<small>For poetry and verse; otherwise paragraphs are joined</small></span></label>
-          <label id="appendLbl"><input type="checkbox" id="append"><span>Add to existing text</span></label>
-        </div>
-        </details>
-        <button class="btn primary big" id="goBtn" onclick="convertCurrent()">Convert to text</button>
-
-        <div class="bookbar hidden" id="bookbar">
-          <label class="f" for="range">Read all pages</label>
-          <div class="row">
-            <input type="text" id="range" placeholder="All pages — or e.g. 1-20, 25">
-            <button class="btn" id="allBtn" onclick="toggleBatch()">▶ Start</button>
-          </div>
-          <label style="display:flex;gap:7px;align-items:center;font-size:13px;margin-top:8px;color:var(--muted);cursor:pointer"><input type="checkbox" id="redo"> Also re-read pages already done</label>
-        </div>
-        <div class="prog"><i id="bar"></i></div>
-        <div class="pstat" id="pstat">Language models download once (≈ 2–5 MB each) and are cached.</div>
-      </div>
-
+      <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" title="Drag to change the widths (double-click: equal)" tabindex="0"></div>
       <div class="card result">
         <div class="tb">
           <div class="tabs" id="tabs">
@@ -944,7 +1022,8 @@ function enterWork(){
   $("#dropView").classList.add("hidden"); $("#workView").classList.remove("hidden");
   const book = isBook();
   $("#workView").classList.toggle("book", book);
-  ["#rail","#pnav","#bookbar","#sameCropLbl","#tabBook","#markLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
+  ["#rail","#pnav","#bookbar","#sameCropLbl","#tabBook","#markLbl","#railBtn","#redoLbl"].forEach(s=>$(s).classList.toggle("hidden", !book));
+  document.body.classList.add("working"); layoutPanes();
   $("#appendLbl").classList.toggle("hidden", book);
   setGo(false); document.body.classList.remove("drop-open");
   $("#docName").textContent = docName; $("#docName").title = docName;
@@ -956,7 +1035,7 @@ function enterWork(){
 function reset(){
   if (batch.running && !confirm("Reading is still running. Stop and close?")) return;
   flushSave(); stopBatch(); destroyViews(); pages = []; docKey = null;
-  $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); document.body.classList.add("drop-open"); showResume(); sendHeight();
+  $("#workView").classList.add("hidden"); $("#dropView").classList.remove("hidden"); document.body.classList.add("drop-open"); document.body.classList.remove("working"); showResume(); sendHeight();
 }
 
 /* ===================== page strip ===================== */
@@ -1130,7 +1209,7 @@ async function go(i){
   img.onload = ()=>{
     $("#imgLoading").classList.add("hidden");
     $("#dims").textContent = `${img.naturalWidth} × ${img.naturalHeight}px`;
-    cropper = new Cropper(img, { viewMode:1, autoCropArea:1, background:false, responsive:true, dragMode:"crop", zoomOnWheel:true, toggleDragModeOnDblclick:false,
+    cropper = new Cropper(img, { viewMode:1, autoCropArea:1, background:false, responsive:false, dragMode:"crop", zoomOnWheel:true, toggleDragModeOnDblclick:false,
       ready(){
         if (p.rot) fitRotation(p.rot);
         const f = p.crop || globalCrop;
@@ -2186,6 +2265,45 @@ function reflow(t){ return t.split(/\n\s*\n/).map(p => p.replace(/(\w)-\n(\w)/g,
 
 /* ===================== downloads ===================== */
 function copyText(){ saveEdits(); const t = tab==="book" ? bookText($("#pageMarks").checked) : out.value; if(t) copy(t); }
+/* ---------- workspace layout: page | text side by side, settings menu, page list ---------- */
+const pane = { view: store.get("ez_view") || "both", split: +(store.get("ez_split") || 1.5), rail: store.get("ez_rail") !== "0" };
+const narrow = () => matchMedia("(max-width:760px)").matches;
+function layoutPanes(){
+  const P = $("#panes"), book = isBook(), railOn = book && pane.rail;
+  P.classList.remove("v-page","v-both","v-text"); P.classList.add("v-" + pane.view); P.classList.toggle("norail", !railOn);
+  document.querySelectorAll("#viewSeg button").forEach(b=>{ b.classList.toggle("on", b.dataset.v===pane.view); b.setAttribute("aria-pressed", b.dataset.v===pane.view); });
+  $("#railBtn").classList.toggle("on", railOn); $("#railBtn").setAttribute("aria-pressed", railOn);
+  const stack = !narrow() && innerWidth < 1100 && pane.view === "both";      // tablets: page above text, both full width
+  P.classList.toggle("stack", stack); $("#viewSeg").classList.toggle("stacked", stack);
+  if (narrow() || stack){ P.style.gridTemplateColumns = ""; P.style.removeProperty("--ph"); }
+  else {
+    const cols = [railOn ? "136px" : null, pane.view !== "text" ? `minmax(0,${pane.split}fr)` : null, pane.view === "both" ? "12px" : null, pane.view !== "page" ? "minmax(0,1fr)" : null].filter(Boolean);
+    P.style.gridTemplateColumns = cols.join(" ");
+    if (!document.body.classList.contains("embed")){ const bar = $("#cmdbar").offsetHeight; P.style.setProperty("--ph", Math.max(460, innerHeight - bar - 26) + "px"); }
+  }
+  window.dispatchEvent(new Event("resize-panes"));
+}
+let paneT = null;
+/* re-fit the crop view to its new box, keeping the crop (the cropper's own resize scales by width only) */
+function refitCrop(){ if (!cropper || !cropper.ready || mode !== "crop" || !$("#cropwrap").offsetWidth) return;      /* hidden (text-only view): fit when shown again */ const d = cropper.getData(); cropper.render(); if (pages[cur]?.rot) fitRotation(pages[cur].rot); cropper.setData(d); }
+function panesChanged(){ clearTimeout(paneT); paneT = setTimeout(()=>{ refitCrop(); if (mode==="areas") fitStage(); }, 60); }
+let refitT = null; window.addEventListener("resize", ()=>{ clearTimeout(refitT); refitT = setTimeout(refitCrop, 120); });
+window.addEventListener("resize", ()=>{ if (!$("#workView").classList.contains("hidden")){ const P = $("#panes"); if (!narrow() && !P.classList.contains("stack") && !document.body.classList.contains("embed")) P.style.setProperty("--ph", Math.max(460, innerHeight - $("#cmdbar").offsetHeight - 26) + "px"); else if (narrow()) P.style.gridTemplateColumns = ""; } });
+let wasNarrow = narrow() + "" + (innerWidth < 1100); window.addEventListener("resize", ()=>{ const k = narrow() + "" + (innerWidth < 1100); if (k !== wasNarrow){ wasNarrow = k; if (!$("#workView").classList.contains("hidden")) layoutPanes(); } });
+$("#viewSeg").addEventListener("click", e=>{ const v = e.target.closest("button")?.dataset.v; if (!v) return; pane.view = v; store.set("ez_view", v); layoutPanes(); panesChanged(); });
+function toggleRail(){ pane.rail = !pane.rail; store.set("ez_rail", pane.rail ? "1" : "0"); layoutPanes(); panesChanged(); }
+(function(){ const sp = $("#splitter"); let drag = null;
+  const apply = r => { pane.split = Math.max(0.35, Math.min(4, r)); layoutPanes(); };
+  sp.addEventListener("pointerdown", e=>{ e.preventDefault(); sp.setPointerCapture(e.pointerId); sp.classList.add("drag"); drag = {l: document.querySelector("#panes .imgcard").getBoundingClientRect().left, r: document.querySelector("#panes .result").getBoundingClientRect().right}; });
+  sp.addEventListener("pointermove", e=>{ if (!drag) return; const a = e.clientX - drag.l, b = drag.r - e.clientX - 12; if (a > 200 && b > 220) apply(a/b); });
+  const end = ()=>{ if (!drag) return; drag = null; sp.classList.remove("drag"); store.set("ez_split", pane.split.toFixed(3)); panesChanged(); };
+  sp.addEventListener("pointerup", end); sp.addEventListener("pointercancel", end);
+  sp.addEventListener("dblclick", ()=>{ apply(1.5); store.set("ez_split", "1.5"); panesChanged(); });
+  sp.addEventListener("keydown", e=>{ if (e.key==="ArrowLeft"||e.key==="ArrowRight"){ e.preventDefault(); apply(pane.split * (e.key==="ArrowRight" ? 1.08 : 1/1.08)); store.set("ez_split", pane.split.toFixed(3)); panesChanged(); } });
+})();
+function toggleSet(){ const m = $("#setMenu"), open = m.classList.contains("hidden"); m.classList.toggle("hidden", !open); $("#setBtn").setAttribute("aria-expanded", open); if (open){ $("#dlMenu").classList.add("hidden"); openMs(false); } }
+document.addEventListener("click", e=>{ if (!e.target.closest(".setmenu")) $("#setMenu").classList.add("hidden"); });
+document.addEventListener("keydown", e=>{ if (e.key==="Escape" && !$("#setMenu").classList.contains("hidden")){ $("#setMenu").classList.add("hidden"); $("#setBtn").focus(); } });
 function toggleMenu(){ const m = $("#dlMenu"); m.classList.toggle("hidden"); m.classList.remove("up");
   if (!m.classList.contains("hidden") && innerWidth > 760){ const r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 8 && r.top - r.height - 40 > 0) m.classList.add("up"); } if (!m.classList.contains("hidden")) m.querySelector("button[onclick^='dl']")?.focus({preventScroll:true}); }
 const FMT_HINT = { exact: "Each page looks like the scan: same paper size, positions, font sizes, bold and colours. Best for printing and sharing.",
@@ -2642,9 +2760,7 @@ $("#codeIframe").textContent = `<iframe src="${BASE}?embed=1&lang=tam+eng" style
 $("#codeLink").textContent = `<a href="${BASE}" target="_blank">Tamil OCR — image & book to text</a>`;
 setMode("crop", true); showResume();
 document.body.classList.add("drop-open");
-(function(){ const d = $("#more"), st = store.get("ez_more");
-  d.open = st ? st==="1" : matchMedia("(min-width: 761px)").matches;
-  d.addEventListener("toggle", ()=>store.set("ez_more", d.open?"1":"0"));
+(function(){
   const upd = ()=>{ $("#moreSum").textContent = [$("#psm").selectedOptions[0].text, $("#prep").value!=="auto" ? $("#prep").selectedOptions[0].text : "", $("#autoLayout").checked ? "tables & pictures" : ""].filter(Boolean).join(" · "); };
   ["psm","prep","autoLayout"].forEach(id=>$("#"+id).addEventListener("change", upd)); upd(); })();
 async function clearSaved(){
