@@ -1029,7 +1029,7 @@ async function fullCanvas(p){
 }
 /* slant of the text lines in degrees (projection profile: the angle where rows of ink line up best) */
 function skewAngle(c){
-  const B = binarize(c, 1000), {w, h, ink} = B, pts = [];
+  const B = binarize(c, 1000), {w, h} = B, ink = B.lineInk, pts = [];      // local contrast: works under uneven light too
   for (let y=Math.round(h*0.04); y<h*0.96; y+=2) for (let x=Math.round(w*0.04); x<w*0.96; x+=2) if (ink[y*w+x]) pts.push(x - w/2, y);
   if (pts.length < 400) return 0;
   const score = a => { const t = Math.tan(a*Math.PI/180), bins = new Float32Array(h*2);
@@ -1374,12 +1374,15 @@ function paperLight(c){
   const bg = filt(filt(v0, true), false);
   for (let i=0;i<sw*sh;i++){ A[i*4]=A[i*4+1]=A[i*4+2]=bg[i]; A[i*4+3]=255; } sg.putImageData(sd,0,0);
   const sorted = Float32Array.from(bg).sort(), lo = sorted[Math.floor(sorted.length*0.05)], hi = sorted[Math.floor(sorted.length*0.95)];
-  let dark = 0; for (const v of bg) if (v < hi - 55) dark++;
-  return { canvas: sm, lo, hi, darkShare: dark / bg.length };
+  let dark = 0, dim = 0; const steps = []; for (const v of bg){ if (v < hi - 55) dark++; if (v < hi - 22) dim++; }
+  for (let y=0;y<sh;y++) for (let x=0;x<sw;x++){ const v = bg[y*sw+x]; if (x+1<sw) steps.push(Math.abs(v - bg[y*sw+x+1])); if (y+1<sh) steps.push(Math.abs(v - bg[(y+1)*sw+x])); }
+  steps.sort((a,b)=>a-b); const step = steps[Math.floor(steps.length*0.98)] || 0;
+  return { canvas: sm, lo, hi, darkShare: dark / bg.length, dimShare: dim / bg.length, step };
 }
 /* shadows / uneven light? (the paper is much darker in some places than others) */
 /* a shadow darkens a large part of the page; a photo printed on the page is a compact dark block (don't "flatten" it away) */
-function unevenLight(c){ const L = paperLight(c); return L.hi - L.lo > 55 && L.darkShare > 0.2 ? L : null; }
+/* light that fades smoothly across the page (a phone photo) has no sharp steps; a printed picture has sharp edges */
+function unevenLight(c){ const L = paperLight(c); return (L.hi - L.lo > 55 && L.darkShare > 0.2) || (L.hi - L.lo > 30 && L.dimShare > 0.3 && L.step < 14) ? L : null; }
 /* divide by the paper's brightness: an evenly lit grey page */
 function flatten(c, L){
   L = L || paperLight(c);
@@ -1405,12 +1408,34 @@ function preprocess(src, m, keepSize){
   if (m === "bw"){ const thr = otsu(hist, d.length/4); for (let i=0;i<d.length;i+=4){ const v = d[i] > thr ? 255 : 0; d[i]=d[i+1]=d[i+2]=v; } }
   x.putImageData(im,0,0); return c;
 }
+function invertDarkBars(c){
+  const k = Math.min(1, 700/c.width), w = Math.max(1, Math.round(c.width*k)), h = Math.max(1, Math.round(c.height*k));
+  const t = document.createElement("canvas"); t.width = w; t.height = h; const g = t.getContext("2d", {willReadFrequently:true}); g.drawImage(c, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data, gray = new Uint8Array(w*h);
+  for (let i=0, j=0; j<w*h; i+=4, j++) gray[j] = (d[i]*299 + d[i+1]*587 + d[i+2]*114)/1000|0;
+  const darkRow = y => { let n = 0; for (let x=0; x<w; x++) if (gray[y*w+x] < 100) n++; return n/w; };
+  const rects = []; let y = 0;
+  while (y < h){ if (darkRow(y) > 0.15){ let e = y; while (e < h && darkRow(e) > 0.15) e++; const bh = e - y;
+      if (bh >= 6 && bh <= w*0.1){ let x = 0;
+        while (x < w){ const colDark = xx => { let n = 0; for (let yy=y; yy<e; yy++) if (gray[yy*w+xx] < 100) n++; return n/bh; };
+          if (colDark(x) > 0.55){ let x2 = x; let miss = 0; while (x2 < w && (colDark(x2) > 0.55 || (colDark(x2) > 0.2 && ++miss < 40))) { if (colDark(x2) > 0.55) miss = 0; x2++; }
+            if (x2 - x >= Math.max(bh*3, w*0.12) && bh <= w*0.08){ let light = 0, mid = 0; for (let yy=y; yy<e; yy++) for (let xx=x; xx<x2; xx++){ const v = gray[yy*w+xx]; if (v > 170) light++; else if (v >= 100) mid++; }
+              const n = (x2-x)*bh, lf = light/n;                 // a solid bar with light letters: few in-between tones (unlike a photograph)
+              if (lf > 0.03 && lf < 0.5 && mid/n < 0.18) rects.push({x, y, w:x2-x, h:bh}); }
+            x = x2 + 1; } else x++; } }
+      y = e; } else y++; }
+  if (!rects.length) return c;
+  const o = document.createElement("canvas"); o.width = c.width; o.height = c.height; const og = o.getContext("2d"); og.drawImage(c, 0, 0);
+  og.globalCompositeOperation = "difference"; og.fillStyle = "#fff";
+  for (const r of rects) og.fillRect(Math.floor(r.x/k)-1, Math.floor(r.y/k)-1, Math.ceil(r.w/k)+2, Math.ceil(r.h/k)+2);
+  o.k = c.k; return o;
+}
 function otsu(hist, total){ let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t]; let sB=0,wB=0,max=0,thr=128;
   for(let t=0;t<256;t++){ wB+=hist[t]; if(!wB) continue; const wF=total-wB; if(!wF) break; sB+=t*hist[t]; const mB=sB/wB, mF=(sum-sB)/wF, b=wB*wF*(mB-mF)*(mB-mF); if(b>max){max=b;thr=t;} } return thr; }
 /* run Tesseract; returns words with boxes in the source canvas' pixels */
 async function ocr(worker, canvas, psm){
   await worker.setParameters({ tessedit_pageseg_mode: String(psm || basePsm()), preserve_interword_spaces: "1", user_defined_dpi: "0" });   // 0 = let Tesseract measure the resolution (a fixed 300 hurts photos and low-res scans)
-  const pc = preprocess(canvas, $("#prep").value), k = pc.k;
+  const pc = invertDarkBars(preprocess(canvas, $("#prep").value)), k = pc.k;
   const { data } = await worker.recognize(pc, {}, { text:true, blocks:true });
   const paras = [];
   (data.blocks||[]).forEach(b=>b.paragraphs.forEach(pa=>{
@@ -1437,17 +1462,32 @@ function binarize(c, maxW = 1400){
   for (let i=0,j=0;i<d.length;i+=4,j++){ const g = (d[i]*299+d[i+1]*587+d[i+2]*114)/1000|0; gray[j]=g; hist[g]++; }
   const thr = Math.min(otsu(hist, w*h), 200), ink = new Uint8Array(w*h);
   for (let j=0;j<w*h;j++) ink[j] = gray[j] < thr ? 1 : 0;
-  return {w, h, s, ink, gray};
+  // ruling lines: darker than the paper around them (works for grey lines and for photos with uneven light)
+  const R = Math.max(8, Math.round(w/60)), I = new Float64Array((w+1)*(h+1));
+  for (let y=0; y<h; y++){ let row = 0; for (let x=0; x<w; x++){ row += gray[y*w+x]; I[(y+1)*(w+1)+x+1] = I[y*(w+1)+x+1] + row; } }
+  const lineInk = new Uint8Array(w*h), delta = Math.max(22, (255 - thr)*0.18);
+  for (let y=0; y<h; y++){ const y0 = Math.max(0, y-R), y1 = Math.min(h, y+R+1);
+    for (let x=0; x<w; x++){ const x0 = Math.max(0, x-R), x1 = Math.min(w, x+R+1);
+      const mean = (I[y1*(w+1)+x1] - I[y0*(w+1)+x1] - I[y1*(w+1)+x0] + I[y0*(w+1)+x0]) / ((x1-x0)*(y1-y0));
+      lineInk[y*w+x] = gray[y*w+x] < Math.min(mean - delta, 235) ? 1 : 0; } }
+  return {w, h, s, ink, gray, lineInk};
 }
 function lineSegs(B){
-  const {w,h,ink,s} = B, H = [], V = [], minH = Math.max(120*s, w*0.12), minV = Math.max(70*s, h*0.025);  // ruling lines are long; letter strokes (≈ 30px at 300 dpi) are not
-  for (let y=0;y<h;y++){ let x=0; while(x<w){ if(ink[y*w+x]){ let e=x; while(e<w && (ink[y*w+e] || (e+1<w && ink[y*w+e+1]))) e++; if(e-x>=minH) H.push({x0:x,x1:e,y0:y,y1:y}); x=e+1; } else x++; } }
-  for (let x=0;x<w;x++){ let y=0; while(y<h){ if(ink[y*w+x]){ let e=y; while(e<h && (ink[e*w+x] || (e+1<h && ink[(e+1)*w+x]))) e++; if(e-y>=minV) V.push({x0:x,x1:x,y0:y,y1:e}); y=e+1; } else y++; } }
+  const {w,h,s} = B, ink = B.lineInk || B.ink, H = [], V = [], gap = 2;
+  const minH = Math.max(120*s, w*0.12), minV = Math.max(70*s, h*0.025);    // ruling lines are long; letter strokes are not
+  const on = j => ink[j] === 1;
+  for (let y=0;y<h;y++){ const r = y*w; let x=0; while(x<w){ if(on(r+x)){ let e=x; for(;;){ let k=e+1; while(k<w && k<=e+gap+1 && !on(r+k)) k++; if (k<w && k<=e+gap+1 && on(r+k)) e=k; else break; } if(e-x>=minH) H.push({x0:x,x1:e,y0:y,y1:y}); x=e+1; } else x++; } }
+  for (let x=0;x<w;x++){ let y=0; while(y<h){ if(on(y*w+x)){ let e=y; for(;;){ let k=e+1; while(k<h && k<=e+gap+1 && !on(k*w+x)) k++; if (k<h && k<=e+gap+1 && on(k*w+x)) e=k; else break; } if(e-y>=minV) V.push({x0:x,x1:x,y0:y,y1:e}); y=e+1; } else y++; } }
+  // join the rows/columns of one line, also pieces of a slightly slanted or broken line
   const merge = (arr, horiz) => { const out = [];
     arr.sort((a,b)=> horiz ? a.y0-b.y0 || a.x0-b.x0 : a.x0-b.x0 || a.y0-b.y0);
-    for (const s of arr){ const m = out.find(o => horiz ? (s.y0-o.y1<=2 && Math.min(o.x1,s.x1)-Math.max(o.x0,s.x0) > 0.6*Math.min(o.x1-o.x0,s.x1-s.x0)) : (s.x0-o.x1<=2 && Math.min(o.y1,s.y1)-Math.max(o.y0,s.y0) > 0.6*Math.min(o.y1-o.y0,s.y1-s.y0)));
-      if (m){ m.x0=Math.min(m.x0,s.x0); m.x1=Math.max(m.x1,s.x1); m.y0=Math.min(m.y0,s.y0); m.y1=Math.max(m.y1,s.y1); } else out.push({...s}); }
-    return out.filter(o => horiz ? o.y1-o.y0 < 8 : o.x1-o.x0 < 8); };
+    for (const sg of arr){
+      const m = out.find(o => horiz
+        ? (sg.y0-o.y1<=3 && sg.y0>=o.y0-1 && (Math.min(o.x1,sg.x1)-Math.max(o.x0,sg.x0) > 0.5*Math.min(o.x1-o.x0,sg.x1-sg.x0) || Math.max(sg.x0-o.x1, o.x0-sg.x1) <= 8))
+        : (sg.x0-o.x1<=3 && sg.x0>=o.x0-1 && (Math.min(o.y1,sg.y1)-Math.max(o.y0,sg.y0) > 0.5*Math.min(o.y1-o.y0,sg.y1-sg.y0) || Math.max(sg.y0-o.y1, o.y0-sg.y1) <= 8)));
+      if (m){ m.x0=Math.min(m.x0,sg.x0); m.x1=Math.max(m.x1,sg.x1); m.y0=Math.min(m.y0,sg.y0); m.y1=Math.max(m.y1,sg.y1); } else out.push({...sg}); }
+    // thin compared with their length (a filled bar or a picture is not a line)
+    return out.filter(o => horiz ? o.y1-o.y0 < Math.max(8, (o.x1-o.x0)*0.022) : o.x1-o.x0 < Math.max(8, (o.y1-o.y0)*0.022)); };
   return { H: merge(H, true), V: merge(V, false) };
 }
 function findTables(B, L){
@@ -1465,8 +1505,11 @@ function findTables(B, L){
     if (box.y1 - box.y0 < h*0.035) continue;
     const vs = L.V.filter(v => v.x0 >= box.x0-6 && v.x0 <= box.x1+6 && v.y0 <= box.y0 + (box.y1-box.y0)*0.3 && v.y1 >= box.y1 - (box.y1-box.y0)*0.3 && v.y1-v.y0 > (box.y1-box.y0)*0.5);
     const inner = vs.filter(v => v.x0 > box.x0+8 && v.x0 < box.x1-8);
+    let inkN = 0; for (let y=box.y0|0; y<box.y1; y+=2) for (let x=box.x0|0; x<box.x1; x+=2) inkN += B.ink[y*w+x];
+    if (inkN / (((box.y1-box.y0)/2)*((box.x1-box.x0)/2)) > 0.32) continue;              // mostly ink: a picture with a frame, not a table
+    const bw = box.x1 - box.x0, part = L.H.filter(l => (l.y0+l.y1)/2 > box.y0+3 && (l.y0+l.y1)/2 < box.y1-3 && l.x0 >= box.x0-8 && l.x1 <= box.x1+8 && l.x1-l.x0 >= bw*0.15);
     tables.push({ box, ruled: inner.length >= 1,
-      hs: g.map(s=>(s.y0+s.y1)/2), vs: inner.length ? dedupe([box.x0, ...inner.map(v=>(v.x0+v.x1)/2), box.x1], 6) : null });
+      hs: dedupe([...g, ...part].map(s=>(s.y0+s.y1)/2), 5), vs: inner.length ? dedupe([box.x0, ...inner.map(v=>(v.x0+v.x1)/2), box.x1], 6) : null });
   }
   return tables;
 }
@@ -1501,33 +1544,96 @@ function findPictures(B, words, exclude){
 /* cells from words: ruled columns (vs) or vertical white gaps; rows from lines (hs) or clustering */
 /* words -> cells. Rows come from hs (row lines) or from text lines; columns from vs (column lines) or from white gaps.
    Returns {rows, vs, hs} so the lines that were used can be shown and edited. */
+/* words of one text row -> phrases (a column cell); words closer than half a line height belong together */
+function phrasesOf(ws, mh){ const out = []; let cur = null;
+  for (const t of [...ws].sort((a,b)=>a.box.x-b.box.x)){ if (cur && t.box.x - cur.x1 < mh*0.55){ cur.x1 = Math.max(cur.x1, t.box.x+t.box.w); cur.ws.push(t); } else { cur = {x0:t.box.x, x1:t.box.x+t.box.w, ws:[t]}; out.push(cur); } }
+  return out; }
+/* words -> visual rows (by vertical overlap, across the whole width) */
+function visualRows(ws, mh){
+  const rows = [];
+  for (const t of [...ws].sort((a,b)=>(a.box.y+a.box.h/2)-(b.box.y+b.box.h/2))){
+    const cy = t.box.y + t.box.h/2, r = rows.find(q => cy >= q.y0 - mh*0.15 && cy <= q.y1 + mh*0.15 && Math.min(q.y1, t.box.y+t.box.h) - Math.max(q.y0, t.box.y) > Math.min(t.box.h, q.y1-q.y0)*0.4);
+    if (r){ r.ws.push(t); r.y0 = Math.min(r.y0, t.box.y); r.y1 = Math.max(r.y1, t.box.y+t.box.h); } else rows.push({ws:[t], y0:t.box.y, y1:t.box.y+t.box.h});
+  }
+  return rows.sort((a,b)=>a.y0-b.y0);
+}
+/* column gaps: x ranges no cell covers. Rows with fewer cells than usual (titles, notes, merged cells) may cross them. */
+function colSeps(phr, x0, x1, mh){
+  const used = phr.filter(r=>r.length), med = median(used.map(r=>r.length)), full = used.filter(r=>r.length >= med);
+  const rows = full.length >= used.length*0.6 ? full : used, W = Math.ceil(x1-x0)+2, cov = new Uint16Array(W);
+  rows.forEach(r=>r.forEach(([a,b])=>{ for (let x=Math.max(0,Math.floor(a-x0)); x<Math.min(W,Math.ceil(b-x0)); x++) cov[x]++; }));
+  let L = 0; while (L < W && !cov[L]) L++; let R = W-1; while (R > 0 && !cov[R]) R--;
+  const seps = []; let i = L;
+  while (i <= R){ if (!cov[i]){ let j = i; while (j <= R && !cov[j]) j++; if (j - i >= mh*0.45) seps.push(x0 + (i+j-1)/2); i = j; } else i++; }
+  return seps;
+}
+/* words -> cells. Rows come from hs (row lines) or from text rows (a wrapped cell stays one row); columns from vs (column lines) or from white gaps.
+   Returns {rows, vs, hs} so the lines that were used can be shown and edited. */
 function tableFromWords(words, box, hs, vs){
-  words = words.filter(t=>!/^[|\[\]_—–\-=~:;.,'`"!]+$/.test(t.text));
+  words = words.filter(t=>t.text && t.text.trim() && !/^[|\[\]_—–\-=~:;.,'`"!]+$/.test(t.text));
   if (!words.length) return null;
   const mh = median(words.map(t=>t.box.h)), cy = t=>t.box.y+t.box.h/2, cx = t=>t.box.x+t.box.w/2;
+  const X0 = box.x0 ?? 0, X1 = box.x1 ?? Math.max(...words.map(t=>t.box.x+t.box.w)), Y0 = box.y0 ?? 0, Y1 = box.y1 ?? Math.max(...words.map(t=>t.box.y+t.box.h));
   let rows = [];
-  if (hs && hs.length > 2){ for (let i=0;i<hs.length-1;i++){ const r = words.filter(t=>cy(t)>=hs[i] && cy(t)<hs[i+1]); if(r.length) rows.push(r); } }
-  else { let curR = [], bottom = -1;
-    for (const t of [...words].sort((a,b)=>cy(a)-cy(b))){ if (curR.length && cy(t) > bottom){ rows.push(curR); curR = []; } bottom = curR.length ? Math.max(bottom, t.box.y+t.box.h) : t.box.y+t.box.h; curR.push(t); }
-    if (curR.length) rows.push(curR);
-    // the row lines that this grouping implies: halfway between neighbouring rows
-    const b = rows.map(r=>[Math.min(...r.map(t=>t.box.y)), Math.max(...r.map(t=>t.box.y+t.box.h))]);
-    hs = [box.y0 ?? 0, ...b.slice(1).map((x,i)=>(b[i][1]+x[0])/2), box.y1 ?? b[b.length-1][1]];
+  if (hs && hs.length >= 2){
+    hs = [...hs].sort((a,b)=>a-b);
+    if (words.some(t=>cy(t) < hs[0]) && hs[0] - Y0 > mh*0.7) hs.unshift(Y0);                       // a header row without a rule above it
+    if (words.some(t=>cy(t) > hs[hs.length-1]) && Y1 - hs[hs.length-1] > mh*0.7) hs.push(Y1);       // a last row without a rule below it
+    for (let i=0;i<hs.length-1;i++){ const r = words.filter(t=>cy(t)>=hs[i] && cy(t)<hs[i+1]); if (r.length) rows.push({ws:r, y0:hs[i], y1:hs[i+1]}); }
+  } else {
+    rows = visualRows(words, mh);
+    hs = null;
   }
-  if (!vs){
-    const W = Math.ceil(box.x1-box.x0)+2, occ = new Uint8Array(W);
-    rows.forEach(r=>{ const sorted = [...r].sort((a,b)=>a.box.x-b.box.x); let ph = null;
-      sorted.forEach(t=>{ if (ph && t.box.x - ph.x1 < mh*0.9) ph.x1 = Math.max(ph.x1, t.box.x+t.box.w); else { ph && occ.fill(1, Math.max(0,ph.x0-box.x0|0), Math.min(W, ph.x1-box.x0|0)); ph = {x0:t.box.x, x1:t.box.x+t.box.w}; } });
-      ph && occ.fill(1, Math.max(0,ph.x0-box.x0|0), Math.min(W, ph.x1-box.x0|0)); });
-    const seps = []; let i=0;
-    while (i<W){ if(!occ[i]){ let j=i; while(j<W && !occ[j]) j++; if (i>0 && j<W && j-i >= mh*1.2) seps.push(box.x0 + (i+j)/2); i=j; } else i++; }
-    vs = [box.x0, ...seps, box.x1];
-  }
+  if (!vs){ vs = [X0, ...colSeps(rows.map(r=>phrasesOf(r.ws, mh).map(p=>[p.x0, p.x1])), X0, X1, mh), X1]; }
   const nc = vs.length-1; if (nc < 2) return null;
-  const grid = rows.map(r=>{ const cells = Array.from({length:nc}, ()=>[]);
-    r.sort((a,b)=> (a.box.y/mh|0)-(b.box.y/mh|0) || a.box.x-b.box.x).forEach(t=>{ let j = vs.findIndex((v,k)=>k<nc && cx(t)>=v && cx(t)<vs[k+1]); if(j<0) j = cx(t)<vs[0]?0:nc-1; cells[j].push(t.text); });
-    return cells.map(c=>c.join(" ").trim()); }).filter(r=>r.some(Boolean));
-  return grid.length >= 1 && (grid.length >= 2 || nc >= 2) ? {rows: grid, vs, hs} : null;
+  const cellsOf = r => { const cells = Array.from({length:nc}, ()=>[]);
+    r.ws.sort((a,b)=> (a.box.y/mh|0)-(b.box.y/mh|0) || a.box.x-b.box.x).forEach(t=>{ let j = vs.findIndex((v,k)=>k<nc && cx(t)>=v && cx(t)<vs[k+1]); if(j<0) j = cx(t)<vs[0]?0:nc-1; cells[j].push(t.text); });
+    return cells.map(c=>c.join(" ").trim()); };
+  let grid = rows.map(r=>({cells: cellsOf(r), y0:r.y0, y1:r.y1}));
+  if (!hs){
+    // a line of a wrapped cell: first column empty and closer to the row above than rows usually are
+    const gaps = grid.slice(1).map((r,i)=>r.y0 - grid[i].y1), typical = median(gaps);
+    for (let i = grid.length-1; i > 0; i--){
+      const r = grid[i], g = r.y0 - grid[i-1].y1;
+      if (!r.cells[0] && r.cells.some(Boolean) && (g < typical*0.7 || g < mh*0.25)){
+        grid[i-1].cells = grid[i-1].cells.map((c,k)=> r.cells[k] ? (c ? c + " " + r.cells[k] : r.cells[k]) : c); grid[i-1].y1 = r.y1; grid.splice(i, 1); }
+    }
+    hs = [Y0, ...grid.slice(1).map((r,i)=>(grid[i].y1 + r.y0)/2), Y1];
+  }
+  const out = grid.map(r=>r.cells).filter(r=>r.some(Boolean));
+  return out.length >= 1 && (out.length >= 2 || nc >= 2) ? {rows: out, vs, hs} : null;
+}
+/* tables printed without lines: runs of text rows whose cells line up in columns */
+function findTextTables(words, exclude){
+  const ws = words.filter(t=>t.text && t.text.trim() && t.conf > 20 && !exclude.some(b=>inBox(t.box, b)));
+  if (ws.length < 6) return [];
+  const mh = median(ws.map(t=>t.box.h)), rows = visualRows(ws, mh).map(r=>({...r, ph: phrasesOf(r.ws, mh)})), out = [];
+  let run = [];
+  const flush = () => { while (run.length && run[run.length-1].ph.length < 2) run.pop(); if (run.length >= 3){ const t = checkTextTable(run, mh); if (t) out.push(t); } run = []; };
+  for (const r of rows){
+    const prev = run[run.length-1], near = prev && r.y0 - prev.y1 < mh*2.2;
+    if (r.ph.length >= 2){ if (!near) flush(); run.push(r); }
+    else if (near && r.ph[0].x0 > Math.min(...run.map(q=>q.ph[0].x0)) + mh*1.5) run.push(r);      // next line of a cell in a later column
+    else flush();
+  }
+  flush();
+  return out;
+}
+function checkTextTable(run, mh){
+  const x0 = Math.min(...run.map(r=>r.ph[0].x0)), x1 = Math.max(...run.map(r=>r.ph[r.ph.length-1].x1));
+  const seps = colSeps(run.map(r=>r.ph.map(p=>[p.x0, p.x1])), x0, x1, mh), nc = seps.length + 1;
+  if (nc < 2) return null;
+  const edges = [x0, ...seps, x1];
+  const cells = run.map(r=>{ const c = Array(nc).fill(""); r.ph.forEach(p=>{ const m = (p.x0+p.x1)/2; let j = edges.findIndex((v,k)=>k<nc && m>=v && m<edges[k+1]); if (j<0) j = nc-1; c[j] += (c[j]?" ":"") + p.ws.map(w=>w.text).join(" "); }); return c; });
+  if (cells.filter(c=>c.filter(Boolean).length >= 2).length < Math.max(3, run.length*0.6)) return null;
+  const col = k => cells.map(c=>c[k]).filter(Boolean), avg = k => { const v = col(k); return v.reduce((a,x)=>a+x.length,0)/Math.max(1,v.length); }, lens = Array.from({length:nc}, (_,k)=>avg(k));
+  if (nc === 2 && Math.min(...lens) > 22) return null;                                                   // two columns of prose
+  if (lens.every(l=>l > 30)) return null;
+  if (nc === 2 && col(0).filter(c=>/^([\p{N}]{1,3}[.)]?|[•\-–*●○■▪◦])$/u.test(c)).length >= col(0).length*0.8) return null;   // a numbered or bulleted list
+  const all = cells.flat().filter(Boolean);
+  if (nc >= 3 && !all.some(c=>/\p{N}/u.test(c)) && all.every(c=>!/\s/.test(c))) return null;           // verse printed in aligned feet (சீர்)
+  const y0 = Math.min(...run.map(r=>r.y0)), y1 = Math.max(...run.map(r=>r.y1)), pad = mh*0.35, bx = {x:x0-pad, y:y0-pad, w:x1-x0+pad*2, h:y1-y0+pad*2};
+  return { box: bx, cols: seps.map(v=>(v-bx.x)/bx.w) };
 }
 const median = a => { const s=[...a].sort((x,y)=>x-y); return s.length ? s[s.length>>1] : 0; };
 function eraseLines(c, L, s){
@@ -1547,7 +1653,10 @@ async function readTable(worker, c, grid){
   if (userCols || userRows) t = tableFromWords(r.words, box, userRows, userCols);
   else {
     const T = findTables(B, L).sort((a,b)=>(b.box.x1-b.box.x0)*(b.box.y1-b.box.y0)-(a.box.x1-a.box.x0)*(a.box.y1-a.box.y0))[0];
-    if (T && T.ruled) t = tableFromWords(r.words, {x0:T.box.x0/B.s, x1:T.box.x1/B.s, y0:T.box.y0/B.s, y1:T.box.y1/B.s}, T.hs.map(v=>v/B.s), T.vs.map(v=>v/B.s));
+    if (T && T.ruled){
+      const hsAll = dedupe([...T.hs, ...L.H.filter(l=>l.x1-l.x0 >= B.w*0.15).map(l=>(l.y0+l.y1)/2)], 5).map(v=>v/B.s);
+      t = tableFromWords(r.words, {x0:T.box.x0/B.s, x1:T.box.x1/B.s, y0:0, y1:H}, hsAll, T.vs.map(v=>v/B.s));
+    }
     if (!t) t = tableFromWords(r.words, box, null, null);
   }
   const inner = (a, len) => a ? a.slice(1, -1).map(v=>v/len).filter(f=>f > 0.005 && f < 0.995) : [];
@@ -1594,7 +1703,14 @@ async function autoLayout(worker, c, psm = 3, edgeTop = true, edgeBottom = true)
     const wh = res.words.map(x=>x.box.h).sort((p,q)=>p-q);
     tables.push({type:"table", box:bx, rows:res.rows, grid:res.grid, conf:res.conf, lh: wh.length ? wh[Math.floor(wh.length*0.75)] : null});
   }
-  const pics = findPictures(B, r.words, T.map(t=>t.box)).map(b=>({type:"image", box:{x:b.x0/s, y:b.y0/s, w:(b.x1-b.x0)/s, h:(b.y1-b.y0)/s}}));
+  for (const tt of findTextTables(r.words, tables.map(t=>t.box))){
+    const bx = {x:Math.max(0,tt.box.x), y:Math.max(0,tt.box.y), w:Math.min(c.width, tt.box.x+tt.box.w)-Math.max(0,tt.box.x), h:Math.min(c.height, tt.box.y+tt.box.h)-Math.max(0,tt.box.y)};
+    const res = await readTable(worker, sub(c, {x:bx.x/c.width, y:bx.y/c.height, w:bx.w/c.width, h:bx.h/c.height}), {cols: tt.cols, rows: []});
+    if (res.rows.length < 3 || res.rows[0].length < 2) continue;
+    const wh = res.words.map(x=>x.box.h).sort((p,q)=>p-q);
+    tables.push({type:"table", box:bx, rows:res.rows, grid:{cols: res.grid.cols, rows: []}, conf:res.conf, lh: wh.length ? wh[Math.floor(wh.length*0.75)] : null});
+  }
+  const pics = findPictures(B, r.words, [...tables.map(t=>({x0:t.box.x*s, y0:t.box.y*s, x1:(t.box.x+t.box.w)*s, y1:(t.box.y+t.box.h)*s}))]).map(b=>({type:"image", box:{x:b.x0/s, y:b.y0/s, w:(b.x1-b.x0)/s, h:(b.y1-b.y0)/s}}));
   // a caption printed right under (or over) a picture is text, not part of the picture
   for (const pc of pics){
     const b = pc.box;
